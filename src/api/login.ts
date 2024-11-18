@@ -1,0 +1,16 @@
+import { request } from "@/utils/request";
+
+export const fetchLogin = async(loginForm: Object) => {
+    return request({
+        url: '/api/user/login',
+        method: 'POST',
+        data: loginForm
+      })
+}
+
+export const fetchLogout = async() => {
+  return request({
+    url: '/api/user/logout',
+    method: 'POST'
+  })
+}

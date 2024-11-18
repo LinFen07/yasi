@@ -1,0 +1,51 @@
+
+.head{
+  color: white;
+  display: flex;
+  height: 64px;
+  width: 100%;
+}
+
+.headLeft {
+  width: 240px;
+  display: flex;
+}
+
+.headLeft h3{
+  margin: 0;
+  font-weight: 500;
+  font-size: 18px;
+}
+
+.Avatar{
+  background-color: aliceblue;
+}
+
+.headMid{
+  display: flex;
+  font-size: 20px;
+  text-align: center;
+  margin: auto;
+  height: 64px;
+}
+
+.empty{
+  width: 80px;
+}
+
+.slider{
+  width: 200px;
+  color: aliceblue;
+}
+
+.headRight {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 64px;
+  height: 64px;
+  margin-left: auto;
+}
+
+.ant-slider .ant-slider-rail{
+  background-color: aliceblue;
+}
