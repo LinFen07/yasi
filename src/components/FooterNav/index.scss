@@ -1,0 +1,57 @@
+
+.nav {
+  display: flex;
+  padding: 0 40px;
+}
+
+.pageButton {
+  font-size: '20px';
+}
+
+.pageAction {
+  margin: auto;
+}
+
+.paginaction{
+  width: 90%;
+  height: 70px;
+  background-color: #fff;
+  text-align: center;
+  border-radius: 2vh;
+  box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
+  display: flex;
+  text-align: center;
+  overflow: auto;
+  font-size: 22px;
+}
+
+.paginaction li {
+  display: inline;
+  margin-left: 2px;
+  height: 28px;
+}
+
+.paginaction li button {
+  width: 39.15px;
+  height: 26px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.paginaction li button:hover{
+  background-color: rgba(89, 174, 227, 0.931);
+}
+
+.active {
+  background-color: rgba(89, 174, 227, 0.931);
+}
+
+.footerRight{
+  margin-left: auto;
+}
+
+.navButton{
+  height: 60px;
+}
+

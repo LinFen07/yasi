@@ -1,0 +1,55 @@
+
+
+.bottom {
+  margin-top: 13px;
+  line-height: 12px;
+}
+
+.button {
+  padding: 0;
+  float: right;
+}
+
+.image {
+  width: 50%;
+  height: 80%;
+  display: block;
+  margin: 20px auto 10px auto;
+}
+
+.clearfix:before,
+.clearfix:after {
+  display: table;
+  content: "";
+}
+
+.clearfix:after {
+  clear: both
+}
+
+.Carousel{
+  text-align: center;
+  justify-content: center;
+  margin: auto;
+}
+.center{
+  text-align: center;
+  justify-content: center;
+  margin: auto;
+}
+
+.appContent{
+  background-color: white;
+  width: 85%;
+  height: 1220px;
+  margin-left: 7.5%;
+  margin-top: 5vh;
+}
+
+.index-title-h3 {
+  width: 120px;
+  font-size: 22px;
+  font-weight: 400;
+  color: #1f2f3d;
+  margin-right: auto;
+}

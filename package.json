@@ -1,65 +1,52 @@
 {
-  "name": "xzs-student",
-  "version": "3.9.0",
-  "author": "武汉思维跳跃科技有限公司",
-  "description": "学之思开源考试系统",
-  "license": "AGPL-3.0",
+  "name": "yas-exam-student",
+  "proxy": "http://120.24.144.113:8668",
+  "version": "0.1.0",
   "private": true,
-  "homepage": "https://www.mindskip.net/xzs.html",
+  "dependencies": {
+    "@ant-design/icons": "5.5.1",
+    "@testing-library/jest-dom": "5.17.0",
+    "@testing-library/react": "13.4.0",
+    "@testing-library/user-event": "13.5.0",
+    "@types/jest": "27.5.2",
+    "@types/node": "16.18.112",
+    "@types/react": "18.3.10",
+    "@types/react-dom": "18.3.0",
+    "antd": "5.21.2",
+    "axios": "1.7.7",
+    "buffer": "6.0.3",
+    "mobx": "6.3.1",
+    "mobx-react": "6.3.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-html-parser": "2.0.2",
+    "react-router": "6.26.2",
+    "react-router-dom": "6.26.2",
+    "react-scripts": "5.0.1",
+    "typescript": "4.9.5",
+    "web-vitals": "2.1.4"
+  },
   "scripts": {
-    "serve": "vue-cli-service serve --mode dev",
-    "build": "vue-cli-service build --mode prod",
-    "build:dev": "vue-cli-service build --mode dev",
-    "build:test": "vue-cli-service build --mode test",
-    "build:pre": "vue-cli-service build --mode pre",
-    "build:prod": "vue-cli-service build --mode prod",
-    "lint": "vue-cli-service lint"
+    "dev": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://gitee.com/mindskip/xzs-mysql.git"
-  },
-  "bugs": {
-    "url": "https://gitee.com/mindskip/xzs-mysql/issues",
-    "email": "mindskip@qq.com"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "src/**/*.{js,vue}": [
-      "eslint --fix",
-      "git add"
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
     ]
   },
-  "dependencies": {
-    "axios": "^0.19.2",
-    "core-js": "^3.38.1",
-    "element-ui": "^2.15.14",
-    "husky": "^7.0.4",
-    "js-cookie": "2.2.0",
-    "normalize.css": "8.0.1",
-    "nprogress": "0.2.0",
-    "screenfull": "^5.2.0",
-    "vue": "^2.7.16",
-    "vue-router": "^3.6.5",
-    "vuex": "^3.6.2"
-  },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^4.5.19",
-    "@vue/cli-plugin-eslint": "^4.5.19",
-    "@vue/cli-plugin-router": "^4.5.19",
-    "@vue/cli-plugin-vuex": "^4.5.19",
-    "@vue/cli-service": "^4.5.19",
-    "@vue/eslint-config-standard": "^4.0.0",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^5.16.0",
-    "eslint-plugin-vue": "^5.2.3",
-    "node-sass": "^6.0.1",
-    "sass-loader": "^10.5.2",
-    "svg-sprite-loader": "4.1.6",
-    "vue-template-compiler": "^2.7.16"
+    "customize-cra": "1.0.0",
+    "react-app-rewired": "2.2.1",
+    "sass": "1.79.4"
   }
 }
