@@ -1,7 +1,6 @@
 
 import './index.scss';
-import ScoreLie from '../scoreLie';
-
+import ScoreLie from '@/components/basic/scoreLie';
 
 import { Space, Table, Tag } from 'antd';
 import type { TableProps } from 'antd';
@@ -32,8 +31,8 @@ const columns: TableProps<DataType>['columns'] = [
     render: (_, { tag }) => (
 
       <Tag color={tag === 'true' ? 'green' : 'volcano'} key={tag}>
-              {tag.toUpperCase()}
-            </Tag>
+        {tag.toUpperCase()}
+      </Tag>
     ),
   },
   {

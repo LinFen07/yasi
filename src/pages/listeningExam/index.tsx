@@ -1,9 +1,10 @@
 
 import { Layout } from 'antd';
-import FooterNav from '@/components/FooterNav';
+
 import './index.scss';
-import HeadTip from '@/components/HeadTip';
-import PageContent from '@/components/examContent';
+import HeadTip from '@/components/container/HeadTip';
+import PageContent from '@/components/container/examContent';
+import FooterNav from '@/components/container/FooterNav';
 
 const {Header, Content} = Layout;
 

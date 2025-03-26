@@ -1,17 +1,14 @@
-import React from 'react';
-import { Flex, Typography, Layout, Splitter } from 'antd';
-import FooterNav from '@/components/FooterNav';
+
+import { Layout } from 'antd';
+import FooterNav from '@/components/container/FooterNav';
 import './index.scss';
-import HeadTip from '@/components/HeadTip';
-import store from '@/stores'
-import PageContent from '@/components/examContent';
+import HeadTip from '@/components/container/HeadTip';
+import PageContent from '@/components/container/examContent';
 
 const {Header, Content, Footer} = Layout;
 
 
 export default function readnExam() {
-  const exam = store.ExamStore.getReadExam();
-  console.log(exam);
   return (
     <div className='examBox'>
       <Layout>

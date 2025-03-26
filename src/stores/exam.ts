@@ -1,5 +1,3 @@
-
-import { read } from "fs";
 import {  makeAutoObservable} from "mobx";
 
 type Items = {
@@ -7,6 +5,11 @@ type Items = {
   itemUuid: string;
   prefix: string;
   score: string;
+}
+
+export interface Exam {
+  name: string;
+  questionItems: Array<ExamType>;
 }
 
 export interface ExamType {
@@ -25,10 +28,10 @@ export interface ExamType {
   answer: string | null;
 }
 
-export interface ReadExamType {
-  content: string;
-  questions: Array<ExamType>;
-}
+// export interface ReadExamType {
+//   content: string;
+//   questions: Array<ExamType>;
+// }
 
 interface correct {
   answer: string | null;
@@ -37,83 +40,47 @@ interface correct {
 }
 
 class ExamStore {
-  exam: Array<Array<ExamType>>  = [];
-  readExam: Array<ReadExamType>  = [];
-  readQuestion: ReadExamType = {
-    content:'',
-    questions: []
-  };
-  listenExam: Array<ExamType> = [];
-  wirtteExam: Array<ExamType> = [];
-  currentExamIndex = 1;
-  currentExamTitle = 'Part1:';
-  scoreTag = '听力报告';
-  FontSize = 18;
-  listenScore: Array<correct> = [];
-  readScore: Array<correct> = [];
 
   constructor() {
     makeAutoObservable(this);
   }
 
-  addExam(exam: Array<ExamType>) {
-    this.exam.push(exam);
-    for(let i = 0; i < exam.length;){
-      if(exam[i].title.includes('Listening questions')){
-        while(!exam[i].title.includes('reading question')){
-          this.listenExam.push(exam[i]);
-          i++;
-        }
-      }else if(exam[i].title.includes('reading question')){
-        while(!exam[i].analyze.includes('参考范文')){
-          if(!this.readQuestion.content){
-            this.readQuestion.content = exam[i].title;
-          }else{
-            this.readQuestion.questions.push(exam[i]);
-          }
-          i++;
-        }
-        this.readExam.push(this.readQuestion);
-          this.readQuestion = {
-            content:'',
-            questions: []
-          };
-      } else if(exam[i].title.includes('Matching Paragraphs to Questions')){
-        while(i < exam.length){
-          if(!this.readQuestion.content){
-            this.readQuestion.content = exam[i].title;
-          }else{
-            this.readQuestion.questions.push(exam[i]);
-          }
-          i++;
-        }
-        this.readExam.push(this.readQuestion);
-          this.readQuestion = {
-            content:'',
-            questions: []
-          };
-      }else{
-        console.log(1)
-        this.wirtteExam.push(exam[i]);
-        i++;
-      }
-    }
+  //当前题目索引
+  currentExamIndex = 1;
+  currentExamTitle = 'Part1:';
+
+  //字体大小
+  FontSize = 18;
+
+  //分数标签
+  scoreTag = '听力报告';
+
+  exam: Array<Exam>  = [];
+  listenExam: Array<Exam> = [];
+  readExam: Array<Exam> = [];
+  wirrteExam: Array<Exam> = [];
+
+  //已完成题目数组
+  correctListenAnswer: Array<number> = [];
+
+  addExam(exam: Array<Exam>) {
+    this.exam = exam;
+    this.listenExam = this.exam.slice(0,2);
+    this.readExam = this.exam.slice(2,5);
+    this.wirrteExam = this.exam.slice(5,7);
+    console.log(this.listenExam);
   }
 
-  getExam() {
-    return this.exam[this.exam.length - 1];
-  }
-
-  getReadExam() {
-    return this.readExam;
-  }
-
-  getListenExam() {
+  getListenExam(){
     return this.listenExam;
   }
 
-  getWritteExam() {
-    return this.wirtteExam;
+  getReadExam(){
+    return this.readExam;
+  }
+
+  getWritteExam(){
+    return this.wirrteExam;
   }
 
   changeCurrent(current: number) {
@@ -124,43 +91,22 @@ class ExamStore {
     this.currentExamTitle = title;
   }
 
-  changeScoreTag(tag: string) {
-    this.scoreTag = tag;
-  }
-
-  getScoreTag() {
-    return this.scoreTag;
-  }
-
+  //改变字体大小
   changeFontSize(size: number) {
     this.FontSize = size;
   }
 
-  updateListenExam(questionIndex: number, queston: ExamType) {
-    this.listenExam[questionIndex] = queston;
+  updateListenExam(index: number, questionIndex: number, queston: ExamType) {
+    this.listenExam[index].questionItems[questionIndex] = queston;
   }
 
-  updateReadExam(questionIndex: number, queston: any) {
-    this.readExam[questionIndex].questions = queston;
+  updateReadExam(index: number, questionIndex: number, queston: ExamType) {
+    this.readExam[index].questionItems[questionIndex] = queston;
   }
 
-  correctListenAnswer() {
-    this.listenExam.forEach((listenQuestion) => {
-      const score = listenQuestion.answer == listenQuestion.correct ? +listenQuestion.score : 0;
-      this.listenScore.push({answer:listenQuestion.answer, true: listenQuestion.correct, score});
-    });
-    console.log(this.listenScore);
+  resetcorrectListenAnswer(){
+    this.correctListenAnswer = [];
   }
-
-  correctReadAnswer() {
-    this.readExam.forEach((readQuestionArr) => {
-      readQuestionArr.questions.forEach((readQuestion) => {
-        const score = readQuestion.answer == readQuestion.correct ? +readQuestion.score : 0;
-        this.readScore.push({answer:readQuestion.answer, true: readQuestion.correct, score});
-      })
-    })
-    console.log(this.readScore);
-  }
-};
+}
 
 export default new ExamStore();

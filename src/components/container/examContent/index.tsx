@@ -4,9 +4,9 @@ import { observer } from 'mobx-react'
 import { useCallback, useEffect, useState } from 'react';
 import { Input } from 'antd';
 
-import Questions from '../questions';
-import ReadQuestions from '../readQuestions'
-import WritteQuestions from '../writteQuestions';
+import ListenQuestions from '@/components/basic/listenQuestions';
+import ReadQuestions from '@/components/basic/readQuestions'
+import WritteQuestions from '@/components/basic/writteQuestions';
 
 const { TextArea } = Input;
 
@@ -27,10 +27,10 @@ type propType = {
 
 const examContent = observer((props: propType) => {
   const { type } = props;
-  const exam = store.ExamStore.getExam();
+  // const exam = store.ExamStore.getExam();
 
-  const [textArr, setTextArr] = useState(exam[0]);
-  const [title, setTitle] = useState(exam[0].title)
+  const [textArr, setTextArr] = useState('A');
+  const [title, setTitle] = useState('A');
   const [selectedText, setSelectedText] = useState<string>('');
   const [flagTextArr, setFlagTextArr] = useState<textArr[]>([
     {
@@ -52,20 +52,20 @@ const examContent = observer((props: propType) => {
   const [fontSize, setFontSize] = useState(store.ExamStore.FontSize);
 
   /*屏蔽浏览器默认右键事件*/
-  // document.oncontextmenu = function (e) {
-  //   e = e || window.event;
-  //   return false;
-  // };
+  document.oncontextmenu = function (e) {
+    e = e || window.event;
+    return false;
+  };
 
   useEffect(() => {
     setFontSize(store.ExamStore.FontSize);
   },[store.ExamStore.FontSize]);
 
-  useEffect(() => {
-    const index = +store.ExamStore.currentExamTitle.slice(4, store.ExamStore.currentExamTitle.length - 1) - 1;
-    setTextArr(exam[index]);
-    setTitle(exam[index].title);
-  },[store.ExamStore.currentExamTitle, exam]);
+  // useEffect(() => {
+  //   const index = +store.ExamStore.currentExamTitle.slice(4, store.ExamStore.currentExamTitle.length - 1) - 1;
+  //   setTextArr(exam[index]);
+  //   setTitle(exam[index].title);
+  // },[store.ExamStore.currentExamTitle, exam]);
 
   useEffect(() => {
     const span = document.querySelectorAll('.gapfilling-span');
@@ -250,11 +250,11 @@ const examContent = observer((props: propType) => {
       <div className='content' style={{fontSize: `${fontSize}px`}}>
         {
           type === 'listen' ? (
-            <Questions {...{title, textArr}}></Questions>
+            <ListenQuestions ></ListenQuestions>
           ) : type === 'read' ? (
             <ReadQuestions ></ReadQuestions>
           ) : type === 'writte' ?(
-            <WritteQuestions {...{title, textArr}}></WritteQuestions>
+            <WritteQuestions ></WritteQuestions>
           ) : (
             <></>
           )
