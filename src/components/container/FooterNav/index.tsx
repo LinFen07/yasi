@@ -6,6 +6,9 @@ import { ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import store from '@/stores';
 import { useEffect, useState } from 'react';
 
+import { observer } from 'mobx-react';
+import { reaction } from 'mobx';
+
 type pageType = {
   title: string;
   questionArr: number[];
@@ -16,8 +19,9 @@ type propType = {
   type: string;
 };
 
-export default function footerNav(props: propType) {
+function footerNav(props: propType) {
   const { type } = props;
+
   const exam = type === 'listen' 
     ? (store.ExamStore.getListenExam())
     : type === 'read' 
@@ -25,7 +29,7 @@ export default function footerNav(props: propType) {
     : (store.ExamStore.getWritteExam());
   let currentPage = store.ExamStore.currentExamIndex;
 
-  const [curren, setCurren] = useState(currentPage);
+  const [curren, setCurren] = useState(currentPage - 1);
 
   const getQuestionArr = (prevLen:number, len: number) => {
     const questionArr = [];
@@ -40,35 +44,21 @@ export default function footerNav(props: propType) {
   };
 
   let prevLen = 0
-  const initialPageArr = type === 'listen'
-    ? (exam.map((part, index) => {
+  const initialPageArr = (exam.map((part, index) => {
         //@ts-ignore
-        const {questionArr, currLen} = getQuestionArr(prevLen, part.correctArray ? part.correctArray.length : 1);
+        const {questionArr, currLen} = getQuestionArr(
+          prevLen, 
+          (part.questionItems[0].correctArray?.length > part.questionItems.length )
+          ? part.questionItems[0].correctArray.length 
+          : part.questionItems.length
+        );
         prevLen = currLen;
         return {
           title: `Part${index + 1}:`,
           questionArr: questionArr,
           maxNum: currLen
         };
-      }))
-    : type === 'read' 
-    ? (exam.map((item, index) => {
-      //@ts-ignore
-      const {questionArr, currLen} = getQuestionArr(prevLen, item.questions.length);
-        prevLen = currLen;
-        return {
-          title: `Part${index + 1}:`,
-          questionArr: questionArr,
-          maxNum: currLen
-        }
-    }))
-    : (exam.map((item,index) => {
-      return {
-        title: `Part${index + 1}:`,
-          questionArr: [index + 1],
-          maxNum: index + 1
-      }
-    }));
+  }))
 
   const [PageArr, setPageArr] = useState<Array<pageType>>([]);
 
@@ -104,6 +94,24 @@ export default function footerNav(props: propType) {
     }
   };
 
+  useEffect(() => {
+    setCurren(store.ExamStore.currentExamIndex);
+  },[store.ExamStore.currentExamIndex]);
+
+  const [correctAnswers, setCorrectAnswers] = useState(store.ExamStore.correctListenAnswer);
+
+  useEffect(() => {
+    const dispose = reaction(
+      () => store.ExamStore.correctListenAnswer.slice(),
+      (correctListenAnswer) => {
+        setCorrectAnswers(correctListenAnswer);
+      }
+    );
+
+    // 清理 reaction
+    return () => dispose();
+  }, []);
+
   return (
     <div className='nav'>
       <div className='paginaction'>
@@ -112,7 +120,14 @@ export default function footerNav(props: propType) {
             <ul style={{display: 'flex'}} onClick={activeAction} key={index}>
               {item.title}
               {item.questionArr.map((e, i) => (
-                <li key={e} ><button className={e == curren ? 'active' : ''}>{e}</button></li>
+                <li key={e} >
+                <button 
+                  style={e == curren ? { backgroundColor: 'rgba(89, 174, 227, 0.931)' } : {}}
+                  className={`${correctAnswers.includes(e) ? 'selectedAnswer' : ''} `}
+                >
+                  {e}
+                </button>
+              </li>
               ))}
             </ul>
           ))
@@ -133,8 +148,10 @@ export default function footerNav(props: propType) {
           size='large' 
           className='navButton' 
           icon={<ArrowRightOutlined 
-          style={{fontSize: '32px'}}/>
+          style={{fontSize: '32px'}}
+          />
           }
+          disabled = {curren == initialPageArr[initialPageArr.length-1].maxNum}
           onClick={() => handleArrowAction('right')}
           ></Button>
         </Space>
@@ -142,3 +159,5 @@ export default function footerNav(props: propType) {
     </div>
   )
 };
+
+export default observer(footerNav);

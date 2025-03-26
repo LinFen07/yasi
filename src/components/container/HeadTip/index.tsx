@@ -8,7 +8,7 @@ import type { MenuProps } from 'antd';
 import './index.scss'
 import store from '@/stores'
 
-import IntegerStep from '../fontSizeSetting';
+import IntegerStep from '@/components/basic/fontSizeSetting';
 import stores from '@/stores';
 
 const items: MenuProps['items'] = [
@@ -55,13 +55,16 @@ function HeadTip(props: propType) {
   const finish = (type: string) => {
     if(type === 'listen'){
       navigate('/readnExam');
-      stores.ExamStore.correctListenAnswer();
+      // stores.ExamStore.correctListenAnswer();
     }else if(type === 'read'){
       navigate('/writteExam');
-      stores.ExamStore.correctReadAnswer();
+      // stores.ExamStore.correctReadAnswer();
     }else if(type === 'writte'){
       navigate('/testOver');
     }
+    store.ExamStore.changeCurrent(1); // 这里的 1 是你想要重置的值
+    store.ExamStore.changeCurrentTitle('Part1:');
+    store.ExamStore.resetcorrectListenAnswer();
   };
   
   const handleSetting = () => {}

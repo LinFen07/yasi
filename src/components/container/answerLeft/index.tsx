@@ -45,7 +45,7 @@ const AnswerLeft = observer(() => {
               ))
             }
           </div>
-          <div className='anltContent'>{ReactHtmlParser(exam[AnswwerId].analyze)}</div>
+          <div className='anltContent'>{ReactHtmlParser(exam[AnswwerId].questionItems[0].analyze)}</div>
           </>
         )
         : scoreTag === '阅读报告' ? (
@@ -57,7 +57,7 @@ const AnswerLeft = observer(() => {
               ))
             }
           </div>
-          <div className='anltContent'>{ReactHtmlParser(read[AnswwerId].content)}</div>
+          <div className='anltContent'>{ReactHtmlParser(read[AnswwerId].name)}</div>
           </>
         )
         : scoreTag === '写作报告' ? (
@@ -69,7 +69,7 @@ const AnswerLeft = observer(() => {
               ))
             }
           </div>
-          <div className='anltContent'>{ReactHtmlParser(writte[AnswwerId].title)}</div>
+          <div className='anltContent'>{ReactHtmlParser(writte[AnswwerId].name)}</div>
           </>
         )
         : (<></>)

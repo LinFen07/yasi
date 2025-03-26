@@ -2,8 +2,8 @@
 import { Button } from 'antd';
 
 import './index.scss'
-import Score from '@/components/score';
-import Answer from '@/pages/answerBox';
+import Score from '@/components/container/score';
+import Answer from '@/components/basic/answerBox';
 //@ts-ignore
 import img from '@/assets/logo.png'
 

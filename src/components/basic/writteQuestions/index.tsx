@@ -12,16 +12,16 @@ type propState = {
   title: string,
   textArr: ExamType
 }
-export default function questions(propState: propState) {
+export default function questions() {
   const exam = stores.ExamStore.getWritteExam();
 
-  const [title, setTitle] = useState(exam[0].title);
+  const [title, setTitle] = useState(exam[0].name);
   const [value, setValue] = useState('');
 
   useEffect(() => {
-    // const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
-    // console.log(exam)
-    setTitle(exam[0].title);
+    const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
+    console.log(exam)
+    setTitle(exam[index].name);
   },[stores.ExamStore.currentExamTitle, exam]);
 
   return (
