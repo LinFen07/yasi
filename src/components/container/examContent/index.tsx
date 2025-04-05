@@ -1,5 +1,5 @@
 import './index.scss'
-import store from '@/stores'
+import stores from '@/stores'
 import { observer } from 'mobx-react'
 import { useCallback, useEffect, useState } from 'react';
 import { Input } from 'antd';
@@ -27,9 +27,7 @@ type propType = {
 
 const examContent = observer((props: propType) => {
   const { type } = props;
-  // const exam = store.ExamStore.getExam();
 
-  const [textArr, setTextArr] = useState('A');
   const [title, setTitle] = useState('A');
   const [selectedText, setSelectedText] = useState<string>('');
   const [flagTextArr, setFlagTextArr] = useState<textArr[]>([
@@ -46,37 +44,20 @@ const examContent = observer((props: propType) => {
   const [noteVisible, setNoteVisible] = useState<boolean>(false);
   const [noteText, setNoteText] = useState<string>('');
   const [isHightlight, setIsHightlight] = useState<boolean>(false);
-  const [value, setValue] = useState<string>('A');
 
   //字体大小
-  const [fontSize, setFontSize] = useState(store.ExamStore.FontSize);
+  const [fontSize, setFontSize] = useState(stores.ExamStore.FontSize);
 
   /*屏蔽浏览器默认右键事件*/
-  document.oncontextmenu = function (e) {
-    e = e || window.event;
-    return false;
-  };
+  // document.oncontextmenu = function (e) {
+  //   e = e || window.event;
+  //   return false;
+  // };
 
   useEffect(() => {
-    setFontSize(store.ExamStore.FontSize);
-  },[store.ExamStore.FontSize]);
+    setFontSize(stores.ExamStore.FontSize);
+  },[stores.ExamStore.FontSize]);
 
-  // useEffect(() => {
-  //   const index = +store.ExamStore.currentExamTitle.slice(4, store.ExamStore.currentExamTitle.length - 1) - 1;
-  //   setTextArr(exam[index]);
-  //   setTitle(exam[index].title);
-  // },[store.ExamStore.currentExamTitle, exam]);
-
-  useEffect(() => {
-    const span = document.querySelectorAll('.gapfilling-span');
-    if(!span) return
-    for(let i = 0; i < span.length; i++) {
-      const input = document.createElement('input');
-      input.className = 'textInput'
-      span[i].innerHTML = '';
-      span[i].appendChild(input);
-    }
-  },[title])
 
   const handleSelection = () => {
     if(noteVisible) return;
@@ -125,7 +106,6 @@ const examContent = observer((props: propType) => {
   }
 
   const handleClickSpan = (e:any) => {
-    
     setNoteVisible(false);
     flagTextArr.forEach(item => {
       if(item.text === e.target.innerText) {
@@ -246,7 +226,7 @@ const examContent = observer((props: propType) => {
 
   return (
     <div className='pageContent'>
-      <div className='title'>{store.ExamStore.currentExamTitle}</div>
+      <div className='title'>{stores.ExamStore.currentExamTitle}</div>
       <div className='content' style={{fontSize: `${fontSize}px`}}>
         {
           type === 'listen' ? (

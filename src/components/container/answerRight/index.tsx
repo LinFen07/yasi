@@ -4,6 +4,9 @@ import ScoreLie from '@/components/basic/scoreLie';
 
 import { Space, Table, Tag } from 'antd';
 import type { TableProps } from 'antd';
+import stores from '@/stores';
+import { observer } from 'mobx-react';
+import { useEffect, useState } from 'react';
 
 interface DataType {
   key: string;
@@ -11,6 +14,7 @@ interface DataType {
   answer: string;
   tag: string;
   myAn: string;
+  score: string;
 }
 
 const columns: TableProps<DataType>['columns'] = [
@@ -44,33 +48,30 @@ const columns: TableProps<DataType>['columns'] = [
       </Space>
     ),
   },
-];
-
-const data: DataType[] = [
   {
-    key: '1',
-    question: 1,
-    answer: 'A',
-    tag: 'true',
-    myAn: 'A'
-  },
-  {
-    key: '2',
-    question: 2,
-    answer: 'B',
-    tag: 'false',
-    myAn: 'A'
-  },
-  {
-    key: '3',
-    question: 3,
-    answer: 'A',
-    tag: 'true',
-    myAn: 'A'
+    title: '得分',
+    key: '得分',
+    dataIndex: 'score',
+    render: (_, record) => (
+      <Space size="middle">
+        <p>{record.score}</p>
+      </Space>
+    ),
   },
 ];
 
-export default function AnswerRight() {
+
+
+ function AnswerRight() {
+
+  
+  const [data, setData] = useState<DataType[]>(stores.ExamStore.correctListen);
+
+  useEffect(() => {
+    let tag = stores.ExamStore.getScoreTag();
+    if(tag == '听力报告') setData(stores.ExamStore.correctListen);
+    else setData(stores.ExamStore.correctRead);
+  }, [stores.ExamStore.scoreTag]);
 
   const changeAn = (e: any) => {
     if (e.target.tagName === 'DIV') return;
@@ -99,3 +100,4 @@ export default function AnswerRight() {
     </div>
   )
 }
+export default observer(AnswerRight);

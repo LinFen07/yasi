@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router';
 
 import { Button, Space, Avatar, Slider, Modal, Dropdown } from 'antd'
@@ -55,10 +55,10 @@ function HeadTip(props: propType) {
   const finish = (type: string) => {
     if(type === 'listen'){
       navigate('/readnExam');
-      // stores.ExamStore.correctListenAnswer();
+      stores.ExamStore.isTrueListeneAnswer();
     }else if(type === 'read'){
       navigate('/writteExam');
-      // stores.ExamStore.correctReadAnswer();
+      stores.ExamStore.isTrueReadAnswer();
     }else if(type === 'writte'){
       navigate('/testOver');
     }
@@ -67,7 +67,15 @@ function HeadTip(props: propType) {
     store.ExamStore.resetcorrectListenAnswer();
   };
   
-  const handleSetting = () => {}
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleVolumeChange = (value: number) => {
+    if (audioRef.current) {
+      audioRef.current.volume = value / 100; // 将 Slider 的值（0-100）转换为音量范围（0-1）
+    }
+  };
+
+  const audioUrl = stores.ExamStore.getListenAudio();
   
   return(
     <div className='head'>
@@ -89,10 +97,17 @@ function HeadTip(props: propType) {
       <div className='empty'></div>
         {
           props.type === 'listen' 
-          ? <Space>
-             <SoundOutlined style={{fontSize: '28px'}}/>  
-             <Slider defaultValue={30} className='slider'/>
-            </Space>
+          ? <div>
+              <Space>
+               <SoundOutlined style={{fontSize: '28px'}}/>  
+               <Slider defaultValue={30} className='slider' onChange={handleVolumeChange}/>
+              </Space>
+              <audio
+                ref={audioRef} // 绑定 audio 元素的引用
+                src={audioUrl}
+                autoPlay
+              ></audio>
+            </div>
           : <></>
         }
       </div>

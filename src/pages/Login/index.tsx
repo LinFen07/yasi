@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Form, Input, Flex, message, Select  } from 'antd';
+import { Cascader } from 'antd';
 
 import { fetchRegister } from "@/api/register";
 import { fetchLogin } from '@/api/login'
@@ -22,6 +23,35 @@ type Props = {
 function LoginRoute(props: Props) {
 
   const navigate = useNavigate();
+  const cityOptions = [
+    {
+      value: '广东省',
+      label: '广东省',
+      children: [
+        { value: '广州市', label: '广州市' },
+        { value: '深圳市', label: '深圳市' },
+        { value: '珠海市', label: '珠海市' },
+      ],
+    },
+    {
+      value: '北京市',
+      label: '北京市',
+      children: [
+        { value: '东城区', label: '东城区' },
+        { value: '西城区', label: '西城区' },
+        { value: '朝阳区', label: '朝阳区' },
+      ],
+    },
+    {
+      value: '上海市',
+      label: '上海市',
+      children: [
+        { value: '黄浦区', label: '黄浦区' },
+        { value: '徐汇区', label: '徐汇区' },
+        { value: '长宁区', label: '长宁区' },
+      ],
+    },
+  ];
 
   const onFinish = async(values: any) => {
     let res, mess, nav;
@@ -37,7 +67,12 @@ function LoginRoute(props: Props) {
 
     //@ts-ignore
     if(res.code == 1) {
-      stores.UserStore.login(values.userName);
+      const cookies = document.cookie;
+      stores.UserStore.login(cookies);
+      stores.UserStore.setName(values.userName);
+      message.success(mess);
+      navigate(nav);
+    }else{
       message.success(mess);
       navigate(nav);
     };
@@ -89,28 +124,86 @@ function LoginRoute(props: Props) {
               {
                 props.data == 'register'
                 ? <div>
-                    <label>年级</label>
+                    <label>确认密码</label>
                     <Form.Item
-                      name="userLevel"
-                      rules={[{ required: true, message: '请选择年级' }]}
+                      name="confirmPassword"
+                      rules={[{ required: true, message: '两次输入的密码不同' }]}
                     >
-                      <Select placeholder="选择年级">
-                        <Option value="1">一年级</Option>
-                        <Option value="2">二年级</Option>
-                        <Option value="3">三年级</Option>
-                        <Option value="4">四年级</Option>
+                      <Input 
+                      prefix={<LockOutlined />} 
+                      placeholder="确认密码"
+                      size="large"
+                      className="lowin-input"
+                      />
+                    </Form.Item>
+                    <label>真实姓名</label>
+                    <Form.Item
+                      name="realName"
+                      rules={[{ required: true, message: '请输入真实姓名' }]}
+                    >
+                      <Input 
+                      prefix={<UserOutlined />} 
+                      placeholder="真实姓名"
+                      size="large"
+                      className="lowin-input"
+                      />
+                    </Form.Item>
+
+                    <label>居住城市</label>
+                    <Form.Item
+                      name="address"
+                      rules={[{ required: true, message: '请填写居住城市' }]}
+                    >
+                      <Cascader
+                        options={cityOptions}
+                        placeholder="请选择居住城市"
+                      />
+                    </Form.Item>
+                    <label>邮箱</label>
+                    <Form.Item
+                      name="email"
+                      rules={[{ required: true, message: '请输入邮箱' }]}
+                    >
+                      <Input 
+                      placeholder="留意邮箱中的考试通知"
+                      size="large"
+                      className="lowin-input"
+                      />
+                    </Form.Item>
+                    <label>套餐</label>
+                    <Form.Item
+                      name="examPackage"
+                      rules={[{ required: true, message: '请选择套餐' }]}
+                    >
+                      <Select placeholder="选择套餐">
+                        <Option value="1">一套试卷</Option>
                       </Select>
                     </Form.Item>
+              <div className="lowin-group password-group">
+                <label>电话</label>
+                <Form.Item
+                  name="phone"
+                  rules={[{ required: true, message: '请输入电话' }]}
+                >
+                  <Input 
+                  placeholder="电话"
+                  size="large"
+                  className="lowin-input"
+                  />
+                </Form.Item>
+              </div>
                   </div>
-                : <div style={{height: '40px'}}>
-                    <Form.Item wrapperCol={{ span: 25, offset: 1 }}>
-                      <Flex>
-                        <Form.Item name="remember" valuePropName="checked" noStyle>
-                          <Checkbox></Checkbox><label className="rememberCheck">记住我</label>
-                        </Form.Item>
-                        <label><a href="#"><b>忘记密码？</b></a></label>
-                      </Flex>
-                    </Form.Item>
+                : <div>
+                    <div style={{height: '40px'}}>
+                      <Form.Item wrapperCol={{ span: 25, offset: 1 }}>
+                        <Flex>
+                          <Form.Item name="remember" valuePropName="checked" noStyle>
+                            <Checkbox></Checkbox><label className="rememberCheck">记住我</label>
+                          </Form.Item>
+                          <label><a href="#"><b>忘记密码？</b></a></label>
+                        </Flex>
+                      </Form.Item>
+                    </div>
                   </div>
               }
               <Form.Item>
@@ -129,7 +222,7 @@ function LoginRoute(props: Props) {
         </div>
       </div>
       <div className="account-foot-copyright">
-        <span>Copyright ©2019-2024 XXXX科技有限公司 版权所有</span>
+        <span>仲恺农业工程学院 北京燕兴国际教育咨询有限公司 版权所有</span>
       </div>
     </div>
   );

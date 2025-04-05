@@ -7,7 +7,7 @@ import { Layout, Menu, Dropdown, Space, Avatar } from 'antd';
 import { fetchLogout } from "@/api/login";
 
 import { observer } from "mobx-react";
-import store from '@/stores/token'
+import store from '@/stores/user'
 
 import './index.scss'
 //@ts-ignore

@@ -1,11 +1,14 @@
 import './index.scss'
-import {  Radio } from 'antd';
+import {  Radio, Checkbox } from 'antd';
 import { useEffect, useState, useRef } from 'react';
 import ReactHtmlParser from 'react-html-parser';
 import stores from '@/stores';
 import { observer } from 'mobx-react'
 
 import { runInAction } from 'mobx';
+
+import { computedPrevCount, computedBlanksPrevCount }from '@/utils/computedPrevCount';
+import { createInput } from '@/utils/createInput';
 
 
 const questions = () => {
@@ -21,26 +24,30 @@ const questions = () => {
     const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
     setReadArr(exam[index]);
     setQuestionArr(exam[index].questionItems);
-  },[stores.ExamStore.currentExamTitle, exam]);
+    createInput(exam);
+  },[stores.ExamStore.currentExamTitle]);
 
   useEffect(() => {
-    const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
-    let prevCount = 0;
-    for(let i = 0; i < index; i++){
-      prevCount += exam[i].questionItems.length;
-    }
+    let prevCount = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
+    let BlanksprevCount = computedBlanksPrevCount(prevCount, stores.ExamStore.currentExamTitle, exam);
     if (titleRefs.current[questionIndex - prevCount - 1]) {
       titleRefs.current[questionIndex - prevCount - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    const inputAll = document.querySelectorAll('.textInput');
+    
+    if(inputAll[questionIndex - BlanksprevCount - 1]){
+      //@ts-ignore
+      inputAll[questionIndex - BlanksprevCount - 1].focus();
+      inputAll[questionIndex - BlanksprevCount - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [questionIndex]);
 
   const onChange = (index: number) => (e: any) => {
     const examIndex = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
+    
+    let prevCount = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
+    console.log('prevCount', prevCount);
     const { value } = e.target;
-    let prevCount = 0;
-    for(let i = 0; i < examIndex; i++){
-      prevCount += exam[i].questionItems.length;
-    }
 
     const updatedQuestions = { ...questionArr[index] };
     updatedQuestions.answer = value;
@@ -78,6 +85,20 @@ const questions = () => {
                       }))}
                       > 
                     </Radio.Group>
+                    : item.questionType == '2' 
+                    ? <Checkbox.Group style={{ width: '100%' }} 
+                      // value={questionArr.answer ? questionArr.answer : ''}
+                      options={item.items.map((opt) => ({
+                      value: opt.prefix,
+                      label: (
+                        <span style={{ display: 'flex', alignItems: 'center' }}>
+                          {opt.prefix}
+                          <p style={{width:'8px'}}></p>
+                          {ReactHtmlParser(opt.content)}
+                        </span>
+                      )
+                      }))}>
+                      </Checkbox.Group>
                   :<></>
                 }
               </div>
