@@ -16,6 +16,10 @@ const Dashboard = () => {
       id: 2,
       title: '2024雅思模拟真题',
     },
+    {
+      id: 3,
+      title: '2024雅思模拟真题',
+    },
   ];
 
   const handleConfirmExam = async(id: number) => {
@@ -25,6 +29,9 @@ const Dashboard = () => {
     if(res.code == 1) {
       //@ts-ignore
       stores.ExamStore.addExam(res.response.titleItems);
+      //添加听力录音
+      //@ts-ignore
+      stores.ExamStore.addListenAudio(res.response.audioFileUrl);
       navigate(`/listeningExam`);
     }
   }

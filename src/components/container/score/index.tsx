@@ -7,7 +7,7 @@ export default function Score() {
   const hanldeScore = (e: any) => {
     if(e.target.tagName === 'UL') return;
     const tag = e.target.innerText;
-    // stores.ExamStore.changeScoreTag(tag);
+    stores.ExamStore.changeScoreTag(tag);
     let btns = document.getElementsByClassName('btn');
     for (let i = 0; i < btns.length; i++) {
       btns[i].classList.remove('active');

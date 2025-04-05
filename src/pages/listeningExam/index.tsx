@@ -9,9 +9,6 @@ import FooterNav from '@/components/container/FooterNav';
 const {Header, Content} = Layout;
 
 export default function listeningExam() {
-  // const exam = examStore.getExam();
-  // //@ts-ignore
-  // console.log(exam[0].analyze);
 
   return (
     <div className='examBox'>

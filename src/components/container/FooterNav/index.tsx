@@ -45,19 +45,22 @@ function footerNav(props: propType) {
 
   let prevLen = 0
   const initialPageArr = (exam.map((part, index) => {
-        //@ts-ignore
-        const {questionArr, currLen} = getQuestionArr(
-          prevLen, 
-          (part.questionItems[0].correctArray?.length > part.questionItems.length )
-          ? part.questionItems[0].correctArray.length 
-          : part.questionItems.length
-        );
-        prevLen = currLen;
-        return {
-          title: `Part${index + 1}:`,
-          questionArr: questionArr,
-          maxNum: currLen
-        };
+    let allLen = 0;
+    for(let i = 0; i < part.questionItems.length; i++) {
+      const len = part.questionItems[i].correctArray ? part.questionItems[i].correctArray.length : 1;
+      allLen += len;
+    }
+    //@ts-ignore
+    const {questionArr, currLen} = getQuestionArr(
+      prevLen, 
+      allLen
+    );
+    prevLen = currLen;
+    return {
+      title: `Part${index + 1}:`,
+      questionArr: questionArr,
+      maxNum: currLen
+    };
   }))
 
   const [PageArr, setPageArr] = useState<Array<pageType>>([]);
@@ -77,7 +80,6 @@ function footerNav(props: propType) {
 
   const activeAction = (e: any) => {
     if(e.target.tagName == 'UL' || e.target.tagName == 'LI') return;
-    setCurren(+e.target.innerHTML);
     store.ExamStore.changeCurrent(+e.target.innerHTML);
     handleChangeTitle(+e.target.innerHTML);
   };

@@ -1,4 +1,4 @@
-import UserStore from './token'
+import UserStore from './user'
 import ExamStore from './exam'
 
 const stores = {

@@ -3,15 +3,16 @@ import { lazy } from "react";
 import { Navigate } from "react-router-dom";
 import Login from '@/pages/Login';
 import Layout from "@/layout";
-import Record from "@/pages/record";
+// import Record from "@/pages/record";
 import Dashboard from "@/pages/dashboard";
-import ErrorQuestions from "@/pages/errorQuestions";
+// import ErrorQuestions from "@/pages/errorQuestions";
 import ListeningExam from "@/pages/listeningExam";
 import Message from "@/pages/message";
 import UserInfo from "@/pages/userInfo";
 import ReadExam from "@/pages/readExam";
 import WritteExam from "@/pages/writte";
 import TestOver from "@/pages/testOver";
+import stores from "@/stores";
 
 // 快速导入工具函数
 const lazyLoad = (moduleName: string) => {
@@ -21,7 +22,7 @@ const lazyLoad = (moduleName: string) => {
 
 // 路由鉴权组件
 const Appraisal = ({ children }: any) => {
-  const token = localStorage.getItem("student");
+  const token = localStorage.getItem(stores.UserStore.key);
   return token ? children : <Navigate to="/login" />;
 };
 
