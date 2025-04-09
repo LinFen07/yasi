@@ -56,7 +56,8 @@ function LoginRoute(props: Props) {
   const onFinish = async(values: any) => {
     let res, mess, nav;
     if(props.data == 'login') {
-      res = await fetchLogin(values);
+      const va = {  ...values , remember: false }
+      res = await fetchLogin(va);
       mess = '登录成功';
       nav = '/layout/dashboard';
     } else {

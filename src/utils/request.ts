@@ -1,21 +1,25 @@
-import axios from "axios";
+import axios from 'axios';
 
 const request = axios.create({
   baseURL: 'http://120.24.144.113:8668',
   timeout: 30000,
-})
+  headers: {
+    'Content-Type': 'application/json',
+    'request-ajax': true,
+  },
+});
 
-export const post = (url: string, params: any) => {
-  const query = {
-    url: url,
-    method: 'POST',
-    withCredentials: true,
-    timeout: 30000,
-    data: params,
-    headers: { 'Content-Type': 'application/json', 'request-ajax': true,}
-  }
-  return request(query)
-}
+// export const post = (url: string, params: any) => {
+//   const query = {
+//     url: url,
+//     method: 'POST',
+//     withCredentials: true,
+//     timeout: 30000,
+//     data: params,
+//     headers: { 'Content-Type': 'application/json', 'request-ajax': true,}
+//   }
+//   return request(query)
+// }
 
 export const postWithLoadTip = function (url: string, params: any) {
   const query = {
@@ -65,6 +69,13 @@ request.interceptors.request.use((config) => {
 //添加响应拦截器
 request.interceptors.response.use((response) => {
   // 2xx 范围内的状态码触发该函数。
+  const setCookieHeader = response.headers['Set-Cookie'];
+  if (setCookieHeader) {
+    // 处理 Set-Cookie 头
+    console.log('Set-Cookie:', setCookieHeader);
+    // 将 Cookie 存储在 localStorage 或 sessionStorage 中
+    localStorage.setItem('cookie', setCookieHeader.join('; '));
+  }
   return response.data
 }, (error) => {
   // 超出 2xx 范围的状态码触发该函数。

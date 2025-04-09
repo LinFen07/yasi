@@ -43,4 +43,5 @@ export type StudentAnswer = {
   questionId: number,
   studentAnswer: string,
   studentId: number,
+  score: string
 }

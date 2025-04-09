@@ -37,6 +37,10 @@ class ExamStore {
   studentListenAnswers: Array<string> = Array(50).fill('');
   studentReadAnswers: Array<string> = Array(50).fill('');
 
+  //考生得分
+  studentListenScore: Array<string> = Array(50).fill('');
+  studentReadScore: Array<string> = Array(50).fill('');
+
   //阅读答案
   correctRead: Array<correct> = [];
   //写作答案
@@ -181,6 +185,16 @@ class ExamStore {
   }
   changeStudentReadAnswer(index: number, answer: string){
     this.studentReadAnswers[index] = answer;
+  }
+
+  changeStudentListenScore(index: number, correct: string, score: string){
+    this.studentListenScore[index] = 
+      this.studentListenAnswers[index] == correct ? score : '0';
+  }
+
+  changeStudentReadScore(index: number, correct: string, score: string){
+    this.studentReadScore[index] = 
+      this.studentReadAnswers[index] == correct ? score : '0';
   }
 }
 
