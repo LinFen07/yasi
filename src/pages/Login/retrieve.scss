@@ -1,0 +1,15 @@
+body {
+  .contain {
+      width: 500px;
+      height: 690px;
+      margin: 100px auto;
+  }
+
+  .go_back a {
+      color: blue;
+  }
+
+  .go_back a:hover {
+      color: skyblue;
+  }
+}

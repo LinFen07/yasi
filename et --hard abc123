@@ -1,0 +1,23 @@
+[33mcommit 898d1e844cfd80c21922839afb8e8dbe1d0d8456[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m
+Author: Admin <abc19814573869@126.com>
+Date:   Sun Apr 6 14:23:58 2025 +0800
+
+    基本完成黑白模式
+
+[33mcommit 3b337fb1d961d20c4d2028b1c0a31adfab05727d[m
+Author: Admin <abc19814573869@126.com>
+Date:   Sun Apr 6 11:28:33 2025 +0800
+
+    改进了黑色模式，还有阴影问题
+
+[33mcommit 293014d5e92e602347dc655501a7e1e92c5f73ab[m
+Author: Admin <abc19814573869@126.com>
+Date:   Sat Apr 5 23:14:37 2025 +0800
+
+    加了黑白模式
+
+[33mcommit 1e3405048423b8a8021f2598153d26d4f041e1c4[m
+Author: Admin <abc19814573869@126.com>
+Date:   Fri Apr 4 21:11:13 2025 +0800
+
+    改变了基础功能，添加了一些必要的内容

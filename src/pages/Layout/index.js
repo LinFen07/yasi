@@ -10,6 +10,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUserInfo, clearUserInfo } from '../../store/user';
+import axios from 'axios';
 
 const { Header, Sider } = Layout;
 const { Option } = Select;
@@ -49,6 +50,11 @@ const GeekLayout = () => {
         const path = route.key;
         navigate(path);
     };
+    const fetchPage = async () => {
+        const res = await axios.get('http://120.24.144.113:8668/api/teacher/examassignment/page')
+        console.log(res.data.response.items)
+    }
+    fetchPage()
 
 
 

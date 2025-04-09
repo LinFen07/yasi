@@ -25,7 +25,8 @@ const Home = () => {
       total: 200,
       evaluated: 125,
       status: 'in-progress',
-      received: true
+      received: true,
+      completedAt: null
     },
     {
       id: 2,
@@ -33,7 +34,8 @@ const Home = () => {
       total: 150,
       evaluated: 98,
       status: 'in-progress',
-      received: true
+      received: true,
+      completedAt: null
     },
     {
       id: 3,
@@ -41,7 +43,8 @@ const Home = () => {
       total: 100,
       evaluated: 75,
       status: 'in-progress',
-      received: true
+      received: true,
+      completedAt: null
     },
     {
       id: 4,
@@ -49,7 +52,36 @@ const Home = () => {
       total: 300,
       evaluated: 0,
       status: 'pending',
-      received: false
+      received: false,
+      completedAt: null
+    },
+    // 已完成任务示例
+    {
+      id: 5,
+      name: '上学期期末考试',
+      total: 250,
+      evaluated: 250,
+      status: 'completed',
+      received: true,
+      completedAt: '2023-12-20'
+    },
+    {
+      id: 6,
+      name: '单元测试1',
+      total: 120,
+      evaluated: 120,
+      status: 'completed',
+      received: true,
+      completedAt: '2023-11-15'
+    },
+    {
+      id: 7,
+      name: '期中模拟考试',
+      total: 180,
+      evaluated: 180,
+      status: 'completed',
+      received: true,
+      completedAt: '2023-10-30'
     }
   ]);
 
@@ -258,6 +290,23 @@ const Home = () => {
                     <List.Item.Meta
                       title={item.name}
                       description={`待阅 ${item.total} 份`}
+                    />
+                  </List.Item>
+                )}
+              />
+            </Tabs.TabPane>
+            <Tabs.TabPane tab="已完成任务" key="3">
+              <List
+                dataSource={tasks.filter(t => t.status === 'completed')}
+                renderItem={item => (
+                  <List.Item
+                    actions={[
+                      <span>完成于: {item.completedAt}</span>
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={item.name}
+                      description={`共完成 ${item.total} 份`}
                     />
                   </List.Item>
                 )}

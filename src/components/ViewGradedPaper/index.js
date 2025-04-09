@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Descriptions, Image, Divider, Table, Button, Card } from 'antd';
+import { Descriptions, Image, Divider, Table, Button, Card, Space } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import ScoreInput from '../ScoreInput';
 
@@ -9,14 +9,40 @@ import ScoreInput from '../ScoreInput';
  * @param {object} paperData - 试卷数据
  * @param {function} onBack - 返回回调
  */
-const ViewGradedPaper = ({ 
+const ViewGradedPaper = ({
   paperData = {},
-  onBack
+  onBack,
+  onEdit,
+  originalData // 新增原始数据prop
 }) => {
+  const handleEdit = (e) => {
+    e.preventDefault();
+    // 恢复原始数据
+    const restoredData = {
+      ...paperData,
+      score: originalData?.score,
+      comment: originalData?.comment,
+      questions: originalData?.questions || []
+    };
+    onEdit?.(restoredData);
+  };
   return (
-    <Card 
+    <Card
       title={`${paperData.name || '考生'}的已阅试卷`}
-      extra={<Button onClick={onBack}>返回</Button>}
+      extra={
+        <Space>
+          <Button
+            type="primary"
+            onClick={handleEdit}
+          >
+            修改
+          </Button>
+          <Button onClick={(e) => {
+            e.preventDefault();
+            onBack();
+          }}>返回</Button>
+        </Space>
+      }
     >
       <div style={{ display: 'flex', gap: '24px' }}>
         {/* 左侧试卷区域 */}
@@ -35,8 +61,8 @@ const ViewGradedPaper = ({
               {paperData.name || '未知'}
             </Descriptions.Item>
             <Descriptions.Item label="得分">
-              <ScoreInput 
-                value={paperData.score} 
+              <ScoreInput
+                value={paperData.score}
                 disabled
               />
             </Descriptions.Item>
@@ -58,6 +84,7 @@ const ViewGradedPaper = ({
                 { title: '批阅人', dataIndex: 'grader', key: 'grader' }
               ]}
               dataSource={paperData.questions || []}
+              rowKey="id"
               pagination={false}
             />
           </div>
@@ -65,8 +92,8 @@ const ViewGradedPaper = ({
           <Divider />
 
           <div style={{ marginTop: '16px' }}>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<DownloadOutlined />}
               onClick={() => console.log('导出PDF')}
             >
@@ -89,7 +116,13 @@ ViewGradedPaper.propTypes = {
     questions: PropTypes.array,
     gradedTime: PropTypes.string
   }),
-  onBack: PropTypes.func.isRequired
+  onBack: PropTypes.func.isRequired,
+  onEdit: PropTypes.func,
+  originalData: PropTypes.shape({
+    score: PropTypes.number,
+    comment: PropTypes.string,
+    questions: PropTypes.array
+  })
 };
 
 export default ViewGradedPaper;
