@@ -50,10 +50,13 @@ const Dashboard = () => {
               key={item.id}
             >
               <Meta title={item.title} />
-              <p>总分·150</p>
+              <p>考试时间：2025.04.08 9:00 ~ 12:00</p>
               <p>总题目·15</p>
               <Button type="primary" onClick={() => handleConfirmExam(item.id)}>
                 前往考试
+              </Button>
+              <Button type="primary" disabled style={{marginLeft: '12px'}} onClick={() => handleConfirmExam(item.id)} >
+                查看结果
               </Button>
             </Card>
             )

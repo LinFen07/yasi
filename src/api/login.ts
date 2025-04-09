@@ -1,6 +1,9 @@
 import { request } from "@/utils/request";
 
-export const fetchLogin = async(loginForm: Object) => {
+export const fetchLogin =  
+// (loginForm: any) => postWithLoadTip(`/api/user/login`, loginForm)
+
+(loginForm: Object) => {
     return request({
         url: '/api/user/login',
         method: 'POST',
