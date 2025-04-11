@@ -46,6 +46,13 @@ class ExamStore {
   //写作答案
   correctWritte: Array<correct> = [];
 
+  //表格标识
+  tableFlag = true;
+
+  tableFlagChange() {
+    this.tableFlag = !this.tableFlag;
+  }
+
   //改变试卷id
   changePaperId(id: number) {
     this.paperId = id;

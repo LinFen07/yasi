@@ -13,10 +13,10 @@ export function createInput(exam: Array<Exam>, type: string) {
     if (span.length === 0) return;
     for(let j = 0; j < exam[index].questionItems.length; j++){
       const questionArr = exam[index].questionItems[j];
-      if(questionArr.questionType == '4'){
+      if(questionArr.topicType == '4' || questionArr.topicType == '6' ){
         MyInput(currIndex, span, prevCount, questionArr, type);
         currIndex += questionArr.items.length;
-      }else if(questionArr.questionType == '2'){
+      }else if(questionArr.questionType == '2' || questionArr.topicType == '5'){
         prevCount += questionArr.correctArray.length;
       }else {
         prevCount += 1;

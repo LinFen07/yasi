@@ -20,6 +20,7 @@ export interface ExamType {
   itemOrder: number;
   items: Array<Items>;
   questionType: string;
+  topicType: string;
   score: string;
   subjectId: number;
   title: string;

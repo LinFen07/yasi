@@ -54,13 +54,13 @@ function HeadTip(props: propType) {
 
   const finish = (type: string) => {
     if(type === 'listen'){
-      navigate('/readnExam');
+      navigate('/readnExam',{ replace: true });
       stores.ExamStore.isTrueListeneAnswer();
     }else if(type === 'read'){
-      navigate('/writteExam');
+      navigate('/writteExam',{ replace: true });
       stores.ExamStore.isTrueReadAnswer();
     }else if(type === 'writte'){
-      navigate('/testOver');
+      navigate('/testOver',{ replace: true });
     }
     store.ExamStore.changeCurrent(1); // 这里的 1 是你想要重置的值
     store.ExamStore.changeCurrentTitle('Part1:');

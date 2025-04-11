@@ -6,3 +6,16 @@ export const select = async(id: number) => {
         method: 'POST',
       })
 }
+
+export const getAdminExam = async() => {
+  return request({
+      url: '/api/admin/exam/paper/allIdAndName',
+      method: 'POST',
+  })
+}
+export const getExam = async() => {
+  return request({
+      url: '/api/student/exam/paper/pageList',
+      method: 'POST',
+  })
+}
