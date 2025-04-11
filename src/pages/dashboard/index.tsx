@@ -3,9 +3,10 @@ import './index.scss';
 import { Button, Card } from 'antd';
 
 import { useNavigate } from "react-router";
-import { select } from "@/api/examPaper";
+import { select, getAdminExam } from "@/api/examPaper";
 
 import stores from '@/stores';
+import { useEffect } from 'react';
 
 const { Meta } = Card;
 
@@ -20,7 +21,18 @@ const Dashboard = () => {
       id: 3,
       title: '2024雅思模拟真题',
     },
+    {
+      id: 14,
+      title: '2024雅思模拟真题',
+    },
   ];
+  const getExamList = async() => {
+    const res = await getAdminExam();
+    console.log(res);
+  }
+  useEffect(() => {
+    getExamList()
+  },[])
 
   const handleConfirmExam = async(id: number) => {
     const res = await select(id);
@@ -33,8 +45,39 @@ const Dashboard = () => {
       //添加听力录音
       //@ts-ignore
       stores.ExamStore.addListenAudio(res.response.audioFileUrl);
-      navigate(`/listeningExam`);
+      navigate(`/listeningExam`,{ replace: true });
     }
+
+    // 请求全屏
+    // const requestFullscreen = () => {
+    //   const element = document.documentElement; // 或者指定某个元素
+    //   if (element.requestFullscreen) {
+    //     element.requestFullscreen();
+    //   }
+    // };
+
+    // requestFullscreen();
+
+    // 阻止 F11 键退出全屏
+    const preventFullscreenExit = (event: KeyboardEvent) => {
+      if (event.key === 'F11' || event.key === 'Escape') {
+        event.preventDefault();
+        alert('Esc 键无法退出全屏模式。');
+      }
+    };
+
+    window.addEventListener('keydown', preventFullscreenExit);
+
+    // 监听全屏状态变化
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        // 如果退出全屏，移除事件监听器
+        window.removeEventListener('keydown', preventFullscreenExit);
+        window.removeEventListener('fullscreenchange', handleFullscreenChange);
+      }
+    };
+
+    window.addEventListener('fullscreenchange', handleFullscreenChange);
   }
   
   return (

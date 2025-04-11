@@ -4,7 +4,7 @@ export const submitAnswer = (data: StudentAnswer) => {
   return request({
     url: '/api/student/studentAnswer/addStudentAnswer',
     method: 'POST',
-    data: `isCorrect=${data.isCorrect}&paperId=${data.paperId}&questionId=${data.questionId}&studentAnswer=${data.studentAnswer}&studentId=${data.studentId}`,
+    data: `isCorrect=${data.isCorrect}&paperId=${data.paperId}&questionId=${data.questionId}&score=${data.score}&studentAnswer=${data.studentAnswer}&studentId=${data.studentId}`,
   })
 }
 

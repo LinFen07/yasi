@@ -1,4 +1,4 @@
-import {  Radio, Checkbox  } from 'antd';
+import {  Radio, Checkbox, Table  } from 'antd';
 import { useEffect, useState, useRef } from 'react';
 import stores from '@/stores';
 import ReactHtmlParser from 'react-html-parser';
@@ -8,6 +8,8 @@ import { runInAction } from 'mobx';
 import  {computedPrevCount, computedBlanksPrevCount}  from '@/utils/computedPrevCount';
 import { createInput } from '@/utils/createInput';
 import { submitStudentAnswer } from '@/utils/submitAnswer'
+import TurndownService from 'turndown';
+import  TickQuestion  from '../tickQuestion/index'
 
 const questions = () => {
   const exam = stores.ExamStore.getListenExam();
@@ -16,6 +18,7 @@ const questions = () => {
   const [questionsArr, setQuestionArr] = useState(listensArr.questionItems);
   const questionIndex = stores.ExamStore.currentExamIndex;
   const titleRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const tableRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   useEffect(() => {
     const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
@@ -87,9 +90,13 @@ const questions = () => {
         {
           questionsArr.map((questionArr, index) => (
             <div key={index}>
-              <div ref={el => titleRefs.current[index] = el}> 
-                {ReactHtmlParser(questionArr.title)}
-              </div>
+              {
+                questionArr.topicType == '5' 
+                ? <TickQuestion {...questionArr}></TickQuestion>
+                : <div ref={el => titleRefs.current[index] = el}> 
+                    {ReactHtmlParser(questionArr.title)}
+                  </div>
+              }
               <div >
                 {
                   questionArr.questionType == '1'
