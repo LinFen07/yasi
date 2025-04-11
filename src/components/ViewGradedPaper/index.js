@@ -1,8 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Descriptions, Image, Divider, Table, Button, Card, Space } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import ScoreInput from '../ScoreInput';
+import TextArea from 'antd/es/input/TextArea';
+import { useSelector, useDispatch } from 'react-redux';
+import { getAppraise } from '../../store/tasks';
+
+// 新增根据id选取评价的函数
+const selectAppraiseById = (data, targetId) => {
+  for (let i = 0; i < data.length; i++) {
+    const item = data[i];
+    if (item.response && item.response.id === targetId) {
+      return item.response.appraise;
+    }
+  }
+  return '无评语';
+};
 
 /**
  * 已阅试卷查看组件
@@ -13,19 +27,47 @@ const ViewGradedPaper = ({
   paperData = {},
   onBack,
   onEdit,
-  originalData // 新增原始数据prop
+  originalData, // 新增原始数据prop
+  appraiseData // 新增 appraiseData prop，用于传入评价数据数组
 }) => {
+  const dispatch = useDispatch();
+  const [appraise, setAppraise] = useState('');
+  const { paper, article } = useSelector(state => state.tasks);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    if (paperData.id) {
+      // 使用 selectAppraiseById 函数根据 id 选取评价
+      const selectedAppraise = selectAppraiseById(appraiseData, paperData.id);
+      setAppraise(selectedAppraise);
+    }
+  }, [paperData.id, appraiseData]);
+
   const handleEdit = (e) => {
     e.preventDefault();
     // 恢复原始数据
     const restoredData = {
       ...paperData,
       score: originalData?.score,
-      comment: originalData?.comment,
+      comment: appraise,
       questions: originalData?.questions || []
     };
     onEdit?.(restoredData);
   };
+
+  const handlePreviousPage = () => {
+    setCurrentPage(currentPage - 1);
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(currentPage + 1);
+  };
+  // 检查 paper 和 paper.response 是否存在
+  const essayTitle1 = paper && paper.response && paper.response.titleItems && paper.response.titleItems[5] ? paper.response.titleItems[5].name : '';
+  const essayTitle2 = paper && paper.response && paper.response.titleItems && paper.response.titleItems[6] ? paper.response.titleItems[6].name : '';
+  const studentAnswer1 = article.response.items?.length > 0 ? article.response.items[0].studentAnswers[0].studentAnswer : "暂无数据";
+  const studentAnswer2 = article.response.items?.length > 0 ? article.response.items[0].studentAnswers[0].studentAnswer : "暂无数据";
+
   return (
     <Card
       title={`${paperData.name || '考生'}的已阅试卷`}
@@ -46,12 +88,31 @@ const ViewGradedPaper = ({
     >
       <div style={{ display: 'flex', gap: '24px' }}>
         {/* 左侧试卷区域 */}
-        <div style={{ flex: 1 }}>
-          <Image
-            src={paperData.paperImage || '/default-paper.jpg'}
-            alt="已阅试卷"
-            style={{ maxWidth: '100%', maxHeight: '600px' }}
-          />
+        <div style={{ flex: 1, marginTop: '40px' }}>
+          {currentPage === 1 && (
+            <>
+              <h3 style={{ color: 'var(--text-color)' }}>作文标题1</h3>
+              <TextArea value={essayTitle1} readOnly rows={3} style={{ marginBottom: '16px' }} />
+              <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
+              <TextArea value={studentAnswer1} readOnly rows={10} />
+            </>
+          )}
+          {currentPage === 2 && (
+            <>
+              <h3 style={{ color: 'var(--text-color)' }}>作文标题2</h3>
+              <TextArea value={essayTitle2} readOnly rows={3} style={{ marginBottom: '16px' }} />
+              <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
+              <TextArea value={studentAnswer2} readOnly rows={10} />
+            </>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+            <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+              上一篇
+            </button>
+            <button onClick={handleNextPage} disabled={currentPage === 2}>
+              下一篇
+            </button>
+          </div>
         </div>
 
         {/* 右侧评分信息 */}
@@ -67,7 +128,7 @@ const ViewGradedPaper = ({
               />
             </Descriptions.Item>
             <Descriptions.Item label="评语">
-              {paperData.comment || '无评语'}
+              {appraise}
             </Descriptions.Item>
           </Descriptions>
 
@@ -81,7 +142,6 @@ const ViewGradedPaper = ({
                 { title: '题号', dataIndex: 'number', key: 'number' },
                 { title: '分值', dataIndex: 'points', key: 'points' },
                 { title: '得分', dataIndex: 'score', key: 'score' },
-                { title: '批阅人', dataIndex: 'grader', key: 'grader' }
               ]}
               dataSource={paperData.questions || []}
               rowKey="id"
@@ -90,16 +150,6 @@ const ViewGradedPaper = ({
           </div>
 
           <Divider />
-
-          <div style={{ marginTop: '16px' }}>
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              onClick={() => console.log('导出PDF')}
-            >
-              导出PDF
-            </Button>
-          </div>
         </div>
       </div>
     </Card>
@@ -122,7 +172,8 @@ ViewGradedPaper.propTypes = {
     score: PropTypes.number,
     comment: PropTypes.string,
     questions: PropTypes.array
-  })
+  }),
+  appraiseData: PropTypes.array // 新增 appraiseData 的 prop 类型定义
 };
 
 export default ViewGradedPaper;

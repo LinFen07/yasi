@@ -57,7 +57,8 @@ const tasksStore = createSlice({
     ],
     currentTask: null,
     article: [],
-    paper: []
+    paper: [],
+    appraise: []
   },
   reducers: {
     setTasks(state, action) {
@@ -78,15 +79,27 @@ const tasksStore = createSlice({
     setPaper(state, action) {
       state.paper = action.payload
       localStorage.setItem('paperInfo', JSON.stringify(action.payload));
+    },
+    setAppraise(state, action) {
+      state.appraise = action.payload
+      localStorage.setItem('appraise', JSON.stringify(action.payload))
+    },
+    addAppraise(state, action) {
+      state.appraise = [...state.appraise, action.payload];
+      localStorage.setItem('appraise', JSON.stringify(state.appraise));
+      console.log(state.appraise)
     }
   }
 })
 
-const { setTasks, setCurrentTask, updateTask, setPaper, setArticle } = tasksStore.actions;
-const fetchArticle = () => {
+const { setTasks, setCurrentTask, updateTask, setPaper, setArticle, setAppraise, addAppraise } = tasksStore.actions;
+const fetchArticle = (userId) => {  // 接收参数 
   return async (dispatch) => {
-    const response = await axios.get('http://120.24.144.113:8668/api/teacher/exam/paper/allIdAndJudge');
-    // 从 tasksStore.actions 中获取 setArticle 并调用
+    const response = await axios.get('http://120.24.144.113:8668/api/teacher/exam/paper/allIdAndJudge', {
+      params: {  // 注意：GET 请求参数需要通过 `params` 传递 
+        userId: userId  // 使用传入的参数 
+      }
+    });
     dispatch(setArticle(response.data));
   };
 };
@@ -105,6 +118,29 @@ const fetchCompositionInfo = () => {
     dispatch(setPaper(compositionInfo));
   };
 };
+
+const getAppraise = (id) => {
+  return async (dispatch) => {
+    try {
+      const res = await axios.get(`http://120.24.144.113:8668/api/teacher/examassignment/${id}`);
+      console.log(res.data);
+      dispatch(addAppraise(res.data));
+    } catch (error) {
+      console.error('请求出错:', error);
+    }
+  };
+};
+
+const fetchAllAppraises = () => {
+  return async (dispatch, getState) => {
+    const state = getState();
+    const taskIds = state.tasks.tasks.map(task => task.id);
+    for (const id of taskIds) {
+      await dispatch(getAppraise(id));
+    }
+  };
+};
+
 // 导出相关 action
-export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle };
+export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle, getAppraise, fetchAllAppraises };
 export default tasksStore.reducer;

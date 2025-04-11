@@ -9,7 +9,7 @@ import './index.scss';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUserInfo, clearUserInfo } from '../../store/user';
+import { clearUserInfo } from '../../store/user';
 import axios from 'axios';
 
 const { Header, Sider } = Layout;
@@ -35,7 +35,7 @@ const GeekLayout = () => {
 
     // 获取用户信息
     useEffect(() => {
-        dispatch(fetchUserInfo());
+        // dispatch(fetchUserInfo());
     }, [dispatch]);
 
     const name = useSelector((state) => state.user.userInfo.name);

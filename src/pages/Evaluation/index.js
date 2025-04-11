@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Table, Button, Tag, Card, message, Spin, Select, Statistic, Breadcrumb } from "antd";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import GradingPanel from "../../components/GradingPanel";
 import ViewGradedPaper from "../../components/ViewGradedPaper";
-
+import { fetchCompositionInfo, fetchArticle, fetchAllAppraises } from '../../store/tasks';
+import { putAppraise } from "../../utils/appraise";
+import { postScore } from "../../utils/score";
+import axios from "axios";
 const { Countdown } = Statistic;
 
 const Evaluation = () => {
-  const { currentTask } = useSelector(state => state.tasks);
+  const { currentTask, appraise } = useSelector(state => state.tasks); // 从 Redux store 中获取 appraise
   const [papers, setPapers] = useState([
     {
       id: 1,
@@ -15,13 +18,12 @@ const Evaluation = () => {
       studentId: "S001",
       paperName: "2023年期中考试数学试卷",
       score: 92,
-      comment: "解题思路清晰，计算准确",
       status: "已阅",
       paperImage: "/papers/math-midterm-2023.jpg",
       questions: [
-        { id: 1, number: '一', points: 20, score: 18, grader: '王老师', comment: '步骤完整' },
-        { id: 2, number: '二', points: 30, score: 28, grader: '王老师', comment: '方法新颖' },
-        { id: 3, number: '三', points: 50, score: 46, grader: '李老师', comment: '答案正确' }
+        { id: 1, number: '一', points: 20, score: 18 },
+        { id: 2, number: '二', points: 30, score: 28 },
+        { id: 3, number: '三', points: 50, score: 46 }
       ],
       gradedTime: '2023-05-15 14:30'
     },
@@ -31,7 +33,6 @@ const Evaluation = () => {
       studentId: 'S002',
       paperName: '2023年期中考试数学试卷',
       score: 0,
-      comment: '',
       status: '待阅',
       paperImage: '/papers/math-midterm-2023-2.jpg',
       questions: [
@@ -47,7 +48,6 @@ const Evaluation = () => {
       studentId: 'S003',
       paperName: '2023年期中考试英语试卷',
       score: 85,
-      comment: '语法准确，写作流畅',
       status: '已阅',
       paperImage: '/papers/english-midterm-2023.jpg',
       questions: [
@@ -64,7 +64,7 @@ const Evaluation = () => {
   const [gradeLoading, setGradeLoading] = useState(false);
   const [essayLoading, setEssayLoading] = useState(false);
   const [selectedPaper, setSelectedPaper] = useState(null);
-
+  const [refreshFlag, setRefreshFlag] = useState(false);
   // 默认选中第一个试卷
   useEffect(() => {
     const fetchInitialPapers = async () => {
@@ -73,7 +73,7 @@ const Evaluation = () => {
         // 这里模拟API请求获取试卷数据
         // const response = await request.get('/api/papers');
         // setPapers(response.data);
-        
+
         // 验证数据格式并设置第一个试卷
         if (Array.isArray(papers) && papers.length > 0) {
           const firstPaper = papers.find(p => p?.id) || papers[0];
@@ -98,17 +98,28 @@ const Evaluation = () => {
     fetchInitialPapers();
   }, [papers]); // 依赖papers数组
 
+  const dispatch = useDispatch();
+  const userId = 1;
+  useEffect(() => {
+    dispatch(fetchCompositionInfo());
+    dispatch(fetchArticle(userId));
+    dispatch(fetchAllAppraises());
+  }, [dispatch, refreshFlag]); // 添加 refreshFlag 作为依赖
+
   const handleGradeSubmit = (values) => {
     setGradeLoading(true);
     const updatedPapers = papers.map(p =>
       p.id === currentPaper.id ? {
         ...p,
         score: values.score,
-        comment: values.comment,
         status: '已阅',
         gradedTime: new Date().toLocaleString()
       } : p
     );
+    const appraiseData = putAppraise(values.comment, 1);
+    appraiseData();
+    const score = postScore(30, values.score);
+    score();
     setPapers(updatedPapers);
 
     const nextPaper = updatedPapers.find(p =>
@@ -182,7 +193,7 @@ const Evaluation = () => {
         {viewMode === 'list' && (
           <Card>
             <div style={{ marginBottom: 16 }}>
-              <Breadcrumb 
+              <Breadcrumb
                 style={{ marginBottom: 16 }}
                 items={[
                   {
@@ -255,17 +266,17 @@ const Evaluation = () => {
                     title: '操作',
                     key: 'action',
                     render: (_, record) => (
-        <Button
-          type="link"
-          onClick={() => {
-            setEssayLoading(true);
-            try {
-              setCurrentPaper(record);
-              setViewMode(record.status === '已阅' ? 'view' : 'grade');
-            } finally {
-              setEssayLoading(false);
-            }
-          }}
+                      <Button
+                        type="link"
+                        onClick={() => {
+                          setEssayLoading(true);
+                          try {
+                            setCurrentPaper(record);
+                            setViewMode(record.status === '已阅' ? 'view' : 'grade');
+                          } finally {
+                            setEssayLoading(false);
+                          }
+                        }}
                       >
                         {record.status === '已阅' ? '查看' : '评阅'}
                       </Button>
@@ -292,17 +303,20 @@ const Evaluation = () => {
             paper={currentPaper}
             onSubmit={handleGradeSubmit}
             onCancel={() => setViewMode('list')}
+            refreshFlag={refreshFlag}
+            setRefreshFlag={setRefreshFlag}
           />
         )}
 
         {/* 查看模式 - 完全重写这部分 */}
         {viewMode === 'view' && currentPaper && (
-            <ViewGradedPaper
-              paperData={currentPaper}
-              onBack={() => setViewMode('list')}
-              onEdit={handleEditPaper}
-              originalData={papers.find(p => p.id === currentPaper.id)}
-            />
+          <ViewGradedPaper
+            paperData={currentPaper}
+            onBack={() => setViewMode('list')}
+            onEdit={handleEditPaper}
+            originalData={papers.find(p => p.id === currentPaper.id)}
+            appraiseData={Array.isArray(appraise) ? appraise : []} // 确保传递数组
+          />
         )}
       </div>
     </Spin>

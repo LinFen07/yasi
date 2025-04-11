@@ -8,7 +8,7 @@ const Login = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const onFinish = async (values) => {
-        await dispatch(fetchLogin(values))
+        // await dispatch(fetchLogin(values))
         navigate('/')
         message.success("登录成功")
     }
