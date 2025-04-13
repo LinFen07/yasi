@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { Table, Button, Tag, Card, message, Spin, Select, Statistic, Breadcrumb } from "antd";
+import GradingEditor from '../../components/GradingEditor';
 import { useSelector, useDispatch } from "react-redux";
 import GradingPanel from "../../components/GradingPanel";
 import ViewGradedPaper from "../../components/ViewGradedPaper";
@@ -65,6 +68,7 @@ const Evaluation = () => {
   const [essayLoading, setEssayLoading] = useState(false);
   const [selectedPaper, setSelectedPaper] = useState(null);
   const [refreshFlag, setRefreshFlag] = useState(false);
+  const [editorContent, setEditorContent] = useState('');
   // 默认选中第一个试卷
   useEffect(() => {
     const fetchInitialPapers = async () => {
@@ -189,135 +193,137 @@ const Evaluation = () => {
 
   return (
     <Spin spinning={gradeLoading || essayLoading}>
-      <div style={{ padding: '24px' }}>
-        {viewMode === 'list' && (
-          <Card>
-            <div style={{ marginBottom: 16 }}>
-              <Breadcrumb
-                style={{ marginBottom: 16 }}
-                items={[
-                  {
-                    title: '试卷批阅'
-                  },
-                  {
-                    title: (
-                      <>
-                        {selectedPaper || papers[0]?.paperName}
-                        <span style={{ marginLeft: 8, color: '#1890ff' }}>
-                          (已阅: {papers.filter(p => p.paperName === (selectedPaper || papers[0]?.paperName) && p.status === '已阅').length}
-                          /总数: {papers.filter(p => p.paperName === (selectedPaper || papers[0]?.paperName)).length})
-                        </span>
-                      </>
-                    )
-                  }
-                ]}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                {currentTask?.deadline && (
-                  <Countdown
-                    title="剩余时间"
-                    value={currentTask.deadline}
-                    format="HH:mm:ss"
-                  />
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <Select
-                  style={{ width: 200 }}
-                  defaultValue={papers[0]?.paperName}
-                  value={selectedPaper || papers[0]?.paperName}
-                  options={Array.from(new Set(papers.map(p => p.paperName))).map(name => ({
-                    value: name,
-                    label: name
-                  }))}
-                  onChange={(value) => setSelectedPaper(value)}
+      <div style={{ padding: '24px', display: 'flex', gap: '16px' }}>
+        {/* 评阅区域 */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {viewMode === 'list' && (
+            <Card>
+              <div style={{ marginBottom: 16 }}>
+                <Breadcrumb
+                  style={{ marginBottom: 16 }}
+                  items={[
+                    {
+                      title: '试卷批阅'
+                    },
+                    {
+                      title: (
+                        <>
+                          {selectedPaper || papers[0]?.paperName}
+                          <span style={{ marginLeft: 8, color: '#1890ff' }}>
+                            (已阅: {papers.filter(p => p.paperName === (selectedPaper || papers[0]?.paperName) && p.status === '已阅').length}
+                            /总数: {papers.filter(p => p.paperName === (selectedPaper || papers[0]?.paperName)).length})
+                          </span>
+                        </>
+                      )
+                    }
+                  ]}
                 />
-                <Button
-                  type="primary"
-                  onClick={handleStartGrading}
-                  disabled={!papers.some(p => p.status === '待阅')}
-                >
-                  开始批阅
-                </Button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  {currentTask?.deadline && (
+                    <Countdown
+                      title="剩余时间"
+                      value={currentTask.deadline}
+                      format="HH:mm:ss"
+                    />
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <Select
+                    style={{ width: 200 }}
+                    defaultValue={papers[0]?.paperName}
+                    value={selectedPaper || papers[0]?.paperName}
+                    options={Array.from(new Set(papers.map(p => p.paperName))).map(name => ({
+                      value: name,
+                      label: name
+                    }))}
+                    onChange={(value) => setSelectedPaper(value)}
+                  />
+                  <Button
+                    type="primary"
+                    onClick={handleStartGrading}
+                    disabled={!papers.some(p => p.status === '待阅')}
+                  >
+                    开始批阅
+                  </Button>
+                </div>
+                <Table
+                  columns={[
+                    {
+                      title: '考生及试卷',
+                      key: 'studentAndPaper',
+                      render: (_, record) => (
+                        <div>
+                          <div>{record.studentName}</div>
+                          <div style={{ color: '#888' }}>{record.paperName}</div>
+                        </div>
+                      ),
+                    },
+                    {
+                      title: '状态',
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: status => (
+                        <Tag color={status === '已阅' ? 'green' : 'orange'}>
+                          {status === '已阅' ? '已评阅' : '待评阅'}
+                        </Tag>
+                      )
+                    },
+                    {
+                      title: '操作',
+                      key: 'action',
+                      render: (_, record) => (
+                        <Button
+                          type="link"
+                          onClick={() => {
+                            setEssayLoading(true);
+                            try {
+                              setCurrentPaper(record);
+                              setViewMode(record.status === '已阅' ? 'view' : 'grade');
+                            } finally {
+                              setEssayLoading(false);
+                            }
+                          }}
+                        >
+                          {record.status === '已阅' ? '查看' : '评阅'}
+                        </Button>
+                      ),
+                    },
+                  ]}
+                  dataSource={papers
+                    .filter(p => p.paperName === (selectedPaper || papers[0]?.paperName))
+                    .sort((a, b) => {
+                      // 未评阅的排在前面
+                      if (a.status === '待阅' && b.status !== '待阅') return -1;
+                      if (a.status !== '待阅' && b.status === '待阅') return 1;
+                      return 0;
+                    })}
+                  rowKey="id"
+                />
               </div>
-              <Table
-                columns={[
-                  {
-                    title: '考生及试卷',
-                    key: 'studentAndPaper',
-                    render: (_, record) => (
-                      <div>
-                        <div>{record.studentName}</div>
-                        <div style={{ color: '#888' }}>{record.paperName}</div>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: '状态',
-                    dataIndex: 'status',
-                    key: 'status',
-                    render: status => (
-                      <Tag color={status === '已阅' ? 'green' : 'orange'}>
-                        {status === '已阅' ? '已评阅' : '待评阅'}
-                      </Tag>
-                    )
-                  },
-                  {
-                    title: '操作',
-                    key: 'action',
-                    render: (_, record) => (
-                      <Button
-                        type="link"
-                        onClick={() => {
-                          setEssayLoading(true);
-                          try {
-                            setCurrentPaper(record);
-                            setViewMode(record.status === '已阅' ? 'view' : 'grade');
-                          } finally {
-                            setEssayLoading(false);
-                          }
-                        }}
-                      >
-                        {record.status === '已阅' ? '查看' : '评阅'}
-                      </Button>
-                    ),
-                  },
-                ]}
-                dataSource={papers
-                  .filter(p => p.paperName === (selectedPaper || papers[0]?.paperName))
-                  .sort((a, b) => {
-                    // 未评阅的排在前面
-                    if (a.status === '待阅' && b.status !== '待阅') return -1;
-                    if (a.status !== '待阅' && b.status === '待阅') return 1;
-                    return 0;
-                  })}
-                rowKey="id"
-              />
-            </div>
-          </Card>
-        )}
+            </Card>
+          )}
 
-        {/* 评阅模式 */}
-        {viewMode === 'grade' && currentPaper && (
-          <GradingPanel
-            paper={currentPaper}
-            onSubmit={handleGradeSubmit}
-            onCancel={() => setViewMode('list')}
-            refreshFlag={refreshFlag}
-            setRefreshFlag={setRefreshFlag}
-          />
-        )}
-
-        {/* 查看模式 - 完全重写这部分 */}
-        {viewMode === 'view' && currentPaper && (
-          <ViewGradedPaper
-            paperData={currentPaper}
-            onBack={() => setViewMode('list')}
-            onEdit={handleEditPaper}
-            originalData={papers.find(p => p.id === currentPaper.id)}
-            appraiseData={Array.isArray(appraise) ? appraise : []} // 确保传递数组
-          />
-        )}
+          {/* 评阅模式 */}
+          {viewMode === 'grade' && currentPaper && (
+            <GradingPanel
+              paperData={currentPaper}
+              onSubmit={handleGradeSubmit}
+              onCancel={() => setViewMode('list')}
+              editorContent={editorContent}
+              setEditorContent={setEditorContent}
+            />
+          )}
+          {/* 查看模式 */}
+          {viewMode === 'view' && currentPaper && (
+            <ViewGradedPaper
+              paperData={currentPaper}
+              onBack={() => setViewMode('list')}
+              onEdit={handleEditPaper}
+              originalData={papers.find(p => p.id === currentPaper.id)}
+              appraiseData={Array.isArray(appraise) ? appraise : []}
+            />
+          )}
+        </div>
       </div>
     </Spin>
   );

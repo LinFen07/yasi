@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Card, Statistic, Table, Divider, Spin, Tabs, List, Progress, Button, message } from 'antd';
+import { FileOutlined, UserOutlined, EditOutlined, LineChartOutlined } from '@ant-design/icons';
+import { Card, Statistic, Table, Divider, Spin, Tabs, List, Progress, Button, message, Col, Row } from 'antd';
 import * as echarts from 'echarts';
 import './index.scss';
 
@@ -202,25 +203,31 @@ const Home = () => {
       }
     }
   }, [studentScores]);
-
+  const stats = [
+    { title: '试卷总数', value: 100, icon: <FileOutlined />, color: '#1890ff' },
+    { title: '待批改试卷', value: 1, icon: <EditOutlined />, color: '#faad14' },
+    { title: '已批阅试卷', value: 99, icon: <LineChartOutlined />, color: '#722ed1' },
+    { title: '学生人数', value: 42, icon: <UserOutlined />, color: '#52c41a' },
+  ];
   return (
     <div className="evaluation-container">
       <h2>教学数据概览</h2>
-
-      <div className="stats-section">
-        <Card>
-          <Statistic
-            title="欢迎回来"
-            value={userInfo?.name || '用户'}
-            prefix={<span style={{ fontSize: 16 }}>👋</span>}
-          />
-          <Divider />
-          <div className="quick-stats">
-            <Statistic title="学生总数" value={53} />
-            <Statistic title="平均成绩" value={78.5} precision={1} />
-            <Statistic title="总评卷量" value={298} />
-          </div>
-        </Card>
+      <div className="stats-container">
+        <Row gutter={16}>
+          {stats.map((stat, index) => (
+            <Col span={6} key={index}>
+              <Card className="stat-card">
+                <div className="stat-icon" style={{ color: stat.color }}>
+                  {stat.icon}
+                </div>
+                <div className="stat-info">
+                  <div className="stat-title">{stat.title}</div>
+                  <div className="stat-value">{stat.value}</div>
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
       </div>
 
       <div className="chart-section">
@@ -251,68 +258,83 @@ const Home = () => {
 
       <div className="task-notification">
         <Card title="任务通知栏" className="stats-card">
-          <Tabs defaultActiveKey="1">
-            <Tabs.TabPane tab="进行中任务" key="1">
-              <List
-                dataSource={tasks.filter(t => t.status === 'in-progress')}
-                renderItem={item => (
-                  <List.Item
-                    actions={[
-                      <Progress
-                        percent={Math.round((item.evaluated / item.total) * 100)}
-                        status="active"
-                        style={{ width: 200 }}
-                      />
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={item.name}
-                      description={`已完成 ${item.evaluated}/${item.total}`}
-                    />
-                  </List.Item>
-                )}
-              />
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="待接收任务" key="2">
-              <List
-                dataSource={tasks.filter(t => t.status === 'pending' && !t.received)}
-                renderItem={item => (
-                  <List.Item
-                    actions={[
-                      <Button
-                        type="primary"
-                        onClick={() => handleReceiveTask(item.id)}
+          <Tabs
+            defaultActiveKey="1"
+            items={[
+              {
+                key: '1',
+                label: '进行中任务',
+                children: (
+                  <List
+                    dataSource={tasks.filter(t => t.status === 'in-progress')}
+                    renderItem={item => (
+                      <List.Item
+                        actions={[
+                          <Progress
+                            percent={Math.round((item.evaluated / item.total) * 100)}
+                            status="active"
+                            style={{ width: 200 }}
+                          />
+                        ]}
                       >
-                        接收任务
-                      </Button>
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={item.name}
-                      description={`待阅 ${item.total} 份`}
-                    />
-                  </List.Item>
-                )}
-              />
-            </Tabs.TabPane>
-            <Tabs.TabPane tab="已完成任务" key="3">
-              <List
-                dataSource={tasks.filter(t => t.status === 'completed')}
-                renderItem={item => (
-                  <List.Item
-                    actions={[
-                      <span>完成于: {item.completedAt}</span>
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={item.name}
-                      description={`共完成 ${item.total} 份`}
-                    />
-                  </List.Item>
-                )}
-              />
-            </Tabs.TabPane>
-          </Tabs>
+                        <List.Item.Meta
+                          title={item.name}
+                          description={`已完成 ${item.evaluated}/${item.total}`}
+                        />
+                      </List.Item>
+                    )}
+                  />
+                )
+              },
+              {
+                key: '2',
+                label: '待接收任务',
+                children: (
+                  <List
+                    dataSource={tasks.filter(t => t.status === 'pending' && !t.received)}
+                    renderItem={item => (
+                      <List.Item
+                        actions={[
+                          <Button
+                            type="primary"
+                            onClick={() => handleReceiveTask(item.id)}
+                          >
+                            接收任务
+                          </Button>
+                        ]}
+                      >
+                        <List.Item.Meta
+                          title={item.name}
+                          description={`待阅 ${item.total} 份`}
+                        />
+                      </List.Item>
+                    )}
+                  />
+                )
+              },
+              {
+                key: '3',
+                label: '已完成任务',
+                children: (
+                  <List
+                    dataSource={tasks.filter(t => t.status === 'completed')}
+                    renderItem={item => (
+                      <List.Item
+                        actions={[
+                          <span>完成于: {item.completedAt}</span>
+                        ]}
+                      >
+                        <List.Item.Meta
+                          title={item.name}
+                          description={`共完成 ${item.total} 份`}
+                        />
+                      </List.Item>
+                    )}
+                  />
+                )
+              }
+            ]}
+          />
         </Card>
       </div>
 

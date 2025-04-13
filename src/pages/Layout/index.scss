@@ -1,13 +1,11 @@
 // 定义变量
-$primary-color: #4a90e2;
-$background-color: #f5f7fa;
-$border-color: #ddd;
+$sidebar-bg: #304156;
+$header-bg: #fff;
+$content-bg: #f0f2f5;
+$primary-color: #42b983;
 $text-color: #333;
 $light-text: #666;
-$white: #ffffff;
-$hover-bg: #f0f5ff;
-$active-bg: #4a90e2;
-$hint-color: #ff6b6b;
+$border-color: #e6ebf5;
 
 // 通用样式
 * {
@@ -17,258 +15,199 @@ $hint-color: #ff6b6b;
 }
 
 body {
-    background-color: $background-color;
+    background-color: $content-bg;
     font-family: 'Microsoft YaHei', sans-serif;
 }
 
 
 // 顶部导航栏
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: $primary-color;
-  color: $white;
-  padding: 0 20px;
-  height: 60px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-  .logo-container {
-      display: flex;
-      align-items: center;
-  }
-
-  .logo {
-      width: 40px;
-      height: 40px;
-      background-color: $white;
-      border-radius: 50%;
-      margin-right: 10px;
-  }
-
-  .welcome-text {
-      font-size: 16px;
-      font-weight: bold;
-      margin-left: 10px;
-  }
-
-  .header-right {
-      display: flex;
-      align-items: center;
-     .user{
+    background-color: $header-bg;
+    height: 60px;
+    line-height: 60px;
+    padding: 0 20px;
+    box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+    position: fixed;
+    right: 0;
+    left: 210px;
+    z-index: 99;
+     .header-left{
+        float:left;
+        display: flex;
         align-items: center;
-        img{
-            width: 20px;
-            height: 20px;
-            background-color: $white;
-            border-radius: 50%;
-            margin-top: 5px;
-            margin-right: 10px;
-        }
      }
-      .Layout-logout {
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          margin-left: 20px;
+    .header-right {
+        float: right;
+        display: flex;
+        align-items: center;
+        height: 100%;
 
-          svg {
-              margin-right: 5px;
-          }
-      }
-  }
+        .user-name {
+            margin-right: 15px;
+            color: $text-color;
+        }
+
+        .logout {
+            cursor: pointer;
+            color: $light-text;
+            transition: color 0.3s;
+
+            &:hover {
+                color: $primary-color;
+            }
+        }
+    }
 }
 
 // 左侧菜单
-.site-layout-background {
-    background-color: $white;
-    height: calc(100vh - 60px);
+.sidebar {
+    background-color: $sidebar-bg;
+    height: 100vh;
     position: fixed;
     left: 0;
-    top: 60px;
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+    top: 0;
+    z-index: 100;
+    box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35);
+    transition: width 0.2s;
+
+    .logo {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        
+        img {
+            max-height: 40px;
+            max-width: 80%;
+        }
+    }
+
+    .ant-menu {
+        background: transparent;
+        border-right: 0;
+
+        .ant-menu-item {
+            margin: 0;
+            height: 48px;
+            line-height: 48px;
+            color: rgba(255, 255, 255, 0.7);
+
+            &:hover {
+                color: #fff;
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+
+            &.ant-menu-item-selected {
+                color: #fff;
+                background-color: $primary-color !important;
+            }
+        }
+    }
+}
+
+// 主布局容器
+.layout-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+// 侧边栏
+.sidebar {
+    flex: 0 0 210px;
+    background-color: $sidebar-bg;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 2px 0 6px rgba(0, 21, 41, 0.35);
+    transition: all 0.2s;
+
+    &.ant-layout-sider-collapsed {
+        flex: 0 0 80px;
+    }
 }
 
 // 主内容区域
-.layout-content {
-    margin-left: 200px;
-    height: calc(100vh - 60px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    will-change: transform;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-    padding: 20px;
-
-    /* 优化滚动条样式 */
-    &::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background-color: rgba(0,0,0,0.2);
-        border-radius: 3px;
-    }
-
-    &::-webkit-scrollbar-track {
-        background: transparent;
-    }
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
-// 教学管理区域
-.teaching-management {
-    background-color: $white;
-    border-radius: 4px;
+// 头部区域
+.header {
+    flex: 0 0 60px;
+    background-color: $header-bg;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+    box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+}
+
+// 内容区域
+.content {
+    flex: 1;
     padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: $content-bg;
+    overflow: auto;
+}
 
-    .class-info {
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-
-        span {
-            margin-right: 10px;
-            color: $light-text;
-        }
-    }
-
-    .course-selection {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+    .stats-container {
         margin-bottom: 20px;
 
-        .course-item {
-            padding: 8px 15px;
-            background-color: $hover-bg;
+        .stat-card {
             border-radius: 4px;
-            color: $primary-color;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
 
             &:hover {
-                background-color: $active-bg;
-                color: $white;
+                transform: translateY(-5px);
+                box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
             }
 
-            &.active {
-                background-color: $primary-color;
-                color: $white;
+            .ant-card-body {
+                display: flex;
+                align-items: center;
+                padding: 20px;
+
+                .stat-icon {
+                    font-size: 36px;
+                    margin-right: 20px;
+                }
+
+                .stat-info {
+                    .stat-title {
+                        color: $light-text;
+                        font-size: 14px;
+                        margin-bottom: 5px;
+                    }
+
+                    .stat-value {
+                        color: $text-color;
+                        font-size: 24px;
+                        font-weight: bold;
+                    }
+                }
             }
         }
     }
-}
 
-// 学生列表区域
-.student-list {
-    background-color: $white;
-    border-radius: 4px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    .chart-card {
+        border-radius: 4px;
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
 
-    .search-bar {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 15px;
-
-        input {
-            padding: 8px 15px;
-            border: 1px solid $border-color;
-            border-radius: 4px;
-            width: 300px;
-        }
-
-        button {
-            background-color: $white;
-            border: 1px solid $border-color;
-            border-left: none;
-            padding: 0 15px;
-            cursor: pointer;
-        }
-    }
-
-    .student-table {
-        width: 100%;
-        border-collapse: collapse;
-
-        th {
-            text-align: left;
-            padding: 12px 15px;
-            background-color: #f9f9f9;
-            border-bottom: 1px solid $border-color;
-            color: $light-text;
+        h3 {
+            color: $text-color;
+            margin-bottom: 20px;
             font-weight: normal;
         }
 
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid $border-color;
-        }
-
-        tr:hover {
-            background-color: $hover-bg;
-        }
-
-        .checkbox {
-            width: 18px;
-            height: 18px;
-        }
-
-        .action-button {
-            background-color: $primary-color;
-            color: $white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-
-            &:hover {
-                background-color: darken($primary-color, 10%);
-            }
+        .chart-container {
+            height: 300px;
         }
     }
 
-    // 底部按钮区域
-    .bottom-buttons {
-        display: flex;
-        margin-top: 20px;
-        gap: 10px;
 
-        .btn {
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-
-            &.btn-primary {
-                background-color: $primary-color;
-                color: $white;
-                border: none;
-
-                &:hover {
-                    background-color: darken($primary-color, 10%);
-                }
-            }
-
-            &.btn-secondary {
-                background-color: $white;
-                color: $light-text;
-                border: 1px solid $border-color;
-
-                &:hover {
-                    background-color: $hover-bg;
-                }
-            }
-        }
-
-        .hint {
-            color: $hint-color;
-            font-size: 12px;
-            margin-left: 10px;
-            line-height: 38px;
-        }
-    }
-}

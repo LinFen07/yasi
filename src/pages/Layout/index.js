@@ -1,19 +1,20 @@
-import { Layout, Menu, Popconfirm, Select } from 'antd';
+import { Layout, Menu, Popconfirm, Card, Row, Col, Button, message, Input } from 'antd';
 import {
     HomeOutlined,
-    DiffOutlined,
     EditOutlined,
     LogoutOutlined,
+    MenuFoldOutlined,
+    MenuUnfoldOutlined,
+
 } from '@ant-design/icons';
 import './index.scss';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { clearUserInfo } from '../../store/user';
 import axios from 'axios';
+const { Header, Sider, Content } = Layout;
 
-const { Header, Sider } = Layout;
-const { Option } = Select;
 
 const items = [
     {
@@ -32,7 +33,7 @@ const GeekLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
-
+    const [collapsed, setCollapsed] = useState(false);
     // 获取用户信息
     useEffect(() => {
         // dispatch(fetchUserInfo());
@@ -59,43 +60,66 @@ const GeekLayout = () => {
 
 
     return (
-        <Layout>
-            <Header className="header">
-                <div className="logo-container">
-                    <div className="logo" />
-                    <span className="welcome-text">欢迎来到教师后台管理系统</span>
+        <Layout className="layout-container">
+            <Sider
+                width={210}
+                collapsedWidth={80}
+                className="sidebar"
+                theme="dark"
+                collapsible
+                collapsed={collapsed}
+                trigger={null}
+                breakpoint="lg"
+                onBreakpoint={(broken) => {
+                    if (broken) setCollapsed(true);
+                    else setCollapsed(false);
+                }}
+            >
+                <div className="logo">
+                    <img src="http://120.24.144.113:8002/static/img/logo.d99ccfc3.png" alt="logo" style={{ height: '40px' }} />
+                    {!collapsed && (
+                        <div style={{ color: '#fff', fontSize: '14px', marginTop: '10px' }}>模考教师阅卷系统</div>
+                    )}
                 </div>
-                <div className="header-right">
-                    <div className="user">
-                        <img src="" alt="" />
-                        <span className="user-name">张老师</span>
+
+                <Menu
+                    mode="inline"
+                    theme="dark"
+                    inlineCollapsed={collapsed}
+                    selectedKeys={[location.pathname]}
+                    items={items}
+                    onClick={onMenuClick}
+                />
+            </Sider>
+            <Layout>
+                <Header className="header">
+                    <div className="header-left">
+                        <Button
+                            type="text"
+                            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                            onClick={() => setCollapsed(!collapsed)}
+                            style={{
+                                fontSize: '16px',
+                                width: 64,
+                                height: 64,
+                            }}
+                        />
                     </div>
-                    <span className="Layout-logout">
+                    <div className="header-right">
+                        <span className="user-name">admin</span>
                         <Popconfirm
                             title="是否确认退出？"
-                            okText="退出"
-                            cancelText="取消"
                             onConfirm={onConfirm}
                         >
-                            <LogoutOutlined /> 退出
+                            <span className="logout">
+                                <LogoutOutlined /> 退出
+                            </span>
                         </Popconfirm>
-                    </span>
-                </div>
-            </Header>
-            <Layout>
-                <Sider width={200} className="site-layout-background">
-                    <Menu
-                        mode="inline"
-                        theme="dark"
-                        selectedKeys={[location.pathname]}
-                        items={items}
-                        onClick={onMenuClick}
-                        style={{ height: '100%', borderRight: 0 }}
-                    />
-                </Sider>
-                <Layout className="layout-content" style={{ padding: 20 }}>
+                    </div>
+                </Header>
+                <Content className="content">
                     <Outlet />
-                </Layout>
+                </Content>
             </Layout>
         </Layout>
     );
