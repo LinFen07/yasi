@@ -1,0 +1,34 @@
+.drag-questionTitle{
+  margin-top: 12px;
+}
+
+.drag-question-option-box{
+  width: 40%;
+  margin-top: 12px;
+}
+
+.drag-question-option{
+  padding: 4px;
+  border: 1.5px solid #6d90d1;
+  margin-top: 6px;
+  margin-left: 10%;
+}
+
+.drag-question-question{
+  margin-top: 20px;
+  display: flex;
+}
+
+.drag-question-question:nth-child(1){
+  margin-top: 24px;
+}
+
+.drag-question-question-box{
+  margin-left: 5%;
+}
+
+.drag-question-dragItem{
+  width: 240px;
+  border: 1.5px dashed #6d90d1;
+  margin-left: 8px;
+}

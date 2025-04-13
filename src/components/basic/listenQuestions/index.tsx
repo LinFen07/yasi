@@ -1,4 +1,4 @@
-import {  Radio, Checkbox, Table  } from 'antd';
+import {  Radio, Checkbox } from 'antd';
 import { useEffect, useState, useRef } from 'react';
 import stores from '@/stores';
 import ReactHtmlParser from 'react-html-parser';
@@ -8,8 +8,8 @@ import { runInAction } from 'mobx';
 import  {computedPrevCount, computedBlanksPrevCount}  from '@/utils/computedPrevCount';
 import { createInput } from '@/utils/createInput';
 import { submitStudentAnswer } from '@/utils/submitAnswer'
-import TurndownService from 'turndown';
 import  TickQuestion  from '../tickQuestion/index'
+import DragQuestion from '../dragQuestion';
 
 const questions = () => {
   const exam = stores.ExamStore.getListenExam();
@@ -92,7 +92,9 @@ const questions = () => {
             <div key={index}>
               {
                 questionArr.topicType == '5' 
-                ? <TickQuestion {...questionArr}></TickQuestion>
+                ? (<TickQuestion {...questionArr}></TickQuestion>)
+                : questionArr.topicType == '6'
+                ? <DragQuestion {...questionArr}></DragQuestion>
                 : <div ref={el => titleRefs.current[index] = el}> 
                     {ReactHtmlParser(questionArr.title)}
                   </div>
