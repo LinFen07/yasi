@@ -26,7 +26,7 @@ export function createInput(exam: Array<Exam>, type: string) {
     return () => clearTimeout(timerId);
 }
 
-function MyInput(index: number, span: any, prevCount: number, questionArr: ExamType, type: string) {
+export function MyInput(index: number, span: any, prevCount: number, questionArr: ExamType, type: string) {
   let len = index + questionArr.items.length;
   for (let i = index; i < len; i++) {
     const wrapper = document.createElement('div');

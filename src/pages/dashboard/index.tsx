@@ -21,10 +21,6 @@ const Dashboard = () => {
       id: 3,
       title: '2024雅思模拟真题',
     },
-    {
-      id: 14,
-      title: '2024雅思模拟真题',
-    },
   ];
   const getExamList = async() => {
     const res = await getAdminExam();
