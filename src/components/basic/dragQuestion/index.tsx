@@ -13,16 +13,13 @@ interface OptionProps {
   option: string;
   index: number;
 }
-
 interface DropTargetProps {
   questionIndex: number;
   onDrop: (item: { option: string; index: number }, questionIndex: number) => void;
   onRemove: (item: { option: string; index: number }) => void;
   droppedItems: { option: string; originalIndex: number }[];
 }
-
 const turndownService = new TurndownService();
-
 const ItemTypes = {
   OPTION: 'option',
 };
@@ -47,7 +44,6 @@ const Option = ({key, option, index }: OptionProps) => {
     </div>
   );
 };
-
 const DropTargetItem = ({ option, originalIndex, onRemove }: { option: string; originalIndex: number; onRemove: (item: { option: string; index: number }) => void }) => {
   const [, drag, preview] = useDrag(
     () => ({
@@ -86,7 +82,6 @@ const DropTarget = ({ questionIndex, onDrop, onRemove, droppedItems }: DropTarge
 };
 
 export default function DragQuestion(questionArr: ExamType) {
-
   function parseMarkdownToQuestionData(markdown: string) {
     const lines = markdown.split('\n');
     let Options: string[] = lines.slice(2, 10);
@@ -107,7 +102,6 @@ export default function DragQuestion(questionArr: ExamType) {
       Options
     };
   }
-
   const markdown = turndownService.turndown(questionArr.title);
   const { questionTitle, Questions, Options } = parseMarkdownToQuestionData(markdown);
   const [localOptions, setLocalOptions] = useState<string[]>(Options);
@@ -149,7 +143,6 @@ export default function DragQuestion(questionArr: ExamType) {
   };
 
   const handleRemove = (item: { option: string; index: number }) => {
-    console.log('remove',item);
     setDroppedItems((prevItems) => prevItems.filter(droppedItem => droppedItem.option !== item.option));
     // 将选项移回原始位置
     setLocalOptions((prevOptions) => {

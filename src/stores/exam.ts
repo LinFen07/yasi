@@ -45,14 +45,7 @@ class ExamStore {
   //阅读答案
   correctRead: Array<correct> = [];
   //写作答案
-  correctWritte: Array<correct> = [];
-
-  //表格标识
-  tableFlag = true;
-
-  tableFlagChange() {
-    this.tableFlag = !this.tableFlag;
-  }
+  correctWritte: Array<string> = Array(3).fill('');
 
   //改变当前试卷
   changeCurrentExam(exam: Array<Exam>) {
@@ -201,6 +194,10 @@ class ExamStore {
   }
   changeStudentReadAnswer(index: number, answer: string){
     this.studentReadAnswers[index] = answer;
+  }
+
+  changeStudentWritteAnswer(index: number, answer: string){
+    this.correctWritte[index] = answer;
   }
 
   changeStudentListenScore(index: number, correct: string, score: string){
