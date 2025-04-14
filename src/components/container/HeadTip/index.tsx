@@ -61,8 +61,9 @@ function HeadTip(props: propType) {
       stores.ExamStore.isTrueReadAnswer();
     }else if(type === 'writte'){
       navigate('/testOver',{ replace: true });
+      console.log(stores.ExamStore.correctWritte)
     }
-    store.ExamStore.changeCurrent(1); // 这里的 1 是你想要重置的值
+    store.ExamStore.changeCurrent(1);
     store.ExamStore.changeCurrentTitle('Part1:');
     store.ExamStore.resetcorrectListenAnswer();
   };

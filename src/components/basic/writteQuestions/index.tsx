@@ -5,13 +5,7 @@ import { ExamType } from '@/typings/exam';
 import stores from '@/stores';
 
 import { Input } from 'antd';
-
 const { TextArea } = Input;
-
-type propState = {
-  title: string,
-  textArr: ExamType
-}
 export default function questions() {
   const exam = stores.ExamStore.getWritteExam();
 
@@ -24,12 +18,16 @@ export default function questions() {
     console.log(exam)
     setTitle(exam[index].name);
     setContent(exam[index].questionItems[0].title);
+    if(index === 1)
+      stores.ExamStore.changeStudentWritteAnswer(0, value);
+    else
+      stores.ExamStore.changeStudentWritteAnswer(1, value);
+    setValue(stores.ExamStore.correctWritte[index]);
   },[stores.ExamStore.currentExamTitle, exam]);
 
   return (
     <div className='readContent'>
         <div className='leftContent'>
-          
           {ReactHtmlParser(title)}
           {ReactHtmlParser(content)}
         </div>
