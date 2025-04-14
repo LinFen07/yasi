@@ -5,6 +5,8 @@ import { ExamType } from "@/typings/exam";
 import TurndownService from 'turndown';
 import './index.scss';
 import stores from '@/stores';
+import { computedDragPrevCount } from '@/utils/computedPrevCount';
+import { runInAction } from 'mobx';
 
 interface OptionProps {
   key: string;
@@ -111,13 +113,13 @@ export default function DragQuestion(questionArr: ExamType) {
   const [localOptions, setLocalOptions] = useState<string[]>(Options);
   const [droppedItems, setDroppedItems] = useState<{ questionIndex: number; option: string; originalIndex: number }[]>([]);
 
+  const dragPrevCount = computedDragPrevCount(stores.ExamStore.currentExamTitle, stores.ExamStore.currentExam);
   const handleDrop = (item: { option: string; index: number }, questionIndex: number) => {
+    stores.ExamStore.changeCurrent(dragPrevCount + questionIndex + 1);
     setDroppedItems((prevItems) => {
       // 查找现有项
       const existingItem = prevItems.find(droppedItem => droppedItem.questionIndex === questionIndex);
-  
       let newItems = prevItems;
-  
       // 如果存在现有项，将其移回 localOptions 并从 droppedItems 中移除
       if (existingItem) {
         const originalIndex = existingItem.originalIndex;
@@ -129,23 +131,26 @@ export default function DragQuestion(questionArr: ExamType) {
       });
         newItems = prevItems.filter(droppedItem => droppedItem.questionIndex !== questionIndex);
       }
-  
       // 添加新项
       newItems = [
         ...newItems.filter(droppedItem => droppedItem.option !== item.option),
         { questionIndex, option: item.option, originalIndex: item.index }
       ];
-  
-      // 返回新的 droppedItems 状态
       return newItems;
     });
     // 移除已拖拽的选项
     setLocalOptions((prevOptions) => prevOptions.filter(option => option !== item.option));
+    runInAction(() => {
+      const indexToRemove = stores.ExamStore.correctListenAnswer.indexOf(dragPrevCount + questionIndex + 1);
+      if (indexToRemove == -1) {
+        stores.ExamStore.correctListenAnswer.push(dragPrevCount + questionIndex + 1);
+      }
+    });
   };
 
   const handleRemove = (item: { option: string; index: number }) => {
+    console.log('remove',item);
     setDroppedItems((prevItems) => prevItems.filter(droppedItem => droppedItem.option !== item.option));
-
     // 将选项移回原始位置
     setLocalOptions((prevOptions) => {
       const newOptions = [...prevOptions];
@@ -159,6 +164,12 @@ export default function DragQuestion(questionArr: ExamType) {
         newOptions.push(item.option);
       }
       return newOptions;
+    });
+    runInAction(() => {
+      const indexToRemove = stores.ExamStore.correctListenAnswer.indexOf(dragPrevCount + item.index + 1);
+      if (indexToRemove !== -1) {
+        stores.ExamStore.correctListenAnswer.splice(indexToRemove, 1);
+      }
     });
   };
 

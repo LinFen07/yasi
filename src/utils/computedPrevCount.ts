@@ -35,3 +35,17 @@ export function computedTickPrevCount(pre: number, title: string, exam: Array<Ex
     }
   return pre;
 }
+export function computedDragPrevCount(title: string, exam: Array<Exam>){
+  let prevCount = computedPrevCount(title, exam);
+  const index = +title.slice(4, title.length - 1) - 1;
+    for(let j = 0; j < exam[index].questionItems.length; j++){
+      if(exam[index].questionItems[j].topicType == '6') return prevCount;
+      else if(
+        exam[index].questionItems[j].questionType == '2' 
+        || exam[index].questionItems[j].questionType == '4'
+      ) 
+      prevCount += exam[index].questionItems[j].correctArray.length;
+      else prevCount++;
+    }
+  return prevCount;
+}
