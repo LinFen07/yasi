@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Table, Button, Tag, Card, message, Spin, Select, Statistic, Breadcrumb } from "antd";
-import GradingEditor from '../../components/GradingEditor';
 import { useSelector, useDispatch } from "react-redux";
 import GradingPanel from "../../components/GradingPanel";
 import ViewGradedPaper from "../../components/ViewGradedPaper";
@@ -19,10 +18,9 @@ const Evaluation = () => {
       id: 1,
       studentName: "张三",
       studentId: "S001",
-      paperName: "2023年期中考试数学试卷",
+      paperName: "雅思模拟试卷1",
       score: 92,
       status: "已阅",
-      paperImage: "/papers/math-midterm-2023.jpg",
       questions: [
         { id: 1, number: '一', points: 20, score: 18 },
         { id: 2, number: '二', points: 30, score: 28 },
@@ -34,10 +32,9 @@ const Evaluation = () => {
       id: 2,
       studentName: '李四',
       studentId: 'S002',
-      paperName: '2023年期中考试数学试卷',
+      paperName: '雅思模拟试卷2',
       score: 0,
       status: '待阅',
-      paperImage: '/papers/math-midterm-2023-2.jpg',
       questions: [
         { id: 1, number: '一', points: 20, score: undefined, grader: undefined },
         { id: 2, number: '二', points: 30, score: undefined, grader: undefined },
@@ -49,16 +46,15 @@ const Evaluation = () => {
       id: 3,
       studentName: '王五',
       studentId: 'S003',
-      paperName: '2023年期中考试英语试卷',
-      score: 85,
-      status: '已阅',
-      paperImage: '/papers/english-midterm-2023.jpg',
+      paperName: '雅思模拟试卷1',
+      score: 0,
+      status: '待阅',
       questions: [
-        { id: 1, number: '听力', points: 30, score: 28, grader: '张老师', comment: '理解准确' },
-        { id: 2, number: '阅读', points: 40, score: 35, grader: '张老师', comment: '细节把握到位' },
-        { id: 3, number: '写作', points: 30, score: 22, grader: '赵老师', comment: '结构清晰' }
+        { id: 1, number: '听力', points: 30, score: undefined, grader: undefined, comment: undefined },
+        { id: 2, number: '阅读', points: 40, score: undefined, grader: undefined, comment: undefined },
+        { id: 3, number: '写作', points: 30, score: undefined, grader: undefined, comment: undefined }
       ],
-      gradedTime: '2023-05-16 09:15'
+      gradedTime: ''
     }
   ]);
 
@@ -69,6 +65,7 @@ const Evaluation = () => {
   const [selectedPaper, setSelectedPaper] = useState(null);
   const [refreshFlag, setRefreshFlag] = useState(false);
   const [editorContent, setEditorContent] = useState('');
+  const [flag, setFlag] = useState(false);
   // 默认选中第一个试卷
   useEffect(() => {
     const fetchInitialPapers = async () => {
@@ -89,7 +86,12 @@ const Evaluation = () => {
 
           setCurrentPaper(validatedPaper);
           // 始终默认进入列表模式
-          setViewMode('list');
+          if (flag === false) {
+            setViewMode('list');
+          } else {
+            setViewMode('view');
+            setFlag(false)
+          }
         }
       } catch (error) {
         console.error('初始化试卷数据失败:', error);
@@ -120,9 +122,10 @@ const Evaluation = () => {
         gradedTime: new Date().toLocaleString()
       } : p
     );
-    const appraiseData = putAppraise(values.comment, 1);
-    appraiseData();
-    const score = postScore(30, values.score);
+    const appraiseData = putAppraise(values.comment, currentPaper.id);
+    // 触发异步 action
+    dispatch(appraiseData);
+    const score = postScore(31, 20);
     score();
     setPapers(updatedPapers);
 
@@ -177,7 +180,7 @@ const Evaluation = () => {
   // 新增编辑处理函数
   const handleEditPaper = (restoredData) => {
     setCurrentPaper({
-      ...(restoredData || currentPaper),
+      ...currentPaper,
       isEditing: true
     });
     setViewMode('grade');
@@ -311,6 +314,7 @@ const Evaluation = () => {
               onCancel={() => setViewMode('list')}
               editorContent={editorContent}
               setEditorContent={setEditorContent}
+              setFlag={setFlag}
             />
           )}
           {/* 查看模式 */}
@@ -330,3 +334,4 @@ const Evaluation = () => {
 };
 
 export default Evaluation;
+

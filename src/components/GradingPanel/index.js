@@ -1,24 +1,53 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { Card, Button, message, Input } from 'antd';
+import { Card, Button, message, Input, Form } from 'antd';
+import ScoreInput from '../ScoreInput';
+import { useSelector } from 'react-redux';
 const { TextArea } = Input;
 
-const GradingPanel = ({ 
-  paperData = {}, 
-  onSubmit, 
+const GradingPanel = ({
+  paperData,
+  onSubmit,
   onCancel,
   editorContent,
-  setEditorContent
+  setEditorContent,
+  setFlag,
 }) => {
+
+  const isEmptyContent = (content) => {
+    if (!content) return true;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    return tempDiv.textContent.trim() === '';
+  };
   const handleSubmit = () => {
+    if (isEmptyContent(editorContent)) {
+      message.error('请填写评语内容后再提交');
+      return;
+    }
+    setFlag(true);
     onSubmit({
       comment: editorContent,
       score: paperData.score || 0
     });
     message.success('评阅已提交');
+    setEditorContent('');
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const handlePreviousPage = () => {
+    setCurrentPage(currentPage - 1);
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(currentPage + 1);
+  };
+  const { paper, article } = useSelector(state => state.tasks);
+  const studentAnswer1 = article.response.items ? article.response.items[0].studentAnswers[0].studentAnswer : null
+  const studentAnswer2 = article.response.items ? article.response.items[0].studentAnswers[0].studentAnswer : null
+  const essayTitle1 = paper && paper.response && paper.response.titleItems && paper.response.titleItems[5] ? paper.response.titleItems[5].name : null;
+  const essayTitle2 = paper && paper.response && paper.response.titleItems && paper.response.titleItems[6] ? paper.response.titleItems[6].name : null;
   return (
     <div style={{ display: 'flex', gap: '16px', height: '100%' }}>
       {/* 左侧：作文展示区域 */}
@@ -33,13 +62,31 @@ const GradingPanel = ({
         </Card>
 
         {/* 显示作文内容 */}
-        <div style={{ marginTop: '16px', border: '1px solid #f0f0f0', padding: '16px', height: 'calc(100% - 120px)' }}>
-          <h3 style={{ color: 'var(--text-color)' }}>作文标题1</h3>
-          <TextArea value={paperData.essayTitle1 || ''} readOnly rows={3} style={{ marginBottom: '16px' }} />
-          <h3 style={{ color: 'var(--text-color)' }}>作文标题2</h3>
-          <TextArea value={paperData.essayTitle2 || ''} readOnly rows={3} style={{ marginBottom: '16px' }} />
-          <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
-          <TextArea value={paperData.studentAnswer || ''} readOnly rows={10} />
+        <div style={{ flex: 1, marginTop: '40px' }}>
+          {currentPage === 1 && (
+            <>
+              <h3 style={{ color: 'var(--text-color)' }}>作文标题1</h3>
+              <TextArea value={essayTitle1} readOnly rows={3} style={{ marginBottom: '16px' }} />
+              <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
+              <TextArea value={studentAnswer1} readOnly rows={10} />
+            </>
+          )}
+          {currentPage === 2 && (
+            <>
+              <h3 style={{ color: 'var(--text-color)' }}>作文标题2</h3>
+              <TextArea value={essayTitle2} readOnly rows={3} style={{ marginBottom: '16px' }} />
+              <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
+              <TextArea value={studentAnswer2} readOnly rows={10} />
+            </>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+            <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+              上一篇
+            </button>
+            <button onClick={handleNextPage} disabled={currentPage === 2}>
+              下一篇
+            </button>
+          </div>
         </div>
       </div>
 
@@ -48,8 +95,11 @@ const GradingPanel = ({
         {/* 评阅编辑区 */}
         <Card
           title="评阅编辑"
-          style={{ flex: 1 }}
+          style={{ flex: 2 }}
         >
+          <Form.Item name="score" label="评分" rules={[{ required: true }]}>
+            <ScoreInput />
+          </Form.Item>
           <ReactQuill
             theme="snow"
             value={editorContent}
@@ -64,7 +114,7 @@ const GradingPanel = ({
                 ['clean']
               ]
             }}
-            style={{ height: '300px', background: '#fff' }}
+            style={{ height: '160px', background: '#fff' }}
           />
         </Card>
 
@@ -76,19 +126,33 @@ const GradingPanel = ({
           <div
             className="ql-editor"
             style={{
-              height: '300px',
+              height: '100px',
               overflow: 'auto',
               background: '#fff',
               padding: '16px'
             }}
-            dangerouslySetInnerHTML={{ __html: editorContent }}
+            dangerouslySetInnerHTML={{
+              __html: editorContent || '<p style="color:#999; text-align:center; margin-top:120px">请在上方编辑评语内容</p>'
+            }}
           />
         </Card>
 
         {/* 操作按钮 */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
           <Button onClick={onCancel}>取消</Button>
-          <Button type="primary" onClick={handleSubmit}>提交评阅</Button>
+          <Button
+            onClick={() => setEditorContent('')}
+            danger
+          >
+            清空
+          </Button>
+          <Button
+            type="primary"
+            onClick={handleSubmit}
+            disabled={isEmptyContent(editorContent)}
+          >
+            提交评阅
+          </Button>
         </div>
       </div>
     </div>
@@ -96,3 +160,5 @@ const GradingPanel = ({
 };
 
 export default GradingPanel;
+
+
