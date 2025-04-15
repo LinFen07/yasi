@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ExamType } from "@/typings/exam";
@@ -106,10 +106,38 @@ export default function DragQuestion(questionArr: ExamType) {
   const { questionTitle, Questions, Options } = parseMarkdownToQuestionData(markdown);
   const [localOptions, setLocalOptions] = useState<string[]>(Options);
   const [droppedItems, setDroppedItems] = useState<{ questionIndex: number; option: string; originalIndex: number }[]>([]);
+  const [studentAnswers, setStudentAnswers] = useState<string[]>(stores.AnswerStore.dragAnswers);
+
+  useEffect(() => {
+    // 初始化 droppedItems 和 localOptions
+    const initialDroppedItems: { questionIndex: number; option: string; originalIndex: number }[] = [];
+    const initialLocalOptions: string[] = [...Options];
+
+    stores.AnswerStore.dragAnswers.forEach((answer, questionIndex) => {
+      if (answer) {
+        const optionIndex = Options.indexOf(answer);
+        if (optionIndex !== -1) {
+          initialDroppedItems.push({ questionIndex, option: answer, originalIndex: optionIndex });
+          initialLocalOptions.splice(optionIndex, 1);
+        }
+      }
+    });
+
+    setDroppedItems(initialDroppedItems);
+    setLocalOptions(initialLocalOptions);
+  }, []);
+
 
   const dragPrevCount = computedDragPrevCount(stores.ExamStore.currentExamTitle, stores.ExamStore.currentExam);
   const handleDrop = (item: { option: string; index: number }, questionIndex: number) => {
     stores.ExamStore.changeCurrent(dragPrevCount + questionIndex + 1);
+    stores.AnswerStore.dragAnswers[questionIndex] = item.option;
+    console.log(stores.AnswerStore.dragAnswers)
+    setStudentAnswers((prevAnswers) => {
+      const newAnswers = [...prevAnswers];
+      newAnswers[item.index] = item.option[0]; 
+      return newAnswers;
+    });
     setDroppedItems((prevItems) => {
       // 查找现有项
       const existingItem = prevItems.find(droppedItem => droppedItem.questionIndex === questionIndex);
