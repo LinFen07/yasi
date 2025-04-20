@@ -1,8 +1,9 @@
 
 import stores from '@/stores';
-import type { Exam, ExamType, StudentAnswer } from '@/typings/exam';
+import type { Exam, ExamType } from '@/typings/exam';
 import { runInAction } from 'mobx';
 import  {computedPrevCount}  from '@/utils/computedPrevCount';
+import { submitStudentBlankAnswer } from './submitAnswer';
 export function createInput(exam: Array<Exam>, type: string) {
   let prevCount = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
   const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
@@ -25,15 +26,6 @@ export function createInput(exam: Array<Exam>, type: string) {
     return () => clearTimeout(timerId);
 }
 
-const studentAnswer: StudentAnswer = {
-  isCorrect: 0,
-  paperId: stores.ExamStore.paperId,
-  questionId: 0,
-  studentAnswer: '1',
-  studentId: stores.UserStore.userId,
-  score: '0'
-}
-
 export function MyInput(index: number, span: any, prevCount: number, questionArr: ExamType, type: string) {
   let len = index + questionArr.items.length;
   for (let i = index; i < len; i++) {
@@ -54,7 +46,6 @@ export function MyInput(index: number, span: any, prevCount: number, questionArr
       placeholder.innerText = (prevCount + i + 1).toString(); // 显示序号
     }
 
-    // 监听 input 的 focus 和 input 事件
     input.addEventListener('focus', () => {
       placeholder.style.display = 'none';
       stores.ExamStore.changeCurrent(prevCount + i + 1);
@@ -68,13 +59,7 @@ export function MyInput(index: number, span: any, prevCount: number, questionArr
       if (input.value) {
         placeholder.style.display = 'none';
         const correctIndex = questionArr.correctArray.length - (len - i);
-          Object.assign(studentAnswer, {
-            isCorrect: input.value == questionArr.correctArray[correctIndex]  ? 1 : 0,
-            questionId: questionArr.items[correctIndex].itemUuid,
-            studentAnswer: input.value,
-            score: input.value == questionArr.correctArray[correctIndex] ? questionArr.items[correctIndex].score : '0',
-          });
-          stores.AnswerStore.changeAnswer(prevCount + i + 1, studentAnswer);
+        submitStudentBlankAnswer(questionArr, i, prevCount, input.value, correctIndex);
         runInAction(() => {
           stores.ExamStore.correctListenAnswer.push(prevCount + i + 1);
         });
