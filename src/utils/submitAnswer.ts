@@ -1,36 +1,42 @@
 
 import { ExamType, StudentAnswer } from '@/typings/exam';
-import { submitAnswer } from '@/api/studentAnswer';
 import stores from '@/stores';
 
-export function submitStudentAnswer(questionsArr: ExamType[], index: number, value: string){
-  const studentAnswer: StudentAnswer = {
-    isCorrect: value == questionsArr[index].correct  ? 1 : 0,
-    paperId: stores.ExamStore.paperId,
-    questionId: questionsArr[index].id,
-    studentAnswer: value,
-    studentId: stores.UserStore.userId,
-    score: questionsArr[index].score
-  }
-
-  submitAnswer(studentAnswer).then((res) => {
-    //@ts-ignore
-    if(res.code == 200){
-      console.log('提交成功');
-    }
-  }).catch((err) => {
-    console.error('提交失败', err);
-  })
+const studentAnswer: StudentAnswer = {
+  isCorrect: 0,
+  paperId: stores.ExamStore.paperId,
+  questionId: 0,
+  studentAnswer: '1',
+  studentId: stores.UserStore.userId,
+  score: '0'
 }
-export function submitStudentSelectAnswer(questionsArr: ExamType[], index: number, value: string, questionIndex: number){
-  const studentAnswer: StudentAnswer = {
+export function submitStudentSelectAnswer(
+  questionsArr: ExamType[], 
+  index: number, 
+  value: string, 
+  questionIndex: number
+): void {
+  Object.assign(studentAnswer, {
     isCorrect: value == questionsArr[index].correct  ? 1 : 0,
-    paperId: stores.ExamStore.paperId,
     questionId: questionsArr[index].id,
     studentAnswer: value,
-    studentId: stores.UserStore.userId,
     score: questionsArr[index].score
-  }
+  });
 
   stores.AnswerStore.changeAnswer(questionIndex, studentAnswer);
+}
+export function submitStudentBlankAnswer(
+  questionArr: ExamType, 
+  i: number, 
+  prevCount: number, 
+  value: string, 
+  correctIndex: number
+): void {
+  Object.assign(studentAnswer, {
+    isCorrect: value == questionArr.correctArray[correctIndex]  ? 1 : 0,
+    questionId: questionArr.items[correctIndex].itemUuid,
+    studentAnswer: value,
+    score: value == questionArr.correctArray[correctIndex] ? questionArr.items[correctIndex].score : '0',
+  });
+  stores.AnswerStore.changeAnswer(prevCount + i + 1, studentAnswer);
 }
