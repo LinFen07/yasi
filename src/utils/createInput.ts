@@ -1,9 +1,8 @@
 
 import stores from '@/stores';
-import type { Exam, ExamType } from '@/typings/exam';
+import type { Exam, ExamType, StudentAnswer } from '@/typings/exam';
 import { runInAction } from 'mobx';
 import  {computedPrevCount}  from '@/utils/computedPrevCount';
-import { submitBlanksAnswer } from './submitAnswer';
 export function createInput(exam: Array<Exam>, type: string) {
   let prevCount = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
   const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
@@ -24,6 +23,15 @@ export function createInput(exam: Array<Exam>, type: string) {
     } 
   }, 0)
     return () => clearTimeout(timerId);
+}
+
+const studentAnswer: StudentAnswer = {
+  isCorrect: 0,
+  paperId: stores.ExamStore.paperId,
+  questionId: 0,
+  studentAnswer: '1',
+  studentId: stores.UserStore.userId,
+  score: '0'
 }
 
 export function MyInput(index: number, span: any, prevCount: number, questionArr: ExamType, type: string) {
@@ -54,24 +62,19 @@ export function MyInput(index: number, span: any, prevCount: number, questionArr
     input.addEventListener('blur', () => {
       if (!input.value) {
         placeholder.style.display = 'block';
-      } 
-      if(input.value){
-        submitBlanksAnswer(questionArr, index + 1, prevCount + i + 2, type);
       }
     });
     input.addEventListener('input', () => {
       if (input.value) {
         placeholder.style.display = 'none';
         const correctIndex = questionArr.correctArray.length - (len - i);
-        const score = Math.floor(+questionArr.score/questionArr.correctArray.length);
-        if(type == 'listen'){
-          stores.ExamStore.changeStudentListenAnswer(prevCount + i + 1,input.value);
-          stores.ExamStore.changeStudentListenScore(prevCount + i + 1, questionArr.correctArray[correctIndex],''+score);
-        }
-        else{
-          stores.ExamStore.changeStudentReadAnswer(prevCount + i + 1,input.value);
-          stores.ExamStore.changeStudentReadScore(prevCount + i + 1, questionArr.correctArray[correctIndex],''+score);
-        }
+          Object.assign(studentAnswer, {
+            isCorrect: input.value == questionArr.correctArray[correctIndex]  ? 1 : 0,
+            questionId: questionArr.items[correctIndex].itemUuid,
+            studentAnswer: input.value,
+            score: input.value == questionArr.correctArray[correctIndex] ? questionArr.items[correctIndex].score : '0',
+          });
+          stores.AnswerStore.changeAnswer(prevCount + i + 1, studentAnswer);
         runInAction(() => {
           stores.ExamStore.correctListenAnswer.push(prevCount + i + 1);
         });
@@ -86,5 +89,4 @@ export function MyInput(index: number, span: any, prevCount: number, questionArr
     span[i].innerHTML = '';
     span[i].appendChild(wrapper);
   }
-  console.log(index)
 }

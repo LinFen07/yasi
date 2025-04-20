@@ -5,7 +5,6 @@ class ExamStore {
   constructor() {
     makeAutoObservable(this);
   }
-
   //当前试卷ID
   paperId = 0;
 
@@ -67,7 +66,7 @@ class ExamStore {
       this.listenExam = this.exam.slice(0,4);
       this.readExam = this.exam.slice(4,7);
       this.wirrteExam = this.exam.slice(7);
-    }
+    } 
   }
 
   getListenExam(){
