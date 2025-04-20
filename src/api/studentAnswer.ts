@@ -24,10 +24,9 @@ export const changeAnswer = (data: StudentAnswer) => {
   })
 }
 
-export const getAnswer = (data: StudentAnswer) => {
+export const getAnswer = (pageNow: number, pageSize: number) => {
   return request({
-    url: '/api/student/studentAnswer/page',
+    url: `/api/student/studentAnswer/page?pageNow=${pageNow}&pageSize=${pageSize}`,
     method: 'POST',
-    data: data,
   })
 }

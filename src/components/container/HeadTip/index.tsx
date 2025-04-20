@@ -10,6 +10,7 @@ import store from '@/stores'
 
 import IntegerStep from '@/components/basic/fontSizeSetting';
 import stores from '@/stores';
+import { requestConcurrency } from '@/utils/requestConcurrency';
 
 const items: MenuProps['items'] = [
   {
@@ -55,13 +56,14 @@ function HeadTip(props: propType) {
   const finish = (type: string) => {
     if(type === 'listen'){
       navigate('/readnExam',{ replace: true });
+      requestConcurrency(stores.AnswerStore.completedAnswers);
       stores.ExamStore.isTrueListeneAnswer();
     }else if(type === 'read'){
       navigate('/writteExam',{ replace: true });
       stores.ExamStore.isTrueReadAnswer();
     }else if(type === 'writte'){
       navigate('/testOver',{ replace: true });
-      console.log(stores.ExamStore.correctWritte)
+      // console.log(stores.ExamStore.correctWritte)
     }
     store.ExamStore.changeCurrent(1);
     store.ExamStore.changeCurrentTitle('Part1:');
