@@ -44,7 +44,8 @@ export type StudentAnswer = {
   questionId: number,
   studentAnswer: string,
   studentId: number,
-  score: string
+  score: string,
+  questionType: string,
 }
 
 export type textArr = {
