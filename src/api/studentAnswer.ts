@@ -7,7 +7,7 @@ export const submitAnswer = (data: StudentAnswer) => {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
-    data: `isCorrect=${data.isCorrect}&paperId=${data.paperId}&questionId=${data.questionId}&score=${data.score}&studentAnswer=${data.studentAnswer}&studentId=${data.studentId}`,
+    data: `isCorrect=${data.isCorrect}&paperId=${data.paperId}&questionId=${data.questionId}&score=${data.score}&studentAnswer=${data.studentAnswer}&studentId=${data.studentId}&questionType=${data.questionType}`,
   })
 }
 

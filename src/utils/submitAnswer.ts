@@ -8,7 +8,8 @@ const studentAnswer: StudentAnswer = {
   questionId: 0,
   studentAnswer: '1',
   studentId: stores.UserStore.userId,
-  score: '0'
+  score: '0',
+  questionType: '1',
 }
 export function submitStudentSelectAnswer(
   questionsArr: ExamType[], 
@@ -22,7 +23,8 @@ export function submitStudentSelectAnswer(
     questionId: questionsArr[index].id,
     studentAnswer: value,
     studentId: stores.UserStore.userId,
-    score: questionsArr[index].score
+    score: questionsArr[index].score,
+    questionType: questionsArr[index].questionType,
   });
 
   stores.AnswerStore.changeAnswer(questionIndex, studentAnswer);
@@ -41,6 +43,7 @@ export function submitStudentBlankAnswer(
     studentAnswer: value,
     studentId: stores.UserStore.userId,
     score: value == questionArr.correctArray[correctIndex] ? questionArr.items[correctIndex].score : '0',
+    questionType: questionArr.questionType,
   });
   stores.AnswerStore.changeAnswer(prevCount + i + 1, studentAnswer);
 }
@@ -56,6 +59,7 @@ export function submitStudentWritteAnswer(
     questionId: questionArr.id,
     studentAnswer: value,
     studentId: stores.UserStore.userId,
+    questionType: questionArr.questionType,
   });
   stores.AnswerStore.changeStudentWritteAnswer(index, studentAnswer);
 }
