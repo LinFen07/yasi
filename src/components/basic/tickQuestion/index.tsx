@@ -6,6 +6,7 @@ import './index.scss';
 import { computedTickPrevCount } from '@/utils/computedPrevCount';
 import stores from '@/stores';
 import { runInAction } from 'mobx';
+import { submitStudentBlankAnswer, submitStudentSelectAnswer } from '@/utils/submitAnswer';
 
 interface RecordType {
   key: number;
@@ -146,6 +147,7 @@ const tickQuestion = (questionArr: ExamType) => {
   },[])
 
   const handleCellClick = (record: RecordType, dataIndex: string) => {
+    submitStudentBlankAnswer(questionArr,record.key - PrevCount - 1,PrevCount, dataIndex, record.key - PrevCount - 1);
     stores.ExamStore.changeCurrent(record.key);
     setStudentAnswers((prevAnswers) => {
       const newAnswers = [...prevAnswers];

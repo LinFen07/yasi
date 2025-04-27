@@ -11,6 +11,7 @@ import store from '@/stores'
 import IntegerStep from '@/components/basic/fontSizeSetting';
 import stores from '@/stores';
 import { requestConcurrency } from '@/utils/requestConcurrency';
+import { submitStudentWritteAnswer } from '@/utils/submitAnswer';
 
 const items: MenuProps['items'] = [
   {
@@ -64,6 +65,8 @@ function HeadTip(props: propType) {
       stores.AnswerStore.clearAnswers();
     }else if(type === 'writte'){
       navigate('/testOver',{ replace: true });
+      submitStudentWritteAnswer(stores.ExamStore.wirrteExam[0].questionItems[0], 0, stores.ExamStore.correctWritte[0]);
+      submitStudentWritteAnswer(stores.ExamStore.wirrteExam[1].questionItems[0], 1, stores.ExamStore.correctWritte[1]);
       requestConcurrency(stores.AnswerStore.writingAnswers);
     }
     store.ExamStore.changeCurrent(1);

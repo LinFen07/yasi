@@ -7,6 +7,7 @@ import './index.scss';
 import stores from '@/stores';
 import { computedDragPrevCount } from '@/utils/computedPrevCount';
 import { runInAction } from 'mobx';
+import { submitStudentBlankAnswer } from '@/utils/submitAnswer';
 
 interface OptionProps {
   key: string;
@@ -130,9 +131,10 @@ export default function DragQuestion(questionArr: ExamType) {
 
   const dragPrevCount = computedDragPrevCount(stores.ExamStore.currentExamTitle, stores.ExamStore.currentExam);
   const handleDrop = (item: { option: string; index: number }, questionIndex: number) => {
+    console.log(item, questionIndex)
+    submitStudentBlankAnswer(questionArr,questionIndex,dragPrevCount, item.option[0], questionIndex)
     stores.ExamStore.changeCurrent(dragPrevCount + questionIndex + 1);
     stores.AnswerStore.dragAnswers[questionIndex] = item.option;
-    console.log(stores.AnswerStore.dragAnswers)
     setStudentAnswers((prevAnswers) => {
       const newAnswers = [...prevAnswers];
       newAnswers[item.index] = item.option[0]; 

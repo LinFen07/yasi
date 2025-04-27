@@ -28,9 +28,10 @@ function questions({exam}: {exam: Exam[]}) {
     stores.ExamStore.changeStudentListenAnswer(pre + index + 1, e.target.value);
     const examIndex = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
     const value  = e.target.value;
+    console.log('onChange',index + pre);
 
     //向数据提交答案
-    submitStudentSelectAnswer(questionsArr, index, value, stores.ExamStore.currentExamIndex);
+    submitStudentSelectAnswer(questionsArr, index, value, index + pre);
 
     const updatedQuestions = { ...questionsArr[index] };
     updatedQuestions.answer = value.toString();
@@ -50,7 +51,7 @@ function questions({exam}: {exam: Exam[]}) {
     stores.ExamStore.changeStudentListenAnswer(pre + index + 1,checkedValues.toString());
     const examIndex = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
 
-    submitStudentSelectAnswer(questionsArr, index, checkedValues.toString(), stores.ExamStore.currentExamIndex);
+    submitStudentSelectAnswer(questionsArr, index, checkedValues.toString(), index + pre);
 
     const updatedQuestions = { ...questionsArr[index] };
     updatedQuestions.selectionsAnswer = checkedValues;

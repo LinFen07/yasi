@@ -38,11 +38,9 @@ export function MyInput(index: number, span: any, prevCount: number, questionArr
     const placeholder = document.createElement('span');
     input.className = 'textInput';
     input.setAttribute('data-index', (prevCount + i + 1).toString()); // 设置序号
-    if(type== 'listen' && stores.ExamStore.studentListenAnswers[prevCount + i + 1]){
-      input.value = stores.ExamStore.studentListenAnswers[prevCount + i + 1]; // 设置默认值 
-    } else if(type == 'read' && stores.ExamStore.studentReadAnswers[prevCount + i + 1]){
-      input.value = stores.ExamStore.studentReadAnswers[prevCount + i + 1]; // 设置默认值
-    } 
+    if(stores.AnswerStore.completedAnswers[prevCount + i].studentAnswer){
+      input.value = stores.AnswerStore.completedAnswers[prevCount + i].studentAnswer; // 设置默认值 
+    }
     else{
       placeholder.className = 'placeholder';
       placeholder.innerText = (prevCount + i + 1).toString(); // 显示序号

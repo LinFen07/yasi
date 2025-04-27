@@ -40,6 +40,9 @@ class ExamStore {
   //阅读答案
   correctRead: Array<correct> = [];
 
+  //写作答案
+  correctWritte: Array<string> = Array(2).fill('');
+
   //改变当前试卷
   changeCurrentExam(exam: Array<Exam>) {
     this.currentExam = exam;
