@@ -24,7 +24,7 @@ export function submitStudentSelectAnswer(
     studentAnswer: value,
     studentId: stores.UserStore.userId,
     score: questionsArr[index].score,
-    questionType: questionsArr[index].questionType,
+    questionType: questionsArr[index].topicType,
   });
 
   stores.AnswerStore.changeAnswer(questionIndex, studentAnswer);
@@ -39,13 +39,13 @@ export function submitStudentBlankAnswer(
   Object.assign(studentAnswer, {
     isCorrect: value == questionArr.correctArray[correctIndex]  ? 1 : 0,
     paperId: stores.ExamStore.paperId,
-    questionId: questionArr.items[correctIndex].itemUuid,
+    questionId: questionArr.id,
     studentAnswer: value,
     studentId: stores.UserStore.userId,
     score: value == questionArr.correctArray[correctIndex] ? questionArr.items[correctIndex].score : '0',
-    questionType: questionArr.questionType,
+    questionType: questionArr.topicType,
   });
-  stores.AnswerStore.changeAnswer(prevCount + i + 1, studentAnswer);
+  stores.AnswerStore.changeAnswer(prevCount + i, studentAnswer);
 }
 
 export function submitStudentWritteAnswer(
@@ -59,7 +59,7 @@ export function submitStudentWritteAnswer(
     questionId: questionArr.id,
     studentAnswer: value,
     studentId: stores.UserStore.userId,
-    questionType: questionArr.questionType,
+    questionType: questionArr.topicType,
   });
   stores.AnswerStore.changeStudentWritteAnswer(index, studentAnswer);
 }

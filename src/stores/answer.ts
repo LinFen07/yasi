@@ -12,10 +12,10 @@ class AnswerStore {
   dragAnswers: Array<string> = Array(10).fill("");
 
   //已完成的题目
-  completedAnswers: Array<StudentAnswer> = Array(41).fill('');
+  completedAnswers: Array<StudentAnswer> = Array(40).fill('');
 
   //写作答案
-  writingAnswers: Array<StudentAnswer> = Array(3).fill('');
+  writingAnswers: Array<StudentAnswer> = Array(2).fill('');
 
   //改变答案
   changeAnswer(index: number, answer: StudentAnswer) {
