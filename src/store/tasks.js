@@ -261,7 +261,7 @@ const getOriginalTitel = (questionId) => {
   return async (dispatch) => {
     try {
       const res = await axios.post(`http://120.24.144.113:8668/api/teacher/question/select/${questionId}`)
-      const title = res.data.response.title
+      const title = res.data.response
       return title
     } catch (error) {
       console.error(error)
