@@ -6,18 +6,17 @@ import { set } from "lodash";
 const tasksStore = createSlice({
   name: "tasks",
   initialState: {
-    tasks: [
-    ],
+    tasks: [],
     currentTask: null,
     article: [],
     paper: [],
     appraise: [],
-    user: null,
-    question: null
   },
   reducers: {
     setTasks(state, action) {
+      // console.log('调用了')
       state.tasks = action.payload
+      localStorage.setItem('tasks', JSON.stringify(action.payload))
     },
     setCurrentTask(state, action) {
       state.currentTask = action.payload
@@ -44,8 +43,6 @@ const tasksStore = createSlice({
       const existingIndex = state.appraise.response.items.findIndex(item => item.id === id);
       if (existingIndex !== -1) {
         state.appraise.response.items[existingIndex].appraise = appraise.response.appraise;
-      } else {
-        state.appraise.response.items.push(appraise.response);
       }
       localStorage.setItem('appraise', JSON.stringify(state.appraise));
     },
@@ -62,22 +59,20 @@ const tasksStore = createSlice({
     },
     addScore(state, action) {
       const { id, score } = action.payload;
-      const existingIndex = state.article.response.items[0].studentAnswers.findIndex(item => item.id === id);
+      const existingIndex = state.article.response.items[2].studentAnswers.findIndex(item => item.id === id);
       if (existingIndex !== -1) {
-        state.article.response.items[0].studentAnswers[existingIndex].score = score.response.items[0].studentAnswers[existingIndex].score;
-      } else {
-        state.article.response.items.push(score.response)
+        state.article.response.items[2].studentAnswers[existingIndex].score = score.response.items[2].studentAnswers[existingIndex].score;
       }
       localStorage.setItem('article', JSON.stringify(state.article));
-    }
+    },
   }
 })
 
-const { setTasks, setCurrentTask, updateTask, setPaper, setArticle, setAppraise, addAppraise, setConfrim, updatePaperStatus, addScore } = tasksStore.actions;
+const { setTasks, setCurrentTask, updateTask, setPaper, setArticle, setAppraise, addAppraise, setConfrim, updatePaperStatus, addScore, setStudentsInfo, setStudentsAnswers, setComposition } = tasksStore.actions;
 const fetchArticle = (userId, id) => {  // 接收参数 
   return async (dispatch) => {
     try {
-      const response = await axios.get('http://120.24.144.113:8668/api/teacher/exam/paper/allIdAndJudge', {
+      const response = await axios.get('http://120.24.144.113:8668/api/teacher/exam/paper/allIdAndJudge?pageSize=50', {
         params: {  // 注意：GET 请求参数需要通过 `params` 传递 
           userId: userId  // 使用传入的参数 
         }
@@ -94,11 +89,7 @@ const fetchArticle = (userId, id) => {  // 接收参数
   };
 };
 
-const paperId = 2; // 请将此 ID 替换为实际的试卷 ID
-
-// 定义接口地址
-const apiUrl = `http://120.24.144.113:8668/api/teacher/exam/paper/select/${paperId}`;
-
+// 定义获取作文信息的函数
 const fetchCompositionInfo = (id) => {
   return async (dispatch) => {
     try {
@@ -116,8 +107,8 @@ const fetchCompositionInfo = (id) => {
 const getAppraise = () => {
   return async (dispatch) => {
     try {
-      const res = await axios.get(`http://120.24.144.113:8668/api/teacher/examassignment/page`);
-      console.log(res.data);
+      const res = await axios.get(`http://120.24.144.113:8668/api/teacher/examassignment/page?pageSize=50`);
+      // console.log(res.data);
       const appraise = res.data
       dispatch(setAppraise(appraise))
     } catch (error) {
@@ -154,6 +145,90 @@ const getNewAppraise = (id) => {
   };
 }
 
+const getTask = (userId) => {
+  return async (dispatch) => {
+    try {
+      const res = await axios.post(`http://120.24.144.113:8668/api/teacher/teacherAssignment/pageList?userId=${userId}`)
+      const count = res.data.response.counts;
+      // console.log(count)
+      const res_2 = await axios.post(`http://120.24.144.113:8668/api/teacher/teacherAssignment/pageList?userId=${userId}&pageSize=${count}`)
+      const task = res_2.data
+      // console.log(task.response.items)
+      dispatch(setTasks(task))
+      // dispatch(getId(task.response.items))
+    } catch (error) {
+      console.error('请求出错:', error)
+    }
+  }
+}
+
+const getStudentsInfo = (examPaperId) => {
+  return async (dispatch) => {
+    try {
+      const res = await axios.get(`http://120.24.144.113:8668/api/teacher/examassignment/${examPaperId}`)
+      // console.log(res.data)
+      const studentId = res.data.response.userId
+      const paperId = res.data.response.examPaperId
+      const appraise = res.data.response.appraise
+      const studentsInfo = {
+        studentId,
+        paperId,
+        appraise
+      }
+      return studentsInfo;
+    } catch (error) {
+      console.error('请求出错', error)
+    }
+  }
+}
+
+const getStudentsAnswers = (studentsInfo) => {
+  return async (dispatch) => {
+    try {
+      const { studentId, paperId } = studentsInfo;
+      // 构建请求体数据
+      const requestData = {
+        "studentId": studentId,
+        "paperId": paperId
+      };
+
+      const res = await axios.post(
+        `http://120.24.144.113:8668/api/teacher/studentAnswer/page`,
+        requestData
+      );
+      const count = res.data.response.counts
+      const res_2 = await axios.post(
+        `http://120.24.144.113:8668/api/teacher/studentAnswer/page?pageSize=${count}`,
+        requestData
+      );
+      const studentAnswer = res_2.data.response.items
+      return studentAnswer
+    } catch (error) {
+    }
+  };
+};
+
+const getComposition = (studentsInfo) => {
+  return async (dispatch) => {
+    try {
+      const { studentId, paperId } = studentsInfo;
+      // 构建请求体数据
+      const requestData = {
+        "studentId": studentId,
+        "paperId": paperId,
+        "questionType": 7
+      };
+
+      const res = await axios.post(
+        `http://120.24.144.113:8668/api/teacher/studentAnswer/page`,
+        requestData
+      );
+      const composition = res.data.response.items
+      return composition
+    } catch (error) {
+    }
+  };
+}
 const selectById = (id) => {
   return async (dispatch) => {
     try {
@@ -170,64 +245,6 @@ const selectById = (id) => {
     }
   };
 }
-
-const batchSelectById = (ids) => {
-  return async (dispatch) => {
-    try {
-      const requests = ids.map(id =>
-        axios.get(`http://120.24.144.113:8668/api/teacher/studentAnswer/selectById/${id}`)
-      );
-      const responses = await Promise.all(requests);
-      const results = responses.map(res => res.data).filter(Boolean);
-      results.forEach(data => dispatch(setConfrim(data)));
-      return results;
-    } catch (error) {
-      console.error('批量请求出错:', error);
-      return [];
-    }
-  };
-}
-
-const getUserById = (id) => {
-  return async (dispatch) => {
-    try {
-      const res = await axios.get(`http://120.24.144.113:8668/api/teacher/user/select/${id}`);
-      dispatch(setUser(res.data));
-      return res.data;
-    } catch (error) {
-      console.error('获取用户信息失败:', error);
-      return null;
-    }
-  };
-}
-
-const setUser = (user) => {
-  return {
-    type: 'tasks/setUser',
-    payload: user
-  };
-}
-
-const getQuestionById = (id) => {
-  return async (dispatch) => {
-    try {
-      const res = await axios.post(`http://120.24.144.113:8668/api/teacher/question/select/${id}`);
-      dispatch(setQuestion(res.data));
-      return res.data;
-    } catch (error) {
-      console.error('获取问题信息失败:', error);
-      return null;
-    }
-  };
-}
-
-const setQuestion = (question) => {
-  return {
-    type: 'tasks/setQuestion',
-    payload: question
-  };
-}
-
 // 导出相关 action
-export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle, getAppraise, getNewAppraise, getConfrim, updatePaperStatus, selectById, batchSelectById, getUserById, getQuestionById };
+export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle, getAppraise, getNewAppraise, getConfrim, updatePaperStatus, getTask, getStudentsInfo, getStudentsAnswers, getComposition, selectById };
 export default tasksStore.reducer;

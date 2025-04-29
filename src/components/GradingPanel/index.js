@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import PropTypes from 'prop-types';
 import { Card, Button, message, Input, Form } from 'antd';
-import ScoreInput from '../ScoreInput';
+import ScoringPanel from '../ScoringPanel';
+import EvaluationPanel from '../EvaluationPanel';
 import { useSelector } from 'react-redux';
 const { TextArea } = Input;
 
@@ -13,11 +13,13 @@ const convertToText = (html) => {
   return doc.documentElement.textContent;
 };
 
+
+
 const GradingPanel = ({
-  paperData,
+  paperData = {},
   onSubmit,
   onCancel,
-  editorContent,
+  editorContent = '',
   setEditorContent,
   setFlag,
   isEditingMode = false
@@ -25,18 +27,27 @@ const GradingPanel = ({
   const [form] = Form.useForm();
 
   const handleSubmit = () => {
-    form.validateFields()
-      .then(() => {
-        const submitData = {
-          comment: editorContent,
-          score: form.getFieldValue('score'),
-          isEditingMode
-        };
-        onSubmit(submitData);
-      })
-      .catch(() => {
-        message.error('请填写完整的评分和评语');
-      });
+    try {
+      form.validateFields()
+        .then(() => {
+          const submitData = isScoringMode ? {
+            comment: editorContent || '',
+            score: form.getFieldValue('score') || 0,
+            isEditingMode
+          } : {
+            comment: editorContent || '',
+            isEditingMode
+          };
+          onSubmit(submitData);
+        })
+        .catch((err) => {
+          console.error('表单验证失败:', err);
+          message.error('请填写完整的评分和评语');
+        });
+    } catch (error) {
+      console.error('提交评阅出错:', error);
+      message.error('提交评阅失败，请重试');
+    }
   };
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,11 +59,12 @@ const GradingPanel = ({
   const handleNextPage = () => {
     setCurrentPage(currentPage + 1);
   };
-  const { paper, article } = useSelector(state => state.tasks);
-  const studentAnswer1 = article.response.items ? article.response.items[0].studentAnswers[0].studentAnswer : null;
-  const studentAnswer2 = article.response.items ? article.response.items[0].studentAnswers[0].studentAnswer : null;
-  const essayTitle1 = paper && paper[0].response ? paper[0].response.title : null;
-  const essayTitle2 = paper && paper[0].response ? paper[0].response.title : null;
+  const { paper = [], article = {} } = useSelector(state => state.tasks);
+  const isScoringMode = paperData.type === 1;
+  const items = article?.response?.items || [];
+  const studentAnswers = items[0]?.studentAnswers || [];
+  const studentAnswer = studentAnswers[0]?.studentAnswer || '';
+  const essayTitle = paper[0]?.response?.title || '';
 
   return (
     <Form form={form}>
@@ -64,28 +76,25 @@ const GradingPanel = ({
             style={{ boxShadow: 'none' }}
           >
             <div style={{ padding: 16 }}>
-              <h3>考生姓名：{paperData?.studentName || '未知'}</h3>
+              <h3>考生姓名：{paperData.studentName || '未知考生'}</h3>
             </div>
           </Card>
 
           {/* 显示作文内容 */}
           <div style={{ flex: 1, marginTop: '40px' }}>
-            {currentPage === 1 && (
-              <>
-                <h3 style={{ color: 'var(--text-color)' }}>作文标题1</h3>
-                <TextArea value={convertToText(essayTitle1) || ''} readOnly rows={3} style={{ marginBottom: '16px' }} />
-                <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
-                <TextArea value={convertToText(studentAnswer1) || ''} readOnly rows={10} />
-              </>
-            )}
-            {currentPage === 2 && (
-              <>
-                <h3 style={{ color: 'var(--text-color)' }}>作文标题2</h3>
-                <TextArea value={convertToText(essayTitle2) || ''} readOnly rows={3} style={{ marginBottom: '16px' }} />
-                <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
-                <TextArea value={convertToText(studentAnswer2) || ''} readOnly rows={10} />
-              </>
-            )}
+            <h3 style={{ color: 'var(--text-color)' }}>作文标题</h3>
+            <TextArea 
+              value={convertToText(essayTitle) || ''} 
+              readOnly 
+              rows={3} 
+              style={{ marginBottom: '16px' }} 
+            />
+            <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
+            <TextArea 
+              value={convertToText(studentAnswer) || ''} 
+              readOnly 
+              rows={10} 
+            />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
               <button onClick={handlePreviousPage} disabled={currentPage === 1}>
                 上一篇
@@ -104,37 +113,25 @@ const GradingPanel = ({
             title={isEditingMode ? "修改评语" : "评阅编辑"}
             style={{ flex: 2 }}
           >
-            <Form.Item
-              name="score"
-              label="评分"
-              rules={[
-                { required: true, message: '请输入评分' },
-                { type: 'number', message: '评分必须为数字' }
-              ]}
-            >
-              <ScoreInput value={form.getFieldValue('score')} onChange={(value) => form.setFieldsValue({ score: value })} />
-            </Form.Item>
-            <Form.Item
-              name="comment"
-              rules={[{ required: true, message: '请输入评语' }]}
-            >
-              <ReactQuill
-                theme="snow"
-                value={editorContent}
-                onChange={setEditorContent}
-                modules={{
-                  toolbar: [
-                    [{ 'header': [1, 2, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'color': [] }, { 'background': [] }],
-                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                    ['link', 'image'],
-                    ['clean']
-                  ]
-                }}
-                style={{ height: '160px', background: '#fff' }}
+            {isScoringMode ? (
+              <ScoringPanel
+                form={form}
+                editorContent={editorContent}
+                setEditorContent={setEditorContent}
+                onSubmit={handleSubmit}
+                onCancel={onCancel}
+                isEditingMode={isEditingMode}
               />
-            </Form.Item>
+            ) : (
+              <EvaluationPanel
+                form={form}
+                editorContent={editorContent}
+                setEditorContent={setEditorContent}
+                onSubmit={handleSubmit}
+                onCancel={onCancel}
+                isEditingMode={isEditingMode}
+              />
+            )}
           </Card>
 
           {/* 预览区 */}
@@ -179,6 +176,20 @@ const GradingPanel = ({
       </div>
     </Form>
   );
+};
+
+GradingPanel.propTypes = {
+  paperData: PropTypes.shape({
+    studentName: PropTypes.string,
+    id: PropTypes.number,
+    questions: PropTypes.array
+  }),
+  onSubmit: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  editorContent: PropTypes.string,
+  setEditorContent: PropTypes.func.isRequired,
+  setFlag: PropTypes.func,
+  isEditingMode: PropTypes.bool
 };
 
 export default GradingPanel;

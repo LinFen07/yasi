@@ -57,6 +57,7 @@ const AnswerTable = ({ answers, pagination }) => {
 };
 
 const ViewGradedPaper = ({ paperData = {}, onBack, onEdit, appraiseData }) => {
+  const isScoringMode = paperData.type === 1; // 1为评分模式，2为评价模式
   const { article } = useSelector(state => state.tasks);
   const [answers, setAnswers] = useState([]);
   const [currentAnswer, setCurrentAnswer] = useState(null);
@@ -72,66 +73,108 @@ const ViewGradedPaper = ({ paperData = {}, onBack, onEdit, appraiseData }) => {
       setAppraise(selectedAppraise);
       setScore(selectedScore);
 
-      // 获取2-10的答题数据
+      // 获取答题数据
       const fetchAnswers = async () => {
-        const ids = Array.from({length: 30}, (_, i) => i + 2); // 2-31
-        const results = await Promise.all(ids.map(id => dispatch(selectById(id))));
-        const validAnswers = results.map(res => res?.response).filter(Boolean);
-        setAnswers(validAnswers);
-        setCurrentAnswer(validAnswers[0] || null);
+        try {
+          if (paperData.questions) {
+            const questionIds = paperData.questions.map(q => q.id);
+            const results = await Promise.all(
+              questionIds.map(id => dispatch(selectById(id)))
+            );
+            const validAnswers = results
+              .map(res => res?.payload?.response)
+              .filter(Boolean);
+            setAnswers(validAnswers);
+            setCurrentAnswer(validAnswers[0] || null);
+          }
+        } catch (error) {
+          console.error('获取答题数据失败:', error);
+        }
       };
-      fetchAnswers();
+      
+      if (isScoringMode) {
+        fetchAnswers();
+      }
     }
   }, [paperData.id, appraiseData, article, dispatch]);
 
   return (
     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', gap: '16px' }}>
-        <Card
-          title="评分详情"
-          extra={
-            <Space>
-              <Button type="primary" onClick={onEdit}>修改</Button>
-              <Button onClick={onBack}>返回</Button>
-            </Space>
-          }
-          style={{ flex: 1 }}
-        >
-          <Descriptions column={1} bordered>
-            <Descriptions.Item label="学生姓名">{paperData.studentName || '未知'}</Descriptions.Item>
-            <Descriptions.Item label="得分"><ScoreInput value={score} disabled /></Descriptions.Item>
-            <Descriptions.Item label="评语"><div dangerouslySetInnerHTML={{ __html: appraise }} /></Descriptions.Item>
-          </Descriptions>
-        </Card>
-
-        <Card title="评分明细" style={{ flex: 1 }}>
-          <Table
-            columns={[
-              { title: '题号', dataIndex: 'number', key: 'number', align: 'center' },
-              { title: '分值', dataIndex: 'points', key: 'points', align: 'center' },
-              { title: '得分', dataIndex: 'score', key: 'score', align: 'center' }
-            ]}
-            dataSource={paperData.questions || []}
-            rowKey="id"
-            pagination={false}
-            size="small"
+      {isScoringMode && currentAnswer && (
+        <Card title="作文内容">
+          <h3 style={{ color: 'var(--text-color)' }}>作文标题</h3>
+          <div style={{ 
+            border: '1px solid #d9d9d9',
+            borderRadius: '4px',
+            padding: '16px',
+            marginBottom: '16px',
+            minHeight: '80px'
+          }}>
+            {currentAnswer.title || '无标题'}
+          </div>
+          <h3 style={{ color: 'var(--text-color)' }}>作文内容</h3>
+          <div 
+            style={{ 
+              border: '1px solid #d9d9d9',
+              borderRadius: '4px',
+              padding: '16px',
+              minHeight: '500px'
+            }}
+            dangerouslySetInnerHTML={{ __html: currentAnswer.studentAnswer || '无内容' }}
           />
         </Card>
-      </div>
-
-      <Card title="答题情况">
-        <AnswerTable 
-          answers={answers}
-          pagination={{
-            total: answers.length,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            pageSizeOptions: ['10', '20', '50'],
-            defaultPageSize: 10,
-            showTotal: total => `共 ${total} 条`
-          }}
-        />
+      )}
+      
+      <Card
+        title={isScoringMode ? "评分详情" : "评价详情"}
+        extra={
+          <Space>
+            <Button type="primary" onClick={onEdit}>修改</Button>
+            <Button onClick={onBack}>返回</Button>
+          </Space>
+        }
+      >
+        <Descriptions column={1} bordered>
+          <Descriptions.Item label="学生姓名">{paperData.studentName || '未知'}</Descriptions.Item>
+          {isScoringMode && (
+            <>
+              <Descriptions.Item label="得分"><ScoreInput value={score} disabled /></Descriptions.Item>
+              <Descriptions.Item label="评分明细">
+                <Table
+                  columns={[
+                    { title: '题号', dataIndex: 'number', key: 'number', align: 'center' },
+                    { title: '分值', dataIndex: 'points', key: 'points', align: 'center' },
+                    { title: '得分', dataIndex: 'score', key: 'score', align: 'center' }
+                  ]}
+                  dataSource={paperData.questions || []}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                />
+              </Descriptions.Item>
+            </>
+          )}
+          <Descriptions.Item label={isScoringMode ? "评语" : "综合评价"}>
+            <div dangerouslySetInnerHTML={{ __html: appraise }} />
+          </Descriptions.Item>
+        </Descriptions>
       </Card>
+
+      {isScoringMode && (
+        <Card title="答题情况">
+          <AnswerTable
+            answers={answers}
+            pagination={{
+              total: answers.length,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              pageSizeOptions: ['10', '20', '50'],
+              defaultPageSize: 10,
+              showTotal: total => `共 ${total} 条`
+            }}
+          />
+        </Card>
+      )}
     </div>
   );
 };
