@@ -49,7 +49,7 @@ const ScoringPanel = ({
 
         fetchTitle();
     }, [dispatch, count, paperData]);
-    // console.log(essayTitle)
+    console.log(essayTitle)
     return (
         <div style={{ display: 'flex', height: '100%', gap: '16px' }}>
             {/* 左侧：作文内容 */}
@@ -59,11 +59,17 @@ const ScoringPanel = ({
             >
                 <div style={{ marginBottom: 16 }}>
                     <h3 style={{ marginBottom: 8 }}>作文标题</h3>
-                    <TextArea
-                        value={convertToText(essayTitle) || ''}
-                        readOnly
-                        autoSize
-                        style={{ width: '100%', marginBottom: 16 }}
+                    <div
+                        dangerouslySetInnerHTML={{
+                            __html: essayTitle?.title || essayTitle?.content || '无标题'
+                        }}
+                        style={{
+                            border: '1px solid #f0f0f0',
+                            padding: 16,
+                            borderRadius: 4,
+                            background: '#fff',
+                            marginBottom: 16
+                        }}
                     />
                     <h3 style={{ marginBottom: 8 }}>作文内容</h3>
                     <TextArea
@@ -94,7 +100,21 @@ const ScoringPanel = ({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             <div><strong>姓名：</strong>{paperData?.studentName || '未知'}</div>
-                            <div><strong>原评分：</strong>{score || '未评分'}</div>
+                            <div style={{ marginBottom: 8 }}>
+                                <strong>原评分：</strong>
+                                <ScoreInput
+                                    value={score}
+                                    readOnly
+                                    disabled
+                                    style={{ 
+                                        width: '100%', 
+                                        marginTop: 4,
+                                        backgroundColor: '#f5f5f5',
+                                        cursor: 'not-allowed',
+                                        opacity: 0.8
+                                    }}
+                                />
+                            </div>
                         </div>
                         <Form form={form} onFinish={onSubmit}>
                             {count === 1 && (

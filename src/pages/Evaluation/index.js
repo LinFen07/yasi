@@ -64,11 +64,6 @@ const Evaluation = () => {
               paperName: `雅思模拟试卷${paperId}`,
               type: type,
               status: status,
-              questions: [
-                { id: 1, number: '一', points: 20, score: undefined, grader: undefined },
-                { id: 2, number: '二', points: 30, score: undefined, grader: undefined },
-                { id: 3, number: '三', points: 50, score: undefined, grader: undefined }
-              ],
               gradedTime: '',
             });
             setPapers(newPapers);
@@ -88,11 +83,13 @@ const Evaluation = () => {
   const [isEditingMode, setIsEditingMode] = useState(false);
   const handleGradeSubmit = async (values) => {
     setGradeLoading(true);
-    const score1 = values.score1 || form.getFieldValue('score1')
-    const score2 = values.score2 || form.getFieldValue('score2')
     try {
+      let score1 = undefined
+      let score2 = undefined
       let updatedPapers
       if (currentPaper.type === 1) {
+        score1 = values.score1 || form.getFieldValue('score1')
+        score2 = values.score2 || form.getFieldValue('score2')
         updatedPapers = papers.map(p => {
           if (p.id === currentPaper.id) {
             const newComposition = [...p.composition];
@@ -299,6 +296,12 @@ const Evaluation = () => {
                       render: (_, record) => record.studentName,
                     },
                     {
+                      title: '试卷名称',
+                      dataIndex: 'paperName',
+                      key: 'paperName',
+                      render: (_, record) => record.paperName,
+                    },
+                    {
                       title: '状态',
                       dataIndex: 'status',
                       key: 'status',
@@ -308,6 +311,7 @@ const Evaluation = () => {
                         </Tag>
                       )
                     },
+
                     {
                       title: '操作',
                       key: 'action',
@@ -324,7 +328,7 @@ const Evaluation = () => {
                               setEssayLoading(false);
                             }
                           }}>
-                          评阅
+                          修改
                         </Button>
                       ),
                     },

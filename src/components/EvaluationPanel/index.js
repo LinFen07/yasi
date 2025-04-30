@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Flex } from 'antd';
+import { useNavigate } from "react-router-dom";
+import { Flex, message, Input } from 'antd';
 import PropTypes from 'prop-types';
 import CustomReactQuill from '../CustomReactQuill';
 import 'react-quill/dist/quill.snow.css';
@@ -7,6 +8,7 @@ import { Form, Card, Button, Table, Carousel, Tag, Spin, Drawer } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { getStudentsAnswers, getOriginalTitel } from '../../store/tasks';
+import { putAppraise } from '../../utils/appraise';
 
 const EvaluationPanel = ({
     form,
@@ -16,11 +18,13 @@ const EvaluationPanel = ({
     onCancel,
     isEditingMode,
     paperData,
-    answers: initialAnswers = []
+    answers: initialAnswers = [],
+    setViewMode
 }) => {
     const [answers, setAnswers] = useState(initialAnswers);
     const [loading, setLoading] = useState(false);
     const dispatch = useDispatch();
+    const disnavigate = useNavigate();
 
     useEffect(() => {
         console.log('组件挂载/更新，检查useEffect执行');
@@ -83,7 +87,8 @@ const EvaluationPanel = ({
                                     score: (group.scores.reduce((a, b) => a + b, 0) / group.scores.length).toFixed(1),
                                     questionDetail: detailResponse.title ||
                                         '无题目详情',
-                                    originalId: group.questionId
+                                    originalId: group.questionId,
+                                    items: detailResponse.items || []
                                 };
                             } catch (err) {
                                 console.error(`获取题目${group.questionId}详情失败:`, err);
@@ -202,9 +207,27 @@ const EvaluationPanel = ({
         (safePage - 1) * pageSize,
         safePage * pageSize
     );
+    const handleDetailClose = async (values) => {
 
+        try {
+            const tasks = JSON.parse(localStorage.getItem('tasks'));
+            const examPaperId = tasks?.response?.items?.[0]?.examPaperId;
+            if (!examPaperId) {
+                message.error('无法获取试卷ID');
+                return;
+            }
+
+            await dispatch(putAppraise(values.comment, examPaperId));
+            message.success('评价提交成功');
+            onSubmit();
+        } catch (error) {
+            console.error('提交失败:', error);
+            message.error('评价提交失败');
+        }
+
+    }
     console.log('当前页码:', safePage, '总页数:', totalPages, '当前页数据:', currentAnswers);
-
+    console.log(111, paperData)
     return (
         <Form form={form} onFinish={onSubmit}>
             <div style={{
@@ -397,6 +420,24 @@ const EvaluationPanel = ({
                                 />
                             </Card>
                             <Card title={isEditingMode ? "修改评价" : "撰写评价"} style={{ flex: 1 }}>
+                                <div style={{ marginBottom: 8 }}>
+                                    <strong>原评价：</strong>
+                                    <Input
+                                        value={paperData?.studentsInfo?.appraise}
+                                        readOnly
+                                        disabled
+                                        // dangerouslySetInnerHTML={{
+                                        //     __html: editorContent
+                                        // }}
+                                        style={{
+                                            width: '100%',
+                                            marginTop: 4,
+                                            backgroundColor: '#f5f5f5',
+                                            cursor: 'not-allowed',
+                                            opacity: 0.8
+                                        }}
+                                    />
+                                </div>
                                 <Form.Item
                                     name="comment"
                                     label=""
@@ -430,6 +471,8 @@ const EvaluationPanel = ({
                     <Button
                         type="primary"
                         htmlType="submit"
+                    // onsubmit={() => setViewMode('list')}
+                    // onClick={() => handleDetailClose()}
                     >
                         {isEditingMode ? '保存修改' : '提交评价'}
                     </Button>
@@ -474,6 +517,32 @@ const EvaluationPanel = ({
                             />
                         </div>
                     </div>
+                    {currentDetail.items && (
+                        <div style={{ marginTop: 24 }}>
+                            <h4>题目选项</h4>
+                            <div style={{
+                                border: '1px solid #f0f0f0',
+                                padding: 16,
+                                borderRadius: 4,
+                                background: '#fff'
+                            }}>
+                                {currentDetail.items.map((item, index) => (
+                                    <div key={index} style={{ marginBottom: 8 }}>
+                                        <strong>{String.fromCharCode(65 + index)}. </strong>
+                                        <span
+                                            dangerouslySetInnerHTML={{
+                                                __html: item.content || '无选项内容'
+                                            }}
+                                            style={{
+                                                fontSize: '15px',
+                                                lineHeight: 1.6
+                                            }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </Drawer>
             )}
         </Form>
