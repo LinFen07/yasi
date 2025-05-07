@@ -178,7 +178,7 @@ const Evaluation = () => {
             setViewMode('list');
           }
           setGradeLoading(false);
-          setEditorContent('');
+          setEditorContent(''); // 提交成功后清空编辑器内容
         }
       }
     } catch (error) {

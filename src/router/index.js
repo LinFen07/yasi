@@ -3,6 +3,7 @@ import Login from "../pages/Login";
 import Evaluation from "../pages/Evaluation";
 import StudentList from "../pages/StudentList"
 import Home from "../pages/Home"
+import Apparise from "../pages/Apparise"
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 const router = createBrowserRouter([
@@ -23,8 +24,8 @@ const router = createBrowserRouter([
                 element: <Evaluation />
             },
             {
-                path: '/studentList',
-                element: <StudentList />
+                path: '/apparise',
+                element: <Apparise />
             }
         ]
     },

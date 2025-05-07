@@ -15,6 +15,10 @@ import { clearUserInfo } from '../../store/user';
 import axios from 'axios';
 const { Header, Sider, Content } = Layout;
 
+// 保存当前路由到localStorage
+const saveCurrentRoute = (path) => {
+    localStorage.setItem('lastRoute', path);
+};
 
 const items = [
     {
@@ -23,10 +27,15 @@ const items = [
         icon: <HomeOutlined />,
     },
     {
-        label: '考试阅卷',
+        label: '作文评阅',
         key: '/evaluation',
         icon: <EditOutlined />,
     },
+    {
+        label: '试卷评价',
+        key: '/apparise',
+        icon: <EditOutlined />,
+    }
 ];
 
 const GeekLayout = () => {
@@ -34,10 +43,19 @@ const GeekLayout = () => {
     const location = useLocation();
     const dispatch = useDispatch();
     const [collapsed, setCollapsed] = useState(false);
-    // 获取用户信息
+
+    // 初始化时检查保存的路由
     useEffect(() => {
-        // dispatch(fetchUserInfo());
-    }, [dispatch]);
+        const lastRoute = localStorage.getItem('lastRoute');
+        if (lastRoute && lastRoute !== location.pathname) {
+            navigate(lastRoute);
+        }
+    }, []);
+
+    // 路由变化时保存当前路由
+    useEffect(() => {
+        saveCurrentRoute(location.pathname);
+    }, [location.pathname]);
 
     const name = useSelector((state) => state.user.userInfo.name);
 

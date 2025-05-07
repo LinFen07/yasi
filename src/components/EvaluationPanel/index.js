@@ -26,107 +26,86 @@ const EvaluationPanel = ({
     const dispatch = useDispatch();
     const disnavigate = useNavigate();
 
+    const [isFetching, setIsFetching] = useState(false);
+
     useEffect(() => {
-        console.log('组件挂载/更新，检查useEffect执行');
-        console.log('当前paperData:', paperData);
-        console.log('当前initialAnswers:', initialAnswers);
+        if (!paperData?.studentId || !paperData?.paperId || isFetching) {
+            return;
+        }
 
         const fetchAnswers = async () => {
-            console.log('开始获取学生答案...');
-            if (paperData?.studentId && paperData?.paperId) {
-                console.log('检测到有效的paperData，包含studentId和paperId');
-                setLoading(true);
-                try {
-                    console.log('准备调用getStudentsAnswers...');
-                    const studentsInfo = {
-                        studentId: paperData.studentId,
-                        paperId: paperData.paperId
-                    };
-                    console.log('调用参数:', studentsInfo);
+            setIsFetching(true);
+            setLoading(true);
+            try {
+                const studentsInfo = {
+                    studentId: paperData.studentId,
+                    paperId: paperData.paperId
+                };
 
-                    const response = await dispatch(getStudentsAnswers(studentsInfo));
-                    console.log('API响应:', response);
+                const response = await dispatch(getStudentsAnswers(studentsInfo));
+                console.log('API响应:', response);
 
-                    if (!response) {
-                        console.error('无效的API响应格式:', response);
-                        setAnswers([]);
-                        return;
-                    }
-
-                    // 按照questionId分组合并
-                    const groupedResponse = response.reduce((acc, item) => {
-                        if (!acc[item.questionId]) {
-                            acc[item.questionId] = {
-                                ...item,
-                                answers: [item.studentAnswer || '未作答'],
-                                scores: [item.score || 0],
-                                isCorrects: [item.isCorrect || 0]
-                            };
-                        } else {
-                            acc[item.questionId].answers.push(item.studentAnswer || '未作答');
-                            acc[item.questionId].scores.push(item.score || 0);
-                            acc[item.questionId].isCorrects.push(item.isCorrect || 0);
-                        }
-                        return acc;
-                    }, {});
-
-                    console.log('分组合并后的数据:', groupedResponse);
-
-                    console.log('开始获取题目详情...');
-                    const answersWithDetails = await Promise.all(
-                        Object.values(groupedResponse).map(async (group) => {
-                            console.log(`获取题目${group.questionId}详情...`);
-                            try {
-                                const detailResponse = await dispatch(getOriginalTitel(group.questionId));
-                                console.log(`题目${group.questionId}详情响应:`, detailResponse);
-                                return {
-                                    id: group.questionId,
-                                    studentAnswer: group.answers.join(' / '),
-                                    correctAnswer: group.correctAnswer || '无',
-                                    isCorrect: group.isCorrects.includes(1) ? 1 : 0,
-                                    score: (group.scores.reduce((a, b) => a + b, 0) / group.scores.length).toFixed(1),
-                                    questionDetail: detailResponse.title ||
-                                        '无题目详情',
-                                    originalId: group.questionId,
-                                    items: detailResponse.items || []
-                                };
-                            } catch (err) {
-                                console.error(`获取题目${group.questionId}详情失败:`, err);
-                                return {
-                                    id: group.questionId,
-                                    studentAnswer: group.answers.join(' / '),
-                                    correctAnswer: group.correctAnswer || '无',
-                                    isCorrect: group.isCorrects.includes(1) ? 1 : 0,
-                                    score: (group.scores.reduce((a, b) => a + b, 0) / group.scores.length).toFixed(1),
-                                    questionDetail: '获取详情失败'
-                                };
-                            }
-                        })
-                    );
-                    console.log('最终答案数据:', answersWithDetails);
-                    setAnswers(answersWithDetails);
-                } catch (error) {
-                    console.error('获取学生答案过程中出错:', error);
+                if (!response) {
+                    console.error('无效的API响应格式:', response);
                     setAnswers([]);
-                } finally {
-                    setLoading(false);
-                    console.log('数据加载完成');
+                    return;
                 }
-            } else {
-                console.warn('缺少必要的studentId或paperId，当前paperData:', paperData);
+
+                const groupedResponse = response.reduce((acc, item) => {
+                    if (!acc[item.questionId]) {
+                        acc[item.questionId] = {
+                            ...item,
+                            answers: [item.studentAnswer || '未作答'],
+                            scores: [item.score || 0],
+                            isCorrects: [item.isCorrect || 0]
+                        };
+                    } else {
+                        acc[item.questionId].answers.push(item.studentAnswer || '未作答');
+                        acc[item.questionId].scores.push(item.score || 0);
+                        acc[item.questionId].isCorrects.push(item.isCorrect || 0);
+                    }
+                    return acc;
+                }, {});
+
+                const answersWithDetails = await Promise.all(
+                    Object.values(groupedResponse).map(async (group) => {
+                        try {
+                            const detailResponse = await dispatch(getOriginalTitel(group.questionId));
+                            return {
+                                id: group.questionId,
+                                studentAnswer: group.answers.join(' / '),
+                                correctAnswer: group.correctAnswer || '无',
+                                isCorrect: group.isCorrects.includes(1) ? 1 : 0,
+                                score: (group.scores.reduce((a, b) => a + b, 0) / group.scores.length).toFixed(1),
+                                questionDetail: detailResponse.title || '无题目详情',
+                                originalId: group.questionId,
+                                items: detailResponse.items || []
+                            };
+                        } catch (err) {
+                            console.error(`获取题目详情失败:`, err);
+                            return {
+                                id: group.questionId,
+                                studentAnswer: group.answers.join(' / '),
+                                correctAnswer: group.correctAnswer || '无',
+                                isCorrect: group.isCorrects.includes(1) ? 1 : 0,
+                                score: (group.scores.reduce((a, b) => a + b, 0) / group.scores.length).toFixed(1),
+                                questionDetail: '获取详情失败'
+                            };
+                        }
+                    })
+                );
+                setAnswers(answersWithDetails);
+            } catch (error) {
+                console.error('获取学生答案失败:', error);
                 setAnswers([]);
+            } finally {
+                setLoading(false);
+                setIsFetching(false);
             }
         };
+
         fetchAnswers();
-        console.log('检查initialAnswers:', initialAnswers);
-        if (initialAnswers.length === 0) {
-            console.log('initialAnswers为空，开始获取答案');
-            fetchAnswers();
-        } else {
-            console.log('使用传入的初始答案:', initialAnswers);
-            setAnswers(initialAnswers);
-        }
-    }, [dispatch, paperData, initialAnswers]);
+    }, [dispatch, paperData?.studentId, paperData?.paperId]);
 
     // 添加mount日志
     useEffect(() => {
@@ -208,7 +187,6 @@ const EvaluationPanel = ({
         safePage * pageSize
     );
     const handleDetailClose = async (values) => {
-
         try {
             const tasks = JSON.parse(localStorage.getItem('tasks'));
             const examPaperId = tasks?.response?.items?.[0]?.examPaperId;
@@ -217,9 +195,17 @@ const EvaluationPanel = ({
                 return;
             }
 
+            // 保存编辑器内容
+            const commentContent = editorContent;
+
             await dispatch(putAppraise(values.comment, examPaperId));
             message.success('评价提交成功');
+
+            // 提交完成后手动调用onSubmit
             onSubmit();
+
+            // 保留编辑器内容
+            setEditorContent(commentContent);
         } catch (error) {
             console.error('提交失败:', error);
             message.error('评价提交失败');
@@ -427,7 +413,7 @@ const EvaluationPanel = ({
                                         readOnly
                                         disabled
                                         // dangerouslySetInnerHTML={{
-                                        //     __html: editorContent
+                                        //     __html: paperData?.studentsInfo?.appraise
                                         // }}
                                         style={{
                                             width: '100%',

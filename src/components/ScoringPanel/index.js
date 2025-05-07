@@ -141,6 +141,10 @@ const ScoringPanel = ({
                                     <ScoreInput style={{ width: '100%' }} />
                                 </Form.Item>
                             )}
+                            <div style={{ marginBottom: '16px' }}>
+                                <h3 style={{ marginBottom: '8px' }}>作文评价</h3>
+                                <TextArea rows={4} placeholder="请输入对作文的评价" />
+                            </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
                                 <Button onClick={onCancel}>返回</Button>
                                 <Form.Item>

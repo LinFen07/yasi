@@ -54,6 +54,7 @@ const GradingPanel = ({
         const submitData = {
           comment: editorContent,
           score: form.getFieldValue('score'),
+          essayComment: form.getFieldValue('essayComment'),
           isEditingMode
         };
         onSubmit(submitData);
@@ -100,6 +101,13 @@ const GradingPanel = ({
                 <TextArea value={convertToText(essayTitle1) || ''} readOnly rows={3} style={{ marginBottom: '16px' }} />
                 <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
                 <TextArea value={convertToText(studentAnswer1) || ''} readOnly rows={10} />
+                <Form.Item
+                  name="essayComment"
+                  label="作文评价"
+                  rules={[{ required: true, message: '请输入作文评价' }]}
+                >
+                  <TextArea rows={4} placeholder="请输入对作文的评价" />
+                </Form.Item>
               </>
             )}
             {currentPage === 2 && (
@@ -108,6 +116,13 @@ const GradingPanel = ({
                 <TextArea value={convertToText(essayTitle2) || ''} readOnly rows={3} style={{ marginBottom: '16px' }} />
                 <h3 style={{ color: 'var(--text-color)' }}>学生答案</h3>
                 <TextArea value={convertToText(studentAnswer2) || ''} readOnly rows={10} />
+                <Form.Item
+                  name="essayComment"
+                  label="作文评价"
+                  rules={[{ required: true, message: '请输入作文评价' }]}
+                >
+                  <TextArea rows={4} placeholder="请输入对作文的评价" />
+                </Form.Item>
               </>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
