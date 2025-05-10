@@ -10,6 +10,18 @@ import { useDispatch } from 'react-redux';
 import { getStudentsAnswers, getOriginalTitel } from '../../store/tasks';
 import { putAppraise } from '../../utils/appraise';
 
+// 转换HTML内容为纯文本
+const convertHtmlToText = (html) => {
+    if (!html) return '';
+    try {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        return doc.body.textContent || '';
+    } catch (e) {
+        console.error('HTML解析失败:', e);
+        return html;
+    }
+};
+
 const EvaluationPanel = ({
     form,
     editorContent,
@@ -43,10 +55,10 @@ const EvaluationPanel = ({
                 };
 
                 const response = await dispatch(getStudentsAnswers(studentsInfo));
-                console.log('API响应:', response);
+                // console.log('API响应:', response);
 
                 if (!response) {
-                    console.error('无效的API响应格式:', response);
+                    // console.error('无效的API响应格式:', response);
                     setAnswers([]);
                     return;
                 }
@@ -82,7 +94,7 @@ const EvaluationPanel = ({
                                 items: detailResponse.items || []
                             };
                         } catch (err) {
-                            console.error(`获取题目详情失败:`, err);
+                            // console.error(`获取题目详情失败:`, err);
                             return {
                                 id: group.questionId,
                                 studentAnswer: group.answers.join(' / '),
@@ -96,7 +108,7 @@ const EvaluationPanel = ({
                 );
                 setAnswers(answersWithDetails);
             } catch (error) {
-                console.error('获取学生答案失败:', error);
+                // console.error('获取学生答案失败:', error);
                 setAnswers([]);
             } finally {
                 setLoading(false);
@@ -205,15 +217,15 @@ const EvaluationPanel = ({
             onSubmit();
 
             // 保留编辑器内容
-            setEditorContent(commentContent);
+            setEditorContent('');
         } catch (error) {
             console.error('提交失败:', error);
             message.error('评价提交失败');
         }
 
     }
-    console.log('当前页码:', safePage, '总页数:', totalPages, '当前页数据:', currentAnswers);
-    console.log(111, paperData)
+    // console.log('当前页码:', safePage, '总页数:', totalPages, '当前页数据:', currentAnswers);
+    // console.log(111, paperData)
     return (
         <Form form={form} onFinish={onSubmit}>
             <div style={{
@@ -230,15 +242,16 @@ const EvaluationPanel = ({
                     style={{
                         display: 'flex',
                         height: 'calc(100vh - 180px)',
-                        position: 'relative'
+                        position: 'relative',
+                        height: '520px'
                     }}
-
                 >
                     {isEditingMode ? (
                         <>
                             {/* 编辑模式下显示完整布局 */}
                             <div style={{
                                 width: '480px',
+                                height: '500px',
                                 paddingRight: '8px',
                                 overflow: 'hidden',
                                 display: 'flex',
@@ -391,7 +404,7 @@ const EvaluationPanel = ({
                         flexShrink: 0
                     }}>
                         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
-                            <Card title="评价预览" style={{ flex: 1 }}>
+                            {/* <Card title="评价预览" style={{ flex: 1 }}>
                                 <div
                                     className="ql-editor"
                                     style={{
@@ -404,23 +417,26 @@ const EvaluationPanel = ({
                                         __html: editorContent || '<p style="color:#999; text-align:center; margin-top:120px">请在右侧编辑评价内容</p>'
                                     }}
                                 />
-                            </Card>
+                            </Card> */}
                             <Card title={isEditingMode ? "修改评价" : "撰写评价"} style={{ flex: 1 }}>
                                 <div style={{ marginBottom: 8 }}>
                                     <strong>原评价：</strong>
-                                    <Input
-                                        value={paperData?.studentsInfo?.appraise}
-                                        readOnly
-                                        disabled
-                                        // dangerouslySetInnerHTML={{
-                                        //     __html: paperData?.studentsInfo?.appraise
-                                        // }}
+                                    <div
+                                        dangerouslySetInnerHTML={{
+                                            __html: paperData?.studentsInfo?.appraise || ''
+                                        }}
                                         style={{
                                             width: '100%',
-                                            marginTop: 4,
-                                            backgroundColor: '#f5f5f5',
-                                            cursor: 'not-allowed',
-                                            opacity: 0.8
+                                            marginTop: 8,
+                                            padding: '12px',
+                                            border: '1px solid #f0f0f0',
+                                            borderRadius: '4px',
+                                            backgroundColor: '#fafafa',
+                                            minHeight: '32px',
+                                            maxHeight: '150px',
+                                            overflowY: 'auto',
+                                            lineHeight: 1.6,
+                                            fontSize: '14px'
                                         }}
                                     />
                                 </div>
@@ -443,7 +459,13 @@ const EvaluationPanel = ({
                                                 ['clean']
                                             ]
                                         }}
-                                        style={{ height: 'calc(100% - 42px)', background: '#fff' }}
+                                        placeholder="请输入对试卷整体的评价..."
+                                        style={{
+                                            height: '250px',
+                                            border: '1px solid #d9d9d9',
+                                            borderRadius: '4px',
+                                            background: '#fff'
+                                        }}
                                     />
                                 </Form.Item>
                             </Card>
@@ -451,7 +473,7 @@ const EvaluationPanel = ({
                     </div>
                 </div>
 
-                {/* 操作按钮 */}
+                {/* 操作按钮
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
                     <Button onClick={onCancel}>取消</Button>
                     <Button
@@ -462,7 +484,7 @@ const EvaluationPanel = ({
                     >
                         {isEditingMode ? '保存修改' : '提交评价'}
                     </Button>
-                </div>
+                </div> */}
             </div>
             {currentDetail && (
                 <Drawer

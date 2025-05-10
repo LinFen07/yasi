@@ -11,6 +11,7 @@ const tasksStore = createSlice({
     article: [],
     paper: [],
     appraise: [],
+    paperName: []
   },
   reducers: {
     setTasks(state, action) {
@@ -65,10 +66,15 @@ const tasksStore = createSlice({
       }
       localStorage.setItem('article', JSON.stringify(state.article));
     },
+    setPaperName(state, action) {
+      // console.log(111111111111)
+      state.paperName = action.payload
+      localStorage.setItem('paperName', JSON.stringify(action.payload))
+    }
   }
 })
 
-const { setTasks, setCurrentTask, updateTask, setPaper, setArticle, setAppraise, addAppraise, setConfrim, updatePaperStatus, addScore, setStudentsInfo, setStudentsAnswers, setComposition } = tasksStore.actions;
+const { setTasks, setCurrentTask, updateTask, setPaper, setArticle, setAppraise, addAppraise, setConfrim, updatePaperStatus, addScore, setStudentsInfo, setStudentsAnswers, setComposition, setPaperName } = tasksStore.actions;
 const fetchArticle = (userId, id) => {  // 接收参数 
   return async (dispatch) => {
     try {
@@ -267,6 +273,37 @@ const getOriginalTitel = (questionId) => {
     }
   }
 }
+
+//获取试卷名字
+const getPaperName = () => {
+  return async (dispatch) => {
+    try {
+      const response = await axios.post(
+        'http://120.24.144.113:8668/api/teacher/exam/paper/pageList',
+        {
+          pageIndex: 0,
+          pageSize: 1,
+          paperType: 1
+        }
+      );
+      const count = response.data.response.total
+      console.log(count)
+      const response_2 = await axios.post(
+        'http://120.24.144.113:8668/api/teacher/exam/paper/pageList',
+        {
+          pageIndex: 0,
+          pageSize: count,
+          paperType: 1
+        }
+      );
+      const paperName = response_2.data.response.list
+      dispatch(setPaperName(paperName))
+    } catch (error) {
+      console.error('获取试卷列表失败:', error);
+      throw error;
+    }
+  };
+}
 // 导出相关 action
-export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle, getAppraise, getNewAppraise, getConfrim, updatePaperStatus, getTask, getStudentsInfo, getStudentsAnswers, getComposition, selectById, selectNameById, getOriginalTitel };
+export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle, getAppraise, getNewAppraise, getConfrim, updatePaperStatus, getTask, getStudentsInfo, getStudentsAnswers, getComposition, selectById, selectNameById, getOriginalTitel, getPaperName };
 export default tasksStore.reducer;

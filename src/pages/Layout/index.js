@@ -31,11 +31,6 @@ const items = [
         key: '/evaluation',
         icon: <EditOutlined />,
     },
-    {
-        label: '试卷评价',
-        key: '/apparise',
-        icon: <EditOutlined />,
-    }
 ];
 
 const GeekLayout = () => {

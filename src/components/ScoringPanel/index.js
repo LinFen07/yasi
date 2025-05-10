@@ -24,11 +24,11 @@ const ScoringPanel = ({
     isEditingMode,
     paperData,
 }) => {
-    const { paper = [], article = {} } = useSelector(state => state.tasks);
+    // const { paper = [], article = {} } = useSelector(state => state.tasks);
     const [count, setCount] = useState(1)
     const [essayTitle, setEssayTitle] = useState('');
     const dispatch = useDispatch()
-    const items = article?.response?.items || [];
+    // const items = article?.response?.items || [];
     const studentAnswer_1 = paperData?.composition[0]?.studentAnswer ? paperData.composition[0].studentAnswer : '暂无'
     const studentAnswer_2 = paperData?.composition[1]?.studentAnswer ? paperData.composition[1].studentAnswer : '暂无'
     const studentAnswer = count === 1 ? studentAnswer_1 : studentAnswer_2
@@ -49,12 +49,11 @@ const ScoringPanel = ({
 
         fetchTitle();
     }, [dispatch, count, paperData]);
-    console.log(essayTitle)
+    // console.log(essayTitle)
     return (
         <div style={{ display: 'flex', height: '100%', gap: '16px' }}>
             {/* 左侧：作文内容 */}
             <Card
-                title="作文内容"
                 style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
             >
                 <div style={{ marginBottom: 16 }}>
@@ -141,10 +140,10 @@ const ScoringPanel = ({
                                     <ScoreInput style={{ width: '100%' }} />
                                 </Form.Item>
                             )}
-                            <div style={{ marginBottom: '16px' }}>
+                            {/* <div style={{ marginBottom: '16px' }}>
                                 <h3 style={{ marginBottom: '8px' }}>作文评价</h3>
                                 <TextArea rows={4} placeholder="请输入对作文的评价" />
-                            </div>
+                            </div> */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
                                 <Button onClick={onCancel}>返回</Button>
                                 <Form.Item>
