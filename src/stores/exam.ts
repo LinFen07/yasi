@@ -1,10 +1,10 @@
-import {  makeAutoObservable} from "mobx";
+import {  makeAutoObservable, reaction} from "mobx";
 import { Exam, ExamType, correct} from '@/typings/exam'
 
 class ExamStore {
-  constructor() {
-    makeAutoObservable(this);
-  }
+  // constructor() {
+  //   makeAutoObservable(this);
+  // }
   //当前试卷ID
   paperId = 0;
 
@@ -43,6 +43,66 @@ class ExamStore {
   //写作答案
   correctWritte: Array<string> = Array(2).fill('');
 
+  constructor() {
+    makeAutoObservable(this);
+    this.loadFromLocalStorage();
+
+    // 自动保存到 localStorage
+    reaction(
+      () => JSON.stringify(this),
+      () => {
+        this.saveToLocalStorage();
+      }
+    );
+  }
+
+  saveToLocalStorage() {
+    const data = {
+      paperId: this.paperId,
+      currentExamIndex: this.currentExamIndex,
+      currentExamTitle: this.currentExamTitle,
+      FontSize: this.FontSize,
+      scoreTag: this.scoreTag,
+      listenAudio: this.listenAudio,
+      exam: this.exam,
+      listenExam: this.listenExam,
+      readExam: this.readExam,
+      wirrteExam: this.wirrteExam,
+      currentExam: this.currentExam,
+      correctListenAnswer: this.correctListenAnswer,
+      correctListen: this.correctListen,
+      studentListenAnswers: this.studentListenAnswers,
+      studentReadAnswers: this.studentReadAnswers,
+      correctRead: this.correctRead,
+      correctWritte: this.correctWritte,
+    };
+    localStorage.setItem('examStore', JSON.stringify(data));
+  }
+
+  loadFromLocalStorage() {
+    const data = localStorage.getItem('examStore');
+    if (data) {
+      const parsedData = JSON.parse(data);
+      this.paperId = parsedData.paperId || 0;
+      this.currentExamIndex = parsedData.currentExamIndex || 1;
+      this.currentExamTitle = parsedData.currentExamTitle || 'Part1:';
+      this.FontSize = parsedData.FontSize || 18;
+      this.scoreTag = parsedData.scoreTag || '听力报告';
+      this.listenAudio = parsedData.listenAudio || '';
+      this.exam = parsedData.exam || [];
+      this.listenExam = parsedData.listenExam || [];
+      this.readExam = parsedData.readExam || [];
+      this.wirrteExam = parsedData.wirrteExam || [];
+      this.currentExam = parsedData.currentExam || [];
+      this.correctListenAnswer = parsedData.correctListenAnswer || [];
+      this.correctListen = parsedData.correctListen || [];
+      this.studentListenAnswers = parsedData.studentListenAnswers || Array(50).fill('');
+      this.studentReadAnswers = parsedData.studentReadAnswers || Array(50).fill('');
+      this.correctRead = parsedData.correctRead || [];
+      this.correctWritte = parsedData.correctWritte || Array(2).fill('');
+    }
+  }
+
   //改变当前试卷
   changeCurrentExam(exam: Array<Exam>) {
     this.currentExam = exam;
@@ -64,6 +124,7 @@ class ExamStore {
       this.readExam = this.exam.slice(4,7);
       this.wirrteExam = this.exam.slice(7);
     } 
+    this.saveToLocalStorage();
   }
 
   getListenExam(){

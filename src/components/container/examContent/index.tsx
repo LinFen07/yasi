@@ -7,6 +7,7 @@ import { Input } from 'antd';
 import ListenQuestions from '@/components/basic/listenQuestions';
 import ReadQuestions from '@/components/basic/readQuestions'
 import WritteQuestions from '@/components/basic/writteQuestions';
+import { useEventListener } from '@/hooks/core/useEventListener';
 
 const { TextArea } = Input;
 
@@ -58,6 +59,13 @@ const examContent = observer((props: propType) => {
     setFontSize(stores.ExamStore.FontSize);
   },[stores.ExamStore.FontSize]);
 
+  const debounce = (func: any, delay: number) => {
+    let timer: any;
+    return (...args: any[]) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => func(...args), delay);
+    };
+  };
 
   const handleSelection = () => {
     if(noteVisible) return;
@@ -70,14 +78,6 @@ const examContent = observer((props: propType) => {
         setMenuVisible(true);
     }
   };
-
-  useEffect(() => {
-      document.addEventListener('mouseup', handleSelection);
-    
-    return () => {
-        document.removeEventListener('mouseup', handleSelection);
-    };
-  }, [handleSelection]);
 
   const handleCloseMenu = useCallback((e: any) => {
     if(e.target.className == 'flag') return;
@@ -92,14 +92,10 @@ const examContent = observer((props: propType) => {
       setNoteVisible(false);
     }
   },[]);
+  const handleSelectionDebounced = debounce(handleSelection, 300);
 
-  useEffect(() => {
-    document.addEventListener('click', handleCloseMenu);
-
-    return () => {
-      document.removeEventListener('click', handleCloseMenu);
-    };
-  }, []);
+  useEventListener('mouseup', handleSelectionDebounced, document);
+  useEventListener('click',handleCloseMenu, document);
 
   const handleNoteText = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setNoteText(e.target.value);
@@ -223,6 +219,49 @@ const examContent = observer((props: propType) => {
     }
     setNoteText('');
   }
+
+  // const longTaskObserver = new PerformanceObserver(list => {
+  //   console.log('长任务列表:', list.getEntries());
+  //   list.getEntries().forEach(entry => {
+  //     if (entry.duration > 65) { // 超过200ms的任务
+  //       console.log('长任务:', {
+  //         duration: entry.duration,
+  //         start: entry.startTime,
+  //       });
+  //     }
+  //   });
+  // });
+
+  // longTaskObserver.observe({ type: 'longtask', buffered: true });
+
+//   let totalFrames = 0;
+// let jankyFrames = 0;
+
+// 通过 requestAnimationFrame 监控帧率
+// function monitorFrames() {
+//   let lastTime = performance.now();
+  
+//   function checkFrame(now: any) {
+//     const frameTime = now - lastTime;
+//     totalFrames++;
+    
+//     // 帧耗时超过16.7ms（60fps）视为卡顿
+//     if (frameTime > 16.7) {
+//       jankyFrames += Math.min(1, (frameTime - 16.7) / 16.7);
+//     }
+    
+//     lastTime = now;
+//     requestAnimationFrame(checkFrame);
+//   }
+  
+//   requestAnimationFrame(checkFrame);
+// }
+
+// monitorFrames()
+// setInterval(() => {
+//   // 每隔1秒输出一次统计信息  
+// console.log(`总帧数: ${totalFrames}, 卡顿帧数: ${jankyFrames}`);
+// }, 1000);
 
   return (
     <div className='pageContent'>

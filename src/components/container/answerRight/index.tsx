@@ -1,4 +1,3 @@
-
 import './index.scss';
 import ScoreLie from '@/components/basic/scoreLie';
 
@@ -7,20 +6,21 @@ import type { TableProps } from 'antd';
 import stores from '@/stores';
 import { observer } from 'mobx-react';
 import { useEffect, useState } from 'react';
+import { getAnswerList } from '@/api/studentAnswer';
 
 interface DataType {
   key: string;
-  question: number;
+  questionId: number;
   answer: string;
-  tag: string;
-  myAn: string;
-  score: string;
+  isCorrect: number;
+  studentAnswer: string;
+  score: number;
 }
 
 const columns: TableProps<DataType>['columns'] = [
   {
     title: '题目',
-    dataIndex: 'question',
+    dataIndex: 'questionId',
     key: '题目',
   },
   {
@@ -32,10 +32,9 @@ const columns: TableProps<DataType>['columns'] = [
     title: '作答情况',
     key: '作答情况',
     dataIndex: 'tags',
-    render: (_, { tag }) => (
-
-      <Tag color={tag === 'true' ? 'green' : 'volcano'} key={tag}>
-        {tag.toUpperCase()}
+    render: (_, { isCorrect }) => (
+      <Tag color={isCorrect === 1 ? 'green' : 'volcano'} key={isCorrect}>
+        {isCorrect === 1 ? 'TRUE' : 'FALSE'}
       </Tag>
     ),
   },
@@ -44,7 +43,16 @@ const columns: TableProps<DataType>['columns'] = [
     key: '我的答案',
     render: (_, record) => (
       <Space size="middle">
-        <p>{record.myAn}</p>
+        <p
+          style={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '120px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {record.studentAnswer}
+        </p>
       </Space>
     ),
   },
@@ -60,40 +68,88 @@ const columns: TableProps<DataType>['columns'] = [
   },
 ];
 
- function AnswerRight() {
-  const [data, setData] = useState<DataType[]>(stores.ExamStore.correctListen);
+
+function AnswerRight() {
+  const [data, setData] = useState<DataType[]>([]);
+  const [currentPage, setCurrentPage] = useState(1); // 当前页码
+  const [pageSize, setPageSize] = useState(5); // 每页显示的条数
+  const [total, setTotal] = useState(0); // 总题目数
+
+  const AnsewerData = {
+    paperId: stores.ExamStore.paperId,
+    studentId: stores.UserStore.userId,
+  };
+
+  async function fetchAnswerList() {
+    const res = await getAnswerList(currentPage, pageSize, AnsewerData);
+    //@ts-ignore
+    setTotal(res.response.counts); // 设置总题目数
+    
+    setData(
+      //@ts-ignore
+      res.response.items.map((item: any) => ({
+        key: item.id,
+        questionId: item.questionId,
+        isCorrect: item.isCorrect,
+        studentAnswer: item.studentAnswer,
+        score: item.score,
+      }))
+    );
+  }
 
   useEffect(() => {
-    let tag = stores.ExamStore.getScoreTag();
-    if(tag == '听力报告') setData(stores.ExamStore.correctListen);
-    else setData(stores.ExamStore.correctRead);
-  }, [stores.ExamStore.scoreTag]);
+    fetchAnswerList();
+  }, [currentPage, pageSize, stores.ExamStore.scoreTag]);
 
   const changeAn = (e: any) => {
     if (e.target.tagName === 'DIV') return;
-    let btns = document.getElementsByClassName('anrtHead')[0].getElementsByTagName('button');
+    let btns = document
+      .getElementsByClassName('anrtHead')[0]
+      .getElementsByTagName('button');
     for (let i = 0; i < btns.length; i++) {
       btns[i].classList.remove('act');
     }
     e.target.classList.add('act');
-  }
+  };
 
   return (
-    <div className='anrt'>
-      <div className='anrtHead' onClick={changeAn}>
-        <button className='act'>我的答案</button>
+    <div className="anrt">
+      <div className="anrtHead" onClick={changeAn}>
+        <button className="act">我的答案</button>
         {/* <button>答案解析</button> */}
       </div>
-      <div className='anrtContent'>
+      <div className="anrtContent">
         <ScoreLie />
         <div>
-          <p style={{textAlign:'left',fontSize:'16px',fontWeight:'600' }}>答题情况</p>
+          <p
+            style={{
+              textAlign: 'left',
+              fontSize: '16px',
+              fontWeight: '600',
+            }}
+          >
+            答题情况
+          </p>
           <div>
-            <Table<DataType>  size='small' columns={columns} dataSource={data} />
+            <Table<DataType>
+              size="small"
+              columns={columns}
+              dataSource={data}
+              pagination={{
+                current: currentPage,
+                pageSize: pageSize,
+                total: total,
+                showSizeChanger: true, // 允许用户调整每页显示条数
+                onChange: (page, pageSize) => {
+                  setCurrentPage(page); // 更新当前页码
+                  setPageSize(pageSize); // 更新每页显示条数
+                },
+              }}
+            />
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 export default observer(AnswerRight);

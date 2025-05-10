@@ -85,6 +85,7 @@ const DropTarget = ({ questionIndex, onDrop, onRemove, droppedItems }: DropTarge
 export default function DragQuestion(questionArr: ExamType) {
   function parseMarkdownToQuestionData(markdown: string) {
     const lines = markdown.split('\n');
+    console.log(lines)
     let Options: string[] = lines.slice(2, 10);
     let Questions: string[] = [];
     let questionTitle: string = lines[0].replace(/\*\*/g, '');

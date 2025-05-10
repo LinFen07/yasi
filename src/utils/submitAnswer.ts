@@ -11,6 +11,7 @@ const studentAnswer: StudentAnswer = {
   score: '0',
   questionType: '1',
 }
+
 export function submitStudentSelectAnswer(
   questionsArr: ExamType[], 
   index: number, 
@@ -54,7 +55,7 @@ export function submitStudentWritteAnswer(
   value: string
 ): void {
   Object.assign(studentAnswer, {
-    isCorrect: value ? 1 : 0,
+    isCorrect: 0,
     paperId: stores.ExamStore.paperId,
     questionId: questionArr.id,
     studentAnswer: value,

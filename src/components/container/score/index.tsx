@@ -4,17 +4,6 @@ import stores from '@/stores';
 
 export default function Score() {
 
-  const hanldeScore = (e: any) => {
-    if(e.target.tagName === 'UL') return;
-    const tag = e.target.innerText;
-    stores.ExamStore.changeScoreTag(tag);
-    let btns = document.getElementsByClassName('btn');
-    for (let i = 0; i < btns.length; i++) {
-      btns[i].classList.remove('active');
-    }
-    e.target.classList.add('active');
-  }
-
   return(
     <div className='contentHead'>
           <div className='lt'>
@@ -33,10 +22,8 @@ export default function Score() {
                 <p>20</p>
               </li>
             </ul>
-            <ul onClick={hanldeScore}>
+            <ul>
             <button className='btn active'>考试报告</button>
-            {/* <button className='btn'>阅读报告</button>
-            <button className='btn'>写作报告</button> */}
             </ul>
           </div>
           <div className='rt'>
