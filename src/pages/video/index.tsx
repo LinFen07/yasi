@@ -11,14 +11,13 @@ export default function Video() {
 
   useEffect(() => {
     console.log(id);
+    stores.ExamStore.changePaperId(+id);
     const fetchExamData = async () => {
       try {
-        stores.ExamStore.changePaperId(+id);
         const res = await select(+id);
         console.log(res);
         //@ts-ignore
         if (res.code === 1) {
-          stores.ExamStore.changePaperId(+id);
           //@ts-ignore
           stores.ExamStore.addExam(res.response.titleItems);
           //@ts-ignore

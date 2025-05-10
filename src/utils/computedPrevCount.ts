@@ -5,7 +5,7 @@ export function computedPrevCount(title: string, exam: Array<Exam>): number {
   let prevCount = 0;
   for(let i = 0; i < index; i++){
     for(let j = 0; j < exam[i].questionItems.length; j++){
-      if(exam[i].questionItems[j].questionType == '4') prevCount += exam[i].questionItems[j].items.length;
+      if(exam[i].questionItems[j].questionType == '4') prevCount += exam[i].questionItems[j].correctArray.length;
       else if(exam[i].questionItems[j].questionType == '2') prevCount += exam[i].questionItems[j].correctArray.length;
       else prevCount++;
     }

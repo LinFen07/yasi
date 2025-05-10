@@ -31,11 +31,11 @@ export interface ExamType {
 
 export interface correct {
   key: string;
-  question: number;
+  questionId: number;
   answer: string;
-  tag: string;
-  myAn: string;
-  score: string;
+  isCorrect: string;
+  studentAnswer: string;
+  score: number;
 }
 
 export type StudentAnswer = {

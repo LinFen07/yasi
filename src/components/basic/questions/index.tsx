@@ -77,6 +77,7 @@ function questions({exam}: {exam: Exam[]}) {
     inputAll[questionIndex - BlanksprevCount - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [questionIndex]);
 
+
   return (
     <div className='listencontent'>
         {

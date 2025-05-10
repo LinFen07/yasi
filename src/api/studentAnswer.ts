@@ -11,7 +11,7 @@ export const submitAnswer = (data: StudentAnswer) => {
   })
 }
 
-export const getAnswerList = (pageNow: number, pageSize: number, data: StudentAnswer) => {
+export const getAnswerList = (pageNow: number, pageSize: number, data: any) => {
   return request({
     url: `/api/student/studentAnswer/page?pageNow=${pageNow}&pageSize=${pageSize}`,
     method: 'POST',

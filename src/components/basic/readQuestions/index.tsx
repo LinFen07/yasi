@@ -16,7 +16,7 @@ const questions = () => {
     setReadArr(exam[index]);
     createInput(exam, 'read');
   },[examTitle]);
-
+  
   return (
     <div className='readContent'>
       <div className='leftContent parsed-name' >{ReactHtmlParser(readArr.name)}</div>
