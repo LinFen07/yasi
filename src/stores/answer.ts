@@ -36,6 +36,10 @@ class AnswerStore {
     }
   }
 
+  resetLocalStorage() {
+    localStorage.removeItem('answerStore');
+  }
+
   // 打勾题答案数组
   tickAnswers: Array<string> = [];
   //拖拽题答案数组

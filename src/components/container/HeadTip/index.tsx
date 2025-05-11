@@ -68,6 +68,8 @@ function HeadTip(props: propType) {
       submitStudentWritteAnswer(stores.ExamStore.wirrteExam[0].questionItems[0], 0, stores.ExamStore.correctWritte[0]);
       submitStudentWritteAnswer(stores.ExamStore.wirrteExam[1].questionItems[0], 1, stores.ExamStore.correctWritte[1]);
       requestConcurrency(stores.AnswerStore.writingAnswers);
+      stores.AnswerStore.resetLocalStorage();
+      stores.ExamStore.resetLocalStorage();
     }
     store.ExamStore.changeCurrent(1);
     store.ExamStore.changeCurrentTitle('Part1:');
