@@ -84,28 +84,56 @@ const DropTarget = ({ questionIndex, onDrop, onRemove, droppedItems }: DropTarge
 
 export default function DragQuestion(questionArr: ExamType) {
   function parseMarkdownToQuestionData(markdown: string) {
-    const lines = markdown.split('\n');
-    console.log(lines)
-    let Options: string[] = lines.slice(2, 10);
+    const lines = markdown.split('\n').map(line => line.trim());
+    console.log(lines);
+
+    const optionRegex = /^[A-Z]\s(.*)$/;
+    const questionRegex = /^\*\*\d+\*\*\s*(.*)$/;
+
+    // let Options: string[] = lines.slice(2, 10);
+    let Options: string[] = [];
     let Questions: string[] = [];
     let questionTitle: string = lines[0].replace(/\*\*/g, '');
+    let optionTitle: string = '', title: string = '';
 
-    for (let i = 11; i < lines.length; i++) {
-      if (lines[i] !== '') {
-        let cleanedLine = lines[i].replace(/\*\*/g, '');
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+
+      if (line === '') continue; // 跳过空行
+
+      // 匹配选项
+      const optionMatch = line.match(optionRegex);
+      const questionMatch = line.match(questionRegex);
+
+      if (optionMatch) {
+        Options.push(optionMatch[0].trim());
+      }
+      else if (questionMatch) {
+        let cleanedLine = questionMatch[0].replace(/\*\*/g, '');
         cleanedLine = cleanedLine.replace(/\s*\d+\s*$/, '');
         Questions.push(cleanedLine);
+      }
+      else {
+        let cleanedLine = line.replace(/\*\*/g, '');
+        if (!optionTitle) {
+          optionTitle = cleanedLine;
+        }
+        else {
+          title = cleanedLine;
+        }
       }
     }
 
     return {
       questionTitle,
       Questions,
-      Options
+      Options,
+      optionTitle,
+      title
     };
   }
   const markdown = turndownService.turndown(questionArr.title);
-  const { questionTitle, Questions, Options } = parseMarkdownToQuestionData(markdown);
+  const { questionTitle, Questions, Options, optionTitle, title } = parseMarkdownToQuestionData(markdown);
   const [localOptions, setLocalOptions] = useState<string[]>(Options);
   const [droppedItems, setDroppedItems] = useState<{ questionIndex: number; option: string; originalIndex: number }[]>([]);
   const [studentAnswers, setStudentAnswers] = useState<string[]>(stores.AnswerStore.dragAnswers);
@@ -203,11 +231,13 @@ export default function DragQuestion(questionArr: ExamType) {
         <div className='drag-questionTitle'>{questionTitle}</div>
         <div style={{ display: 'flex' }}>
           <div className='drag-question-option-box'>
+            <div className='drag-question-title'>{optionTitle}</div>
             {localOptions.map((option, index) => (
               <Option key={option} option={option} index={index} />
             ))}
           </div>
           <div className='drag-question-question-box'>
+            <div className='drag-question-title' style={{marginTop:'2vh'}}>{title}</div>
             {
               Questions.map((question, questionIndex) => (
                 <div key={questionIndex} className='drag-question-question' style={{ marginBottom: '10px' }}>
