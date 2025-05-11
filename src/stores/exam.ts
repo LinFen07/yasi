@@ -98,6 +98,10 @@ class ExamStore {
     }
   }
 
+  resetLocalStorage() {
+    localStorage.removeItem('examStore');
+  }
+
   //改变当前试卷
   changeCurrentExam(exam: Array<Exam>) {
     this.currentExam = exam;
