@@ -75,7 +75,7 @@ const TaskTable = ({
                                     }
                                 }}
                             >
-                                修改
+                                {record.status === '已阅' ? '修改' : '评阅'}
                             </Button>
                         ),
                     },

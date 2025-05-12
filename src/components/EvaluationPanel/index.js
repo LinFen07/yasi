@@ -423,7 +423,7 @@ const EvaluationPanel = ({
                                     <strong>原评价：</strong>
                                     <div
                                         dangerouslySetInnerHTML={{
-                                            __html: paperData?.studentsInfo?.appraise || ''
+                                            __html: paperData?.studentsInfo?.appraise || '<span style="color:#999">未评价</span>'
                                         }}
                                         style={{
                                             width: '100%',

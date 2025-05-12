@@ -303,7 +303,7 @@ const Evaluation = () => {
                       {
                         title: (
                           <>
-                            {paperName?.name || '请选择试卷'}
+                            {selectedPaper?.label || '请选择试卷'}
                             <span style={{ marginLeft: 8, color: '#1890ff' }}>
                               (已阅: {papers.filter(p => p.status === '已阅').length}
                               /总数: {papers.length})

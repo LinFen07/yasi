@@ -147,7 +147,7 @@ const ScoringPanel = ({
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
                                 <Button onClick={onCancel}>返回</Button>
                                 <Form.Item>
-                                    <Button type="primary" htmlType="submit">提交修改</Button>
+                                    <Button type="primary" htmlType="submit">   {isEditingMode ? '保存修改' : '提交评价'}</Button>
                                 </Form.Item>
                             </div>
                         </Form>
