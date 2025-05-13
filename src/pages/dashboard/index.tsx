@@ -2,7 +2,7 @@
 import './index.scss';
 import { Button, Card } from 'antd';
 import { useNavigate } from "react-router";
-import { getAdminExam, isCompleted } from "@/api/examPaper";
+import { getExam } from "@/api/examPaper";
 import { useEffect, useState } from 'react';
 import stores from '@/stores';
 
@@ -10,26 +10,24 @@ const { Meta } = Card;
 
 const Dashboard = () => {
   const [ examList, setExamList ] = useState([]);
-  const [ isCompletedList, setIsCompletedList ] = useState([]);
   const navigate = useNavigate();
 
-  const getExamList = async() => {
-    const res = await getAdminExam();
-    console.log(res);
-    //@ts-ignore
-    setExamList(res.response);
+  const getTime = (time: string) => {
+    const t = new Date(time).getTime();
+    const current = new Date().getTime();
+    return current > t;
   }
 
-  const fetchisCompleted = async(id: number) => {
-    const res = await isCompleted(id);
+  const getExamList = async() => {
+    const res = await getExam(stores.UserStore.userId);
+    console.log(res);
     //@ts-ignore
-    setIsCompletedList(res.response.items.map((item: any) => item.examPaperId));
+    setExamList(res.response.items);
   }
 
   useEffect(() => {
     try {
       getExamList()
-      fetchisCompleted(stores.UserStore.userId);
     } catch (error) {
       console.log(error);
     }
@@ -49,8 +47,9 @@ const Dashboard = () => {
     // requestFullscreen();
   }
 
-  const handleSreachTestResult = (id: number) => { 
-    stores.ExamStore.changePaperId(id)
+  const handleSreachTestResult = (id: number, isAppraise: number, appraise: string) => { 
+    stores.ExamStore.changePaperId(id);
+    if (isAppraise) stores.AnswerStore.appraise = appraise;
     navigate('/testOver');
   }
   
@@ -64,21 +63,22 @@ const Dashboard = () => {
               <Card
               hoverable
               style={{ width: 240 }}
-              key={item.id}
+              key={item.examPaperId}
             >
-              <Meta title={item.name} />
-              <p>考试时间：2025.04.08 9:00 ~ 12:00</p>
+              <Meta title={item.examPaperName} />
+              <p>考试时间：{item.startTime} ~ </p>
+              <p>{item.endTime}</p>
               <Button 
                 type="primary" 
-                // disabled={isCompletedList.includes(item.id as never)} 
-                onClick={() => handleConfirmExam(item.id)}>
+                disabled={getTime(item.endTime)} 
+                onClick={() => handleConfirmExam(item.examPaperId)}>
                 前往考试
               </Button>
               <Button 
                 type="primary" 
-                disabled={!isCompletedList.includes(item.id as never)}  
+                disabled={!getTime(item.endTime)} 
                 style={{marginLeft: '12px'}} 
-                onClick={() => handleSreachTestResult(item.id)} >
+                onClick={() => handleSreachTestResult(item.examPaperId, item.isAppraise, item.appraise)} >
                 查看结果
               </Button>
             </Card>
