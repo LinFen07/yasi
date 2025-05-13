@@ -8,7 +8,7 @@ export const select = async(id: number) => {
 }
 
 // 判断考生是否已完成该试卷
-export const isCompleted = async(id: number) => {
+export const getExam = async(id: number) => {
   return request({
       url: `/api/student/examassignment/page?userId=${id}`,
       method: 'GET',
@@ -21,9 +21,9 @@ export const getAdminExam = async() => {
       method: 'POST',
   })
 }
-export const getExam = async() => {
-  return request({
-      url: '/api/student/exam/paper/pageList',
-      method: 'POST',
-  })
-}
+// export const getExam = async() => {
+//   return request({
+//       url: '/api/student/exam/paper/pageList',
+//       method: 'POST',
+//   })
+// }

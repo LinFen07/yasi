@@ -24,6 +24,7 @@ class AnswerStore {
   readTotalSorce: number = 0;
   listenTrueCount: number = 0;
   readTrueCount: number = 0;
+  appraise: string = '';
 
   saveToLocalStorage() {
     const data = {
