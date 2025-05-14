@@ -313,7 +313,7 @@ const Evaluation = () => {
                       }
                     ]}
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                  {/* <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                     {currentTask?.deadline && (
                       <Countdown
                         title="剩余时间"
@@ -321,7 +321,7 @@ const Evaluation = () => {
                         format="HH:mm:ss"
                       />
                     )}
-                  </div>
+                  </div> */}
                   <TaskTable
                     papers={papers}
                     selectedPaper={selectedPaper}

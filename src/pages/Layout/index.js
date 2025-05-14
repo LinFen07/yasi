@@ -21,14 +21,14 @@ const saveCurrentRoute = (path) => {
 };
 
 const items = [
-    {
-        label: '首页',
-        key: '/home',
-        icon: <HomeOutlined />,
-    },
+    // {
+    //     label: '首页',
+    //     key: '/app/home',
+    //     icon: <HomeOutlined />,
+    // },
     {
         label: '作文评阅',
-        key: '/evaluation',
+        key: '/app/evaluation',
         icon: <EditOutlined />,
     },
 ];
@@ -52,7 +52,7 @@ const GeekLayout = () => {
         saveCurrentRoute(location.pathname);
     }, [location.pathname]);
 
-    const name = useSelector((state) => state.user.userInfo.name);
+    // const name = useSelector((state) => state.user.userInfo.name);
 
     // 退出登录
     const onConfirm = () => {
@@ -119,7 +119,7 @@ const GeekLayout = () => {
                         />
                     </div>
                     <div className="header-right">
-                        <span className="user-name">admin</span>
+                        <span className="user-name">{useSelector(state => state.user.userInfo?.userName) || 'admin'}</span>
                         <Popconfirm
                             title="是否确认退出？"
                             onConfirm={onConfirm}

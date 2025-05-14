@@ -2,7 +2,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { removeToken, request } from "../utils/index.js";
 import { setToken as _setToken, getToken } from "../utils/index.js";
-import axios from 'axios';
+import { useNavigate } from "react-router-dom";
+import { message } from 'antd'
+// import axios from 'axios';
 const userStore = createSlice({
     name: "user",
     //数据状态
@@ -15,11 +17,11 @@ const userStore = createSlice({
     reducers: {
         setToken(state, action) {
             state.token = action.payload
-            //localstorage存一份
-            _setToken(action.payload)
+            _setToken(action.payload) // 使用token.js中的方法
         },
         setUserInfo(state, action) {
             state.userInfo = action.payload
+            // 保持原样，因为token.js不处理用户信息
             localStorage.setItem('user_message', JSON.stringify(action.payload))
         },
         clearUserInfo(state) {
@@ -44,13 +46,22 @@ const userReducer = userStore.reducer
 //异步方法 完成登录获取token
 const fetchLogin = (loginForm) => {
     return async (dispatch) => {
+        // 构造请求数据，确保字段名正确
+        const requestData = {
+            userName: loginForm.userName,
+            password: loginForm.code
+        };
         // 发送请求
-        const response = await fetch('http://120.24.144.113:8668/api/user/login', {
+        const response = await fetch('/api/user/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(loginForm),
+            body: JSON.stringify(requestData),
+            credentials: 'include' // 允许发送和接收cookies
         });
-
+        const cookieString = document.cookie;
+        const jsessionId = cookieString.split('JSESSIONID=')[1];
+        const token = jsessionId ? jsessionId.split(';')[0] : '';
+        console.log('Extracted token:', token)
         // 检查HTTP状态码
         if (!response.ok) {
             throw new Error(`HTTP错误! 状态码: ${response.status}`);
@@ -60,17 +71,13 @@ const fetchLogin = (loginForm) => {
         const result = await response.json();
         console.log('完整响应:', result); // 打印完整响应以验证数据结构
 
-        // 安全访问嵌套字段并dispatch所有用户数据
-        // if (result?.response) {
-        // console.log('用户数据:', result.response);
-        // const jsessionid = getCookie('JSESSIONID');
-        // console.log('获取到的JSESSIONID:', jsessionid);
-        // if (jsessionid) {
-        //     dispatch(setToken(jsessionid));
-        // } else {
-        //     console.error('未获取到JSESSIONID');
-        // }
-        dispatch(setUserInfo(result.response)); // 假设setUserInfo能接受整个用户对象作为参数
+        // 只有当code为1时才处理成功响应
+        if (result.code === 1) {
+            dispatch(setUserInfo(result.response));
+            return { success: true, message: "登录成功" };
+        } else {
+            return { success: false, message: result.message || "登录失败" };
+        }
     };
 
     function getCookie(name) {

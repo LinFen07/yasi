@@ -27,13 +27,13 @@ const TaskTable = ({
                         onChange={handleSelectChange}
                     />
                 )}
-                <Button
+                {/* <Button
                     type="primary"
                     onClick={handleStartGrading}
-                    disabled={!filterPendingPapers().length}
+                    disabled={!selectedPaper || filterPendingPapers().length === 0}
                 >
                     开始批阅
-                </Button>
+                </Button> */}
             </div>
             <Table
                 columns={[

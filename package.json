@@ -2,6 +2,7 @@
   "name": "system",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://120.24.144.113:8668",
   "dependencies": {
     "@ant-design/charts": "^2.2.7",
     "@reduxjs/toolkit": "^2.6.1",

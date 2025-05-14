@@ -7,18 +7,22 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 const router = createBrowserRouter([
     {
         path: '/',
+        element: <Login />,
+    },
+    {
+        path: '/app',
         element: <Layout />,
         children: [
             {
                 index: true,
-                element: <Navigate to="/home" replace />
+                element: <Navigate to="/app/evaluation" replace />
             },
+            // {
+            //     path: '/app/home',
+            //     element: <Home />
+            // },
             {
-                path: '/home',
-                element: <Home />
-            },
-            {
-                path: '/evaluation',
+                path: '/app/evaluation',
                 element: <Evaluation />
             }
         ]
