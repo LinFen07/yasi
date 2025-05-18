@@ -7,7 +7,7 @@ class ExamStore {
 
   //当前题目索引
   currentExamIndex = 1;
-  currentExamTitle = 'Part1:';
+  currentExamTitle = 'Part1';
 
   //字体大小
   FontSize = 18;
@@ -73,7 +73,7 @@ class ExamStore {
       const parsedData = JSON.parse(data);
       this.paperId = parsedData.paperId || 0;
       this.currentExamIndex = parsedData.currentExamIndex || 1;
-      this.currentExamTitle = parsedData.currentExamTitle || 'Part1:';
+      this.currentExamTitle = parsedData.currentExamTitle || 'Part1';
       this.FontSize = parsedData.FontSize || 18;
       this.scoreTag = parsedData.scoreTag || '听力报告';
       this.listenAudio = parsedData.listenAudio || '';

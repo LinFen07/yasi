@@ -2,7 +2,7 @@ import { Button } from "antd";
 import { useNavigate } from "react-router";
 import "./index.scss";
 import { select } from "@/api/examPaper";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import stores from "@/stores";
 import { AddCorrect } from "@/utils/getCorrect";
 
@@ -11,7 +11,6 @@ export default function Video() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    console.log(id);
     stores.ExamStore.changePaperId(+id);
     const fetchExamData = async () => {
       try {
@@ -21,9 +20,14 @@ export default function Video() {
         if (res.code === 1) {
           //@ts-ignore
           const response = res.response;
+          console.log(response);
           stores.ExamStore.addExam(response.titleItems);
-          AddCorrect(response.titleItems);
           stores.ExamStore.addListenAudio(response.audioFileUrl);
+          const au = document.querySelector("audio");
+          if(au) {
+            au.src = response.audioFileUrl;
+          } 
+          AddCorrect(response.titleItems);
         }
       } catch (error) {
         console.error("获取考试数据失败:", error);
@@ -33,10 +37,21 @@ export default function Video() {
     fetchExamData();
   }, [id]);
 
+  // useEffect(() => {
+  //   const au = document.querySelector("audio");
+  //   if(au) {
+  //     au.src = stores.ExamStore.getListenAudio();
+  //   } 
+  // },[])
+
   function handleClick() {
+    const au = document.querySelector("audio");
+    console.log(au)
+    if(au) {
+      au.play()
+    } 
     navigate(`/listeningExam`);
   }
-
 
   return (
     <div>

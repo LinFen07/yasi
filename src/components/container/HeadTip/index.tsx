@@ -1,17 +1,15 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react'
 import { useNavigate } from 'react-router';
-
 import { Button, Space, Avatar, Slider, Modal, Dropdown } from 'antd'
 import { FieldTimeOutlined, SoundOutlined, DownOutlined } from '@ant-design/icons'
 import type { MenuProps } from 'antd';
-
 import './index.scss'
 import store from '@/stores'
-
 import IntegerStep from '@/components/basic/fontSizeSetting';
 import stores from '@/stores';
 import { requestConcurrency } from '@/utils/requestConcurrency';
 import { submitStudentWritteAnswer } from '@/utils/submitAnswer';
+
 
 const items: MenuProps['items'] = [
   {
@@ -28,7 +26,7 @@ type propType = {
     type: string;
 };
 
-function HeadTip(props: propType) {
+const HeadTip = forwardRef((props: propType) => {
 
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
   const [seconds, setSeconds] = useState<number>(0);
@@ -72,7 +70,7 @@ function HeadTip(props: propType) {
       stores.ExamStore.resetLocalStorage();
     }
     store.ExamStore.changeCurrent(1);
-    store.ExamStore.changeCurrentTitle('Part1:');
+    store.ExamStore.changeCurrentTitle('Part1');
     store.ExamStore.resetcorrectListenAnswer();
   };
   
@@ -84,7 +82,6 @@ function HeadTip(props: propType) {
     }
   };
 
-  const audioUrl = stores.ExamStore.getListenAudio();
   
   return(
     <div className='head'>
@@ -111,11 +108,6 @@ function HeadTip(props: propType) {
                <SoundOutlined style={{fontSize: '28px'}}/>  
                <Slider defaultValue={30} className='slider' onChange={handleVolumeChange}/>
               </Space>
-              <audio
-                ref={audioRef} // 绑定 audio 元素的引用
-                src={audioUrl}
-                autoPlay
-              ></audio>
             </div>
           : <></>
         }
@@ -146,6 +138,6 @@ function HeadTip(props: propType) {
       </Modal>
     </div>
   );
-};
+});
 
 export default HeadTip;

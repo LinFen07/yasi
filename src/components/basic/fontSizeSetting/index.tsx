@@ -7,7 +7,8 @@ const IntegerStep: React.FC = () => {
   const [inputValue, setInputValue] = useState(18);
 
   const onChange: InputNumberProps['onChange'] = (newValue) => {
-    setInputValue(newValue as number);
+    const fontSize = newValue as number;
+    setInputValue(fontSize);
     stores.ExamStore.changeFontSize(inputValue);
   };
 

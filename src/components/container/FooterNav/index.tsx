@@ -55,7 +55,7 @@ function footerNav(props: propType) {
     );
     prevLen = currLen;
     return {
-      title: `Part${index + 1}:`,
+      title: `Part${index + 1} Questions ${prevLen - allLen + 1} - ${prevLen}`,
       questionArr: questionArr,
       maxNum: currLen
     };

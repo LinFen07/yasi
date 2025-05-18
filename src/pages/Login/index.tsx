@@ -5,14 +5,15 @@ import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Form, Input, Flex, message, Select  } from 'antd';
 import { Cascader } from 'antd';
 
-import { fetchRegister } from "@/api/register";
+import { fetchRegister, getExamMeal } from "@/api/register";
 import { fetchLogin } from '@/api/login'
-
 import stores from "@/stores";
-
 import './index.scss'
 //@ts-ignore
 import img from '@/assets/logo2.png'
+// @ts-ignore
+import {citys} from '@/utils/ChinaCitys2025'
+import { useEffect, useState } from "react";
 
 const { Option } = Select;
 
@@ -23,62 +24,64 @@ type Props = {
 function LoginRoute(props: Props) {
 
   const navigate = useNavigate();
-  const cityOptions = [
-    {
-      value: '广东省',
-      label: '广东省',
-      children: [
-        { value: '广州市', label: '广州市' },
-        { value: '深圳市', label: '深圳市' },
-        { value: '珠海市', label: '珠海市' },
-      ],
-    },
-    {
-      value: '北京市',
-      label: '北京市',
-      children: [
-        { value: '东城区', label: '东城区' },
-        { value: '西城区', label: '西城区' },
-        { value: '朝阳区', label: '朝阳区' },
-      ],
-    },
-    {
-      value: '上海市',
-      label: '上海市',
-      children: [
-        { value: '黄浦区', label: '黄浦区' },
-        { value: '徐汇区', label: '徐汇区' },
-        { value: '长宁区', label: '长宁区' },
-      ],
-    },
-  ];
+
+  const [ExamMeal, setExamMeal] = useState<any>([]);
+
+  const cityOptions = citys.map((city: any) => {
+    return { value: city.value, label: city.value, children: city.children.map((item: any) => {
+      return { value: item.value, label: item.value }
+    }) }
+  })
+
+  const fetchGetExamMeal = async(pageSize: number, pageNum: number) => {
+    const res = await getExamMeal(pageSize, pageNum);
+    // @ts-ignore
+    setExamMeal(res.response.items);
+  }
+
+  useEffect(() => {
+    try {
+      fetchGetExamMeal(10, 1);
+    } catch (error) {
+      console.log(error);
+    }
+  },[])
 
   const onFinish = async(values: any) => {
     let res, mess, nav;
     if(props.data == 'login') {
       const va = {  ...values , remember: false }
       res = await fetchLogin(va);
-      mess = '登录成功';
-      nav = '/layout/dashboard';
-    } else {
+      //@ts-ignore
+      if(res.code == 1) {
+        // stores.UserStore.setUserId(res.data.id);
+        const cookies = document.cookie;
+        console.log(cookies);
+        stores.UserStore.login(cookies);
+        stores.UserStore.setName(values.userName);
+        message.success('登录成功');
+        navigate('/layout/dashboard');
+      }
+      else {
+        // @ts-ignore
+        message.error(res.message);
+      }
+      return;
+    } 
+    else {
+      const ad = values.address
+      values.address = ad[0] + ad[1];
       console.log('注册', values);
       res = await fetchRegister(values);
-      mess = '注册成功';
-      nav = '/';
-    };
-
-    //@ts-ignore
-    if(res.code == 1) {
-      // stores.UserStore.setUserId(res.data.id);
-      const cookies = document.cookie;
-      console.log(cookies);
-      stores.UserStore.login(cookies);
-      stores.UserStore.setName(values.userName);
-      message.success(mess);
-      navigate(nav);
-    }else{
-      message.success(mess);
-      navigate(nav);
+      // @ts-ignore
+      if(res.code == 1) {
+        message.success('注册成功');
+        navigate('/login');
+      }
+      else {
+        // @ts-ignore
+        message.error(res.message);
+      }
     };
   };
 
@@ -191,7 +194,14 @@ function LoginRoute(props: Props) {
                       rules={[{ required: true, message: '请选择套餐' }]}
                     >
                       <Select placeholder="选择套餐">
-                        <Option value="1">一套试卷</Option>
+                      {
+                        ExamMeal?.map((item: any, index: number) => (
+                          <Option value={item.id} key={index}>
+                            {item.dictValue}: {item.description}
+                          </Option>
+                        ))
+                      }
+                        {/* <Option value="1">一套试卷</Option> */}
                       </Select>
                     </Form.Item>
               <div className="lowin-group password-group">

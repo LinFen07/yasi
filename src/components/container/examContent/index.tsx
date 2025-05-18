@@ -29,7 +29,6 @@ type propType = {
 const examContent = observer((props: propType) => {
   const { type } = props;
 
-  const [title, setTitle] = useState('A');
   const [selectedText, setSelectedText] = useState<string>('');
   const [flagTextArr, setFlagTextArr] = useState<textArr[]>([
     {
@@ -220,53 +219,10 @@ const examContent = observer((props: propType) => {
     setNoteText('');
   }
 
-  // const longTaskObserver = new PerformanceObserver(list => {
-  //   console.log('长任务列表:', list.getEntries());
-  //   list.getEntries().forEach(entry => {
-  //     if (entry.duration > 65) { // 超过200ms的任务
-  //       console.log('长任务:', {
-  //         duration: entry.duration,
-  //         start: entry.startTime,
-  //       });
-  //     }
-  //   });
-  // });
-
-  // longTaskObserver.observe({ type: 'longtask', buffered: true });
-
-//   let totalFrames = 0;
-// let jankyFrames = 0;
-
-// 通过 requestAnimationFrame 监控帧率
-// function monitorFrames() {
-//   let lastTime = performance.now();
-  
-//   function checkFrame(now: any) {
-//     const frameTime = now - lastTime;
-//     totalFrames++;
-    
-//     // 帧耗时超过16.7ms（60fps）视为卡顿
-//     if (frameTime > 16.7) {
-//       jankyFrames += Math.min(1, (frameTime - 16.7) / 16.7);
-//     }
-    
-//     lastTime = now;
-//     requestAnimationFrame(checkFrame);
-//   }
-  
-//   requestAnimationFrame(checkFrame);
-// }
-
-// monitorFrames()
-// setInterval(() => {
-//   // 每隔1秒输出一次统计信息  
-// console.log(`总帧数: ${totalFrames}, 卡顿帧数: ${jankyFrames}`);
-// }, 1000);
-
   return (
     <div className='pageContent'>
       <div className='title'>{stores.ExamStore.currentExamTitle}</div>
-      <div className='content' style={{fontSize: `${fontSize}px`}}>
+      <div className='exam-content' style={{fontSize: `${fontSize}px`}}>
         {
           type === 'listen' ? (
             <ListenQuestions ></ListenQuestions>

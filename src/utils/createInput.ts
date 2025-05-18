@@ -6,7 +6,7 @@ import  {computedPrevCount}  from '@/utils/computedPrevCount';
 import { submitStudentBlankAnswer } from './submitAnswer';
 export function createInput(exam: Array<Exam>, type: string) {
   let prevCount = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
-  const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
+  const index = +stores.ExamStore.currentExamTitle[4] - 1;
 
   setTimeout(() => {
     const span = document.querySelectorAll('.gapfilling-span');

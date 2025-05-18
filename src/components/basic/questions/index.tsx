@@ -18,7 +18,7 @@ function questions({exam}: {exam: Exam[]}) {
   const questionIndex = stores.ExamStore.currentExamIndex;
 
   useEffect(() => {
-    const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
+    const index = +stores.ExamStore.currentExamTitle[4] - 1;
     setListensArr(exam[index]);
     setQuestionArr(exam[index].questionItems);
   },[stores.ExamStore.currentExamTitle]);
@@ -26,7 +26,7 @@ function questions({exam}: {exam: Exam[]}) {
   const onChange = (index: number) => (e: any) => {
     let pre = computedPrevCount(stores.ExamStore.currentExamTitle, stores.ExamStore.currentExam);
     stores.ExamStore.changeStudentListenAnswer(pre + index + 1, e.target.value);
-    const examIndex = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
+    const examIndex = +stores.ExamStore.currentExamTitle[4] - 1;
     const value  = e.target.value;
     console.log('onChange',index + pre);
 
@@ -49,7 +49,7 @@ function questions({exam}: {exam: Exam[]}) {
   const checkedOnChange = (index: number) => (checkedValues: string[]) =>{
     let pre = computedPrevCount(stores.ExamStore.currentExamTitle, stores.ExamStore.currentExam);
     stores.ExamStore.changeStudentListenAnswer(pre + index + 1,checkedValues.toString());
-    const examIndex = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
+    const examIndex = +stores.ExamStore.currentExamTitle[4] - 1;
 
     submitStudentSelectAnswer(questionsArr, index, checkedValues.toString(), index + pre);
 
@@ -77,6 +77,16 @@ function questions({exam}: {exam: Exam[]}) {
     inputAll[questionIndex - BlanksprevCount - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [questionIndex]);
 
+    //字体大小
+  const [fontSize, setFontSize] = useState(stores.ExamStore.FontSize);
+
+  useEffect(() => {
+    setFontSize(stores.ExamStore.FontSize);
+  },[stores.ExamStore.FontSize]);
+
+  const stripHtmlTags = (html: string): string => {
+    return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ');;
+  };
 
   return (
     <div className='listencontent'>
@@ -88,8 +98,12 @@ function questions({exam}: {exam: Exam[]}) {
                 ? (<TickQuestion {...questionArr}></TickQuestion>)
                 : questionArr.topicType == '6'
                 ? <DragQuestion {...questionArr}></DragQuestion>
-                : <div ref={el => titleRefs.current[index] = el}> 
+                : questionArr.topicType == '4'
+                ?<div> 
                     {ReactHtmlParser(questionArr.title)}
+                  </div>
+                : <div ref={el => titleRefs.current[index] = el} style={{fontSize: `${fontSize}px`}}> 
+                    {stripHtmlTags(questionArr.title)}
                   </div>
               }
               <div >
@@ -101,25 +115,25 @@ function questions({exam}: {exam: Exam[]}) {
                       options={questionArr.items.map((opt) => ({
                       value: opt.prefix,
                       label: (
-                        <span style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', fontSize: `${fontSize}px` }}>
                           {opt.prefix}
                           <p style={{width:'8px'}}></p>
-                          {ReactHtmlParser(opt.content)}
+                          {stripHtmlTags(opt.content)}
                         </span>
                       )
                       }))}>
                     </Radio.Group>) 
                     : questionArr.questionType == '2' 
-                    ? <Checkbox.Group style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
+                    ? <Checkbox.Group style={{ width: '100%', display: 'flex', flexDirection: 'column'}}
                       onChange={checkedOnChange(index)} 
                       value={questionArr.selectionsAnswer ? questionArr.selectionsAnswer : []}
                       options={questionArr.items.map((opt) => ({
                       value: opt.prefix,
                       label: (
-                        <span style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', fontSize: `${fontSize}px`  }}>
                           {opt.prefix}
                           <p style={{width:'8px'}}></p>
-                          {ReactHtmlParser(opt.content)}
+                          {stripHtmlTags(opt.content)}
                         </span>
                       )
                       }))}>
