@@ -16,7 +16,7 @@ export default function questions() {
   const [value, setValue] = useState(['', '']);
 
   useEffect(() => {
-    const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
+    const index = +stores.ExamStore.currentExamTitle[4] - 1;
     setTitle(exam[index].name);
     setContent(exam[index].questionItems[0].title);
 
@@ -29,7 +29,7 @@ export default function questions() {
   }, [stores.ExamStore.currentExamTitle, exam]);
 
   useEffect(() => {
-    const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
+    const index = +stores.ExamStore.currentExamTitle[4]- 1;
     stores.ExamStore.correctWritte[index] = value[index]; // 更新答案到 MobX store
   },[value]);
 
@@ -41,9 +41,9 @@ export default function questions() {
       </div>
       <TextArea
         className='rightContent'
-        value={value[+stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1]} // 根据 index 获取对应的答案
+        value={value[+stores.ExamStore.currentExamTitle[4] - 1]} // 根据 index 获取对应的答案
         onChange={(e) => {
-          const index = +stores.ExamStore.currentExamTitle.slice(4, stores.ExamStore.currentExamTitle.length - 1) - 1;
+          const index = +stores.ExamStore.currentExamTitle[4] - 1;
           setValue((prev) => {
             const updatedValues = [...prev];
             updatedValues[index] = e.target.value; // 更新对应作文的答案

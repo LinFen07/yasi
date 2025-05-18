@@ -1,7 +1,11 @@
 import stores from "@/stores";
 import { Exam } from "@/typings/exam";
 
-export function AddCorrect(exam: Exam[]) {
+export function AddCorrect(exam: Exam[] | null | undefined) {
+  if (!exam || !Array.isArray(exam)) {
+    console.warn('AddCorrect: exam 数据无效', exam);
+    return;
+  }
   let questionIndex = 0;
   for(let i = 0; i < exam.length; i++) {
     const questionItems = exam[i].questionItems;
@@ -24,7 +28,6 @@ export function AddCorrect(exam: Exam[]) {
           questionIndex++;
         }
       }
-      
     }
   }
 }

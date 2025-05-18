@@ -1,7 +1,7 @@
 import { Exam } from '@/typings/exam';
 
 export function computedPrevCount(title: string, exam: Array<Exam>): number {
-  const index = +title.slice(4, title.length - 1) - 1;
+  const index = +title[4] - 1;
   let prevCount = 0;
   for(let i = 0; i < index; i++){
     for(let j = 0; j < exam[i].questionItems.length; j++){
@@ -14,7 +14,7 @@ export function computedPrevCount(title: string, exam: Array<Exam>): number {
 }
 
 export function computedBlanksPrevCount(pre: number, title: string, exam: Array<Exam>){
-  const index = +title.slice(4, title.length - 1) - 1;
+  const index = +title[4] - 1;
     for(let j = 0; j < exam[index].questionItems.length; j++){
       if(exam[index].questionItems[j].questionType == '4') return pre;
       else if(exam[index].questionItems[j].questionType == '2') pre += exam[index].questionItems[j].correctArray.length;
@@ -24,7 +24,7 @@ export function computedBlanksPrevCount(pre: number, title: string, exam: Array<
 }
 export function computedTickPrevCount(title: string, exam: Array<Exam>){
   let prevCount = computedPrevCount(title, exam);
-  const index = +title.slice(4, title.length - 1) - 1;
+  const index = +title[4] - 1;
     for(let j = 0; j < exam[index].questionItems.length; j++){
       if(exam[index].questionItems[j].topicType == '5') return prevCount;
       else if(
@@ -38,7 +38,7 @@ export function computedTickPrevCount(title: string, exam: Array<Exam>){
 }
 export function computedDragPrevCount(title: string, exam: Array<Exam>){
   let prevCount = computedPrevCount(title, exam);
-  const index = +title.slice(4, title.length - 1) - 1;
+  const index = +title[4] - 1;
     for(let j = 0; j < exam[index].questionItems.length; j++){
       if(exam[index].questionItems[j].topicType == '6') return prevCount;
       else if(

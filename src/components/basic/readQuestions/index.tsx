@@ -12,7 +12,7 @@ const questions = () => {
   const [readArr, setReadArr] = useState(exam[0]);
 
   useEffect(() => {
-    const index = +examTitle.slice(4, examTitle.length - 1) - 1;
+    const index = +examTitle[4] - 1;
     setReadArr(exam[index]);
     createInput(exam, 'read');
   },[examTitle]);

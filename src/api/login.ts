@@ -1,7 +1,6 @@
 import { request } from "@/utils/request";
 
 export const fetchLogin =  
-
 (loginForm: Object) => {
     return request({
         url: '/api/user/login',
@@ -9,7 +8,6 @@ export const fetchLogin =
         data: loginForm,
       })
 }
-
 
 export const fetchLogout = async() => {
   return request({
