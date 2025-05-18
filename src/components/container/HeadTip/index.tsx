@@ -27,10 +27,11 @@ type propType = {
 };
 
 const HeadTip = forwardRef((props: propType) => {
+  const testTime: number = props.type == 'listen' ? 30 : 60;
 
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
   const [seconds, setSeconds] = useState<number>(0);
-  const [minutes, setMintnue] = useState<number>(30);
+  const [minutes, setMintnue] = useState<number>(testTime);
   const [timerVisible, setTimerVisible] = useState<boolean>(false);
 
   useEffect(() => {
@@ -115,11 +116,11 @@ const HeadTip = forwardRef((props: propType) => {
       <div className='headRight'>
         <Space size={24}>
           <Button size='large' onClick={() => setModalOpen(true)}>Finish Text</Button>
-          {
+          {/* {
             props.type === 'listen'
             ? <></>
             : <Button size='large' onClick={() => setModalOpen(true)}>Pause</Button>
-          }
+          } */}
           <div style={{fontSize: '16px'}}>
             <Dropdown menu={{ items }} trigger={['click']}>
               <a onClick={(e) => e.preventDefault()}>
