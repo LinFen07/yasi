@@ -222,7 +222,9 @@ const examContent = observer((props: propType) => {
 
   return (
     <div className='pageContent'>
-      <div className='title'>{stores.ExamStore.currentExamTitle}</div>
+      <div className='title'>{stores.ExamStore.currentExamTitle}
+        <div className='title-expin'>{stores.ExamStore.titleExpain}</div>
+      </div>
       <div className='exam-content' style={{fontSize: `${fontSize}px`}}>
         {
           type === 'listen' ? (

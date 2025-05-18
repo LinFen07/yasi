@@ -9,7 +9,7 @@ import { reaction } from 'mobx';
 
 type pageType = {
   title: string;
-  headTitle: string;
+  headTitleExpain: string;
   questionArr: number[];
   maxNum: number;
 }
@@ -55,16 +55,24 @@ function footerNav(props: propType) {
       allLen
     );
     prevLen = currLen;
-    let headTitle = type === 'listen'
-      ? `Part${index + 1}` + ' '+ ` Questions ${prevLen - allLen + 1} - ${prevLen}`
+    
+    let writteTitle = '';
+    if(type === 'writte') {
+      if(index == 0) 
+        writteTitle = 'You should spend about 20 minutes on this task. Write at least 150 words.'
+      else 
+        writteTitle = 'You should spend about 40 minutes on this task. Write at least 250 words.'
+    }
+    let headTitleExpain = type === 'listen'
+      ? ` Questions ${prevLen - allLen + 1} - ${prevLen}`
       : type === 'read'
-      ? `Part${index + 1}` + ' '+ ` Read the passage below and answer questions ${prevLen - allLen + 1} - ${prevLen}`
+      ? ` Read the passage below and answer questions ${prevLen - allLen + 1} - ${prevLen}`
       : type === 'writte'
-      ? `Part${index + 1}`
+      ? `${writteTitle}`
       : '';
     return {
       title: `Part${index + 1}`,
-      headTitle,
+      headTitleExpain,
       questionArr: questionArr,
       maxNum: currLen
     };
@@ -75,7 +83,8 @@ function footerNav(props: propType) {
   const handleChangeTitle = (curren: number) => {
     for(let page of PageArr){
       if(page.maxNum >= curren){
-        store.ExamStore.changeCurrentTitle(page.headTitle);
+        store.ExamStore.changeCurrentTitle(page.title);
+        store.ExamStore.changeTitleExpain(page.headTitleExpain);
         break;
       };
     };
@@ -83,7 +92,8 @@ function footerNav(props: propType) {
 
   useEffect(() => {
     setPageArr(initialPageArr);
-    store.ExamStore.changeCurrentTitle(initialPageArr[0].headTitle);
+    store.ExamStore.changeCurrentTitle(initialPageArr[0].title);
+    store.ExamStore.changeTitleExpain(initialPageArr[0].headTitleExpain);
   },[]);
 
   const activeAction = (e: any) => {
