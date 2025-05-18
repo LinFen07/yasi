@@ -8,11 +8,11 @@ class ExamStore {
   //当前题目索引
   currentExamIndex = 1;
   currentExamTitle = 'Part1';
+  titleExpain = '';
 
   //字体大小
   FontSize = 18;
-  //分数标签
-  scoreTag = '听力报告';
+
 
   //听力录音
   listenAudio: string = '';
@@ -53,7 +53,6 @@ class ExamStore {
       currentExamIndex: this.currentExamIndex,
       currentExamTitle: this.currentExamTitle,
       FontSize: this.FontSize,
-      scoreTag: this.scoreTag,
       listenAudio: this.listenAudio,
       exam: this.exam,
       listenExam: this.listenExam,
@@ -77,7 +76,6 @@ class ExamStore {
       this.currentExamIndex = parsedData.currentExamIndex || 1;
       this.currentExamTitle = parsedData.currentExamTitle || 'Part1';
       this.FontSize = parsedData.FontSize || 18;
-      this.scoreTag = parsedData.scoreTag || '听力报告';
       this.listenAudio = parsedData.listenAudio || '';
       this.exam = parsedData.exam || [];
       this.listenExam = parsedData.listenExam || [];
@@ -143,6 +141,10 @@ class ExamStore {
     this.currentExamTitle = title;
   }
 
+  changeTitleExpain(title: string) {
+    this.titleExpain = title;
+  }
+
   //改变字体大小
   changeFontSize(size: number) {
     this.FontSize = size;
@@ -158,15 +160,6 @@ class ExamStore {
 
   resetcorrectListenAnswer(){
     this.correctListenAnswer = [];
-  }
-
-  changeScoreTag(tag: string) {
-    this.scoreTag = tag;
-  }
-
-  //获取题目类型
-  getScoreTag(){
-    return this.scoreTag;
   }
 
   //添加听力录音

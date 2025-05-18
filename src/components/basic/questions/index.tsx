@@ -87,6 +87,24 @@ function questions({exam}: {exam: Exam[]}) {
     return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ');;
   };
 
+  const replaceFontSize = (html: string, fontSize: number): string => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    const elements = doc.body.querySelectorAll('*');
+    elements.forEach((el: any) => {
+      // 如果已有 style 属性，保留原有内容并添加 font-size
+      let currentStyle = el.getAttribute('style') || '';
+      const fontSizeRegex = /font-size\s*:\s*[^;]+;?/gi;
+      currentStyle = currentStyle.replace(fontSizeRegex, '').trim(); // 移除已有的 font-size
+      currentStyle += ` font-size:${fontSize}px;`;
+      el.setAttribute('style', currentStyle);
+    });
+
+    const serializer = new XMLSerializer();
+    return doc.body.innerHTML;
+  };
+
   return (
     <div className='listencontent'>
         {
@@ -98,8 +116,8 @@ function questions({exam}: {exam: Exam[]}) {
                 : questionArr.topicType == '6'
                 ? <DragQuestion {...questionArr}></DragQuestion>
                 : questionArr.topicType == '4'
-                ?<div> 
-                    {ReactHtmlParser(questionArr.title)}
+                ? <div style={{fontSize: `${fontSize}px`}}>
+                    {ReactHtmlParser(replaceFontSize(questionArr.title, fontSize))}
                   </div>
                 : <div ref={el => titleRefs.current[index] = el} style={{fontSize: `${fontSize}px`}}> 
                     {stripHtmlTags(questionArr.title)}
