@@ -1,10 +1,9 @@
-import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react'
+import { useEffect, useState, forwardRef } from 'react'
 import { useNavigate } from 'react-router';
 import { Button, Space, Avatar, Slider, Modal, Dropdown } from 'antd'
 import { FieldTimeOutlined, SoundOutlined, DownOutlined } from '@ant-design/icons'
 import type { MenuProps } from 'antd';
 import './index.scss'
-import store from '@/stores'
 import IntegerStep from '@/components/basic/fontSizeSetting';
 import stores from '@/stores';
 import { requestConcurrency } from '@/utils/requestConcurrency';
@@ -70,9 +69,9 @@ const HeadTip = forwardRef((props: propType) => {
       stores.AnswerStore.resetLocalStorage();
       stores.ExamStore.resetLocalStorage();
     }
-    store.ExamStore.changeCurrent(1);
-    store.ExamStore.changeCurrentTitle('Part1');
-    store.ExamStore.resetcorrectListenAnswer();
+    stores.ExamStore.changeCurrent(1);
+    stores.ExamStore.changeCurrentTitle('Part1');
+    stores.ExamStore.resetcorrectListenAnswer();
   };
 
   const handleVolumeChange = (value: number) => {
@@ -84,7 +83,7 @@ const HeadTip = forwardRef((props: propType) => {
       <div className='headLeft'>
         <Space>
           <Avatar size={40} className='Avatar'/>
-        <h3>{store.UserStore.name}</h3>
+        <h3>{stores.UserStore.name}</h3>
         </Space>
       </div>
       <div className='headMid'>
