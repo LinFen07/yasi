@@ -43,7 +43,7 @@ function footerNav(props: propType) {
   };
 
   let prevLen = 0
-  const initialPageArr = (exam.map((part, index) => {
+  const initialPageArr = exam.map((part, index) => {
     let allLen = 0;
     for(let i = 0; i < part.questionItems.length; i++) {
       const len = part.questionItems[i].correctArray ? part.questionItems[i].correctArray.length : 1;
@@ -76,7 +76,7 @@ function footerNav(props: propType) {
       questionArr: questionArr,
       maxNum: currLen
     };
-  }))
+  })
 
   const [PageArr, setPageArr] = useState<Array<pageType>>([]);
 

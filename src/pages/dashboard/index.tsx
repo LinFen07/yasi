@@ -49,7 +49,7 @@ const Dashboard = () => {
   },[stores.UserStore.userId])
 
   const handleConfirmExam = async(id: number) => {
-    window.open(`/video?id=${id}`, '_blank');
+    window.open(`/video?id=${id}&type=listen`, '_blank');
 
     // 请求全屏
     // const requestFullscreen = () => {

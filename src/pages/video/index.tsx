@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ExamExplainVideo from '@/components/basic/examExpainVideo';
+import ExpainVideoCard from "@/components/hoc/videoCard";
 
 import "./index.scss";
 import { select } from "@/api/examPaper";
@@ -21,12 +22,10 @@ const IeltsFamiliarisationTest: React.FC = () => {
     const fetchExamData = async () => {
       try {
         const res = await select(+id);
-        console.log(res);
         //@ts-ignore
         if (res.code === 1) {
           //@ts-ignore
           const response = res.response;
-          console.log(response);
           stores.ExamStore.addExam(response.titleItems);
           stores.ExamStore.addListenAudio(response.audioFileUrl);
           AddCorrect(response.titleItems);
@@ -40,11 +39,11 @@ const IeltsFamiliarisationTest: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    if(type == 'listen' || type == 'read' || type == 'writte')
+    if( type == 'read' || type == 'writte')
       setListenCompelete(true);
-    if(type == 'read' || type == 'writte')
-      setReadCompekete(true);
     if(type == 'writte')
+      setReadCompekete(true);
+    if(type == 'end')
       setWritteCompelete(true);
   },[type])
 
@@ -59,76 +58,9 @@ const IeltsFamiliarisationTest: React.FC = () => {
           IELTS Familiarisation Test
         </h1>
         {/* <div style={{ fontWeight: 600, color: '#555', marginBottom: 8 }}>Today</div> */}
-        {/* Listening Card */}
-        <div style={{
-          border: '1px solid #ddd',
-          borderRadius: 8,
-          background: '#fff',
-          marginBottom: 32,
-          padding: 36,
-          position: 'relative'
-        }}>
-          <div style={{ fontSize: 24, fontWeight: 600, color: '#555' }}>Listening</div>
-          <div className='exam-compelete' style={listenCompelete ? {color: '#aebe36'}: undefined} >{listenCompelete ? 'completed' : 'Not completed'}</div>
-          <div style={{ color: '#666', marginBottom: 16 }}>Timing: 30 minutes</div>
-          {
-            type === ''
-            ? <ExamExplainVideo type='listen'></ExamExplainVideo>
-            : <></>
-          }
-          {
-            listenCompelete 
-            ? <CheckOutlined className='video-complete-icon'/>
-            : <></>
-          }
-        </div>
-        {/* Reading Card */}
-        <div style={{
-          border: '1px solid #ddd',
-          borderRadius: 8,
-          background: '#fff',
-          marginBottom: 32,
-          padding: 36,
-          position: 'relative'
-        }}>
-          <div style={{ fontSize: 24, fontWeight: 600, color: '#555' }}>Listening</div>
-          <div className='exam-compelete' style={readCompelete ? {color: '#aebe36'}: undefined}>{readCompelete ? 'completed' : 'Not completed'}</div>
-          <div style={{ color: '#666', marginBottom: 16 }}>Timing: 60 minutes</div>
-          {
-            type === 'listen'
-            ? <ExamExplainVideo type='read'></ExamExplainVideo>
-            : <></>
-          }
-          {
-            readCompelete 
-            ? <CheckOutlined className='video-complete-icon'/>
-            : <></>
-          }
-        </div>
-        {/* Writing Card */}
-        <div style={{
-          border: '1px solid #ddd',
-          borderRadius: 8,
-          background: '#fff',
-          marginBottom: 32,
-          padding: 36,
-          position: 'relative'
-        }}>
-          <div style={{ fontSize: 24, fontWeight: 600, color: '#555' }}>Listening</div>
-          <div style={{ color: '#d81b3a', fontWeight: 600, fontSize: 20, margin: '8px 0' }}>Not completed</div>
-          <div style={{ color: '#666', marginBottom: 16 }}>Timing: 60 minutes</div>
-          {
-            type === 'read'
-            ? <ExamExplainVideo type='writte'></ExamExplainVideo>
-            : <></>
-          }
-          {
-            writteCompelete 
-            ? <CheckOutlined className='video-complete-icon'/>
-            : <></>
-          }
-        </div>
-        {/* Yellow Note */}
+        <ExpainVideoCard type ='listen' isCompeleted= {listenCompelete} isShowVideo={type == 'listen'}/>
+        <ExpainVideoCard type ='read' isCompeleted= {readCompelete} isShowVideo={type == 'read'}/>
+        <ExpainVideoCard type ='writte' isCompeleted= {writteCompelete} isShowVideo={type == 'writte'}/>
         {
           noteVisible
           ? <div className='exam-video-explain-note-container'>

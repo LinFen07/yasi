@@ -2,7 +2,7 @@
 import stores from '@/stores';
 import type { Exam, ExamType } from '@/typings/exam';
 import { autorun, runInAction } from 'mobx';
-import  {computedPrevCount}  from '@/utils/computedPrevCount';
+import  {computedPrevCount}  from '@/utils/computed';
 import { submitStudentBlankAnswer } from './submitAnswer';
 export function createInput(exam: Array<Exam>, type: string) {
   let prevCount = computedPrevCount(stores.ExamStore.currentExamTitle, exam);

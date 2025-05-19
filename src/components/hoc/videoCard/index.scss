@@ -1,0 +1,35 @@
+.video-card-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  margin-bottom: 32px;
+  padding: 36px;
+  position: relative;
+}
+
+.video-card-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #555;
+}
+
+.exam-compelete {
+  color: #d81b3a;
+  font-weight: 600;
+  font-size: 20px;
+  margin: 8px 0;
+}
+
+.video-time {
+  color: #666;
+  margin-bottom: 16px;
+}
+
+
+.video-complete-icon {
+  position: absolute;
+  top: 40%;
+  right: 10%;
+  font-size: 48px;
+  color: #aebe36;
+}
