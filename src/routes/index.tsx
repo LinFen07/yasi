@@ -4,7 +4,6 @@ import { Navigate } from "react-router-dom";
 import Login from '@/pages/Login';
 import Layout from "@/layout";
 import Dashboard from "@/pages/dashboard";
-import UserInfo from "@/pages/userInfo";
 import TestOver from "@/pages/testOver";
 import stores from "@/stores";
 import Video from "@/pages/video";
@@ -50,11 +49,7 @@ const routes: Array<Router> = [
       {
         path: 'dashboard',
         element: <Dashboard/>
-      },
-      {
-        path: 'userInfo',
-        element: <UserInfo />
-      },
+      }
     ]
   },
   {
