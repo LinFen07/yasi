@@ -178,6 +178,10 @@ class ExamStore {
   changeStudentReadAnswer(index: number, answer: string){
     this.studentReadAnswers[index] = answer;
   }
+
+  changeWritteAnswer(index: number, answer: string){
+    this.correctWritte[index] = answer;
+  }
   changeAusioVolume(volume: number) {
     this.audioVolume = volume;
   }
