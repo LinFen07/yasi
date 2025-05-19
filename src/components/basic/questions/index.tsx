@@ -4,7 +4,7 @@ import stores from '@/stores';
 import ReactHtmlParser from 'react-html-parser';
 import { observer } from 'mobx-react';
 import { runInAction } from 'mobx';
-import  { computedBlanksPrevCount, computedPrevCount }  from '@/utils/computedPrevCount';
+import  { computedBlanksPrevCount, computedPrevCount }  from '@/utils/computed';
 import { submitStudentSelectAnswer } from '@/utils/submitAnswer'
 import  TickQuestion  from '../tickQuestion/index'
 import DragQuestion from '../dragQuestion';

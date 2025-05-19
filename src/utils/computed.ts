@@ -50,3 +50,11 @@ export function computedDragPrevCount(title: string, exam: Array<Exam>){
     }
   return prevCount;
 }
+
+export const countWords = (text: string): number => {
+  if (!text) return 0;
+
+  // 匹配英文单词和中文字符
+  const matches = text.match(/[\u4e00-\u9fa5]|\b\w+\b/g);
+  return matches ? matches.length : 0;
+}

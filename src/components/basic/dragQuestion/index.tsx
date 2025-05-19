@@ -5,7 +5,7 @@ import { ExamType } from "@/typings/exam";
 import TurndownService from 'turndown';
 import './index.scss';
 import stores from '@/stores';
-import { computedDragPrevCount } from '@/utils/computedPrevCount';
+import { computedDragPrevCount } from '@/utils/computed';
 import { runInAction } from 'mobx';
 import { submitStudentBlankAnswer } from '@/utils/submitAnswer';
 

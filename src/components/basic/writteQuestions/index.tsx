@@ -1,11 +1,10 @@
 import './index.scss';
 import { useEffect, useState } from 'react';
 import ReactHtmlParser from 'react-html-parser';
-import { ExamType } from '@/typings/exam';
 import stores from '@/stores';
 
 import { Input } from 'antd';
-import { submitStudentWritteAnswer } from '@/utils/submitAnswer';
+import { countWords } from '@/utils/computed';
 const { TextArea } = Input;
 export default function questions() {
   const exam = stores.ExamStore.getWritteExam();
@@ -49,14 +48,6 @@ export default function questions() {
     const count = countWords(text);
 
     setWordCount(count);
-  }
-
-  const countWords = (text: string): number => {
-    if (!text) return 0;
-  
-    // 匹配英文单词和中文字符
-    const matches = text.match(/[\u4e00-\u9fa5]|\b\w+\b/g);
-    return matches ? matches.length : 0;
   }
 
   return (

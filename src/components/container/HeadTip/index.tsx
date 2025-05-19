@@ -55,11 +55,11 @@ const HeadTip = forwardRef((props: propType) => {
 
   const finish = (type: string) => {
     if(type === 'listen'){
-      navigate(`/video?id=${stores.ExamStore.paperId}&type=${type}`, { replace: true });
+      navigate(`/video?id=${stores.ExamStore.paperId}&type=read`, { replace: true });
       requestConcurrency(stores.AnswerStore.completedAnswers);
       stores.AnswerStore.clearAnswers(type);
     }else if(type === 'read'){
-      navigate(`/video?id=${stores.ExamStore.paperId}&type=${type}`, { replace: true });
+      navigate(`/video?id=${stores.ExamStore.paperId}&type=writte`, { replace: true });
       requestConcurrency(stores.AnswerStore.completedAnswers);
       stores.AnswerStore.clearAnswers(type);
     }else if(type === 'writte'){
@@ -74,8 +74,6 @@ const HeadTip = forwardRef((props: propType) => {
     store.ExamStore.changeCurrentTitle('Part1');
     store.ExamStore.resetcorrectListenAnswer();
   };
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleVolumeChange = (value: number) => {
     stores.ExamStore.changeAusioVolume(value);
@@ -113,11 +111,6 @@ const HeadTip = forwardRef((props: propType) => {
       <div className='headRight'>
         <Space size={24}>
           <Button size='large' onClick={() => setModalOpen(true)}>Finish Text</Button>
-          {/* {
-            props.type === 'listen'
-            ? <></>
-            : <Button size='large' onClick={() => setModalOpen(true)}>Pause</Button>
-          } */}
           <div style={{fontSize: '16px'}}>
             <Dropdown menu={{ items }} trigger={['click']}>
               <a onClick={(e) => e.preventDefault()}>

@@ -3,7 +3,7 @@ import TurndownService from 'turndown';
 import { Table } from 'antd';
 import { ExamType } from '@/typings/exam';
 import './index.scss';
-import { computedTickPrevCount } from '@/utils/computedPrevCount';
+import { computedTickPrevCount } from '@/utils/computed';
 import stores from '@/stores';
 import { runInAction } from 'mobx';
 import { submitStudentBlankAnswer, submitStudentSelectAnswer } from '@/utils/submitAnswer';
