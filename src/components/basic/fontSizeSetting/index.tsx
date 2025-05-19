@@ -14,7 +14,7 @@ const IntegerStep: React.FC = () => {
 
   return (
     <Row>
-      <p style={{marginRight:'12px'}}>字体大小</p>
+      <p style={{marginRight:'12px'}}>Text Size </p>
       <Col span={12} style={{marginTop:'5px'}}>
         <Slider
           min={18}

@@ -93,17 +93,19 @@ const HeadTip = forwardRef((props: propType) => {
           {
             timerVisible
             ? <p>{minutes}：{seconds.toString().padStart(2, '0')}</p>
-            : <p>{minutes}minutes left</p>
+            : <p>{minutes} minutes remaining</p>
           }
         </Space>
       <div className='empty'></div>
         {
           props.type === 'listen' 
           ? <div>
-              <Space>
+              <Space style={{height: '100%'}}>
                <SoundOutlined style={{fontSize: '28px'}}/>  
                <Slider defaultValue={30} className='slider' onChange={handleVolumeChange}/>
+               <p style={{marginLeft: '8px'}}>Audio is playing</p>
               </Space>
+              
             </div>
           : <></>
         }
