@@ -4,13 +4,11 @@ import { Navigate } from "react-router-dom";
 import Login from '@/pages/Login';
 import Layout from "@/layout";
 import Dashboard from "@/pages/dashboard";
-import ListeningExam from "@/pages/listeningExam";
 import UserInfo from "@/pages/userInfo";
-import ReadExam from "@/pages/readExam";
-import WritteExam from "@/pages/writte";
 import TestOver from "@/pages/testOver";
 import stores from "@/stores";
 import Video from "@/pages/video";
+import ExamPage from "@/pages/examPage";
 
 // 快速导入工具函数
 const lazyLoad = (moduleName: string) => {
@@ -61,15 +59,15 @@ const routes: Array<Router> = [
   },
   {
     path: '/listeningExam',
-    element: <ListeningExam/>
+    element: <ExamPage type="listen"/>
   },
   {
     path: '/readnExam',
-    element: <ReadExam/>
+    element: <ExamPage type="read"/>
   },
   {
     path: '/writteExam',
-    element: <WritteExam/>
+    element: <ExamPage type="writte"/>
   },
   {
     path: '/testOver',
