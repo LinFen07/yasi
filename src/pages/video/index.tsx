@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import ExamExplainVideo from '@/components/basic/examExpainVideo';
 import ExpainVideoCard from "@/components/hoc/videoCard";
 
 import "./index.scss";
@@ -7,7 +6,6 @@ import { select } from "@/api/examPaper";
 import { useEffect } from "react";
 import stores from "@/stores";
 import { AddCorrect } from "@/utils/getCorrect";
-import { CheckOutlined } from '@ant-design/icons';
 
 const IeltsFamiliarisationTest: React.FC = () => {
   const id  = new URLSearchParams(window.location.search).get("id") || 0;

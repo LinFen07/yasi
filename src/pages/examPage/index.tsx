@@ -1,25 +1,25 @@
 
 import { Layout } from 'antd';
-import FooterNav from '@/components/container/FooterNav';
 import './index.scss';
 import HeadTip from '@/components/container/HeadTip';
 import PageContent from '@/components/container/examContent';
+import FooterNav from '@/components/container/FooterNav';
 
-const {Header, Content, Footer} = Layout;
+const {Header, Content} = Layout;
 
+export default function ExamPage({type}: {type: string}) {
 
-export default function readnExam() {
   return (
     <div className='examBox'>
       <Layout>
         <Header className='examHeader'>
-          <HeadTip type='read'></HeadTip>
+          <HeadTip type={type}></HeadTip>
         </Header>
         <Content className='examContent'>
-          <PageContent type='read'></PageContent>
+          <PageContent type={type}></PageContent>
         </Content>
         <div className='footer'>
-          <FooterNav type='read'></FooterNav>
+          <FooterNav type={type}></FooterNav>
         </div>
       </Layout>
     </div>
