@@ -1,7 +1,7 @@
 import './index.scss'
 import stores from '@/stores'
 import { observer } from 'mobx-react'
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Input } from 'antd';
 
 import ListenQuestions from '@/components/basic/listenQuestions';
@@ -45,6 +45,7 @@ const examContent = observer((props: propType) => {
   const [noteText, setNoteText] = useState<string>('');
   const [isHightlight, setIsHightlight] = useState<boolean>(false);
 
+  const noteTextAreaRef = useRef<HTMLTextAreaElement>(null);
   //字体大小
   const [fontSize, setFontSize] = useState(stores.ExamStore.FontSize);
 
@@ -177,6 +178,7 @@ const examContent = observer((props: propType) => {
   }
 
   const handleBlur = () => {
+    console.log('blur',noteText.length)
     if(noteText.length == 0) {
       handleClear();
       return
@@ -220,6 +222,10 @@ const examContent = observer((props: propType) => {
     setNoteText('');
   }
 
+  const handleNoteClose = () => {
+    setNoteVisible(false);
+  }
+
   return (
     <div className='pageContent'>
       <div className='title'>{stores.ExamStore.currentExamTitle}
@@ -253,12 +259,9 @@ const examContent = observer((props: propType) => {
       {
         noteVisible 
         ? <div className='note' style={{ position: 'absolute', top: menuPosition.y, left: menuPosition.x}}>
-          <button onClick={() => {
-            handleClear();
-            setNoteVisible(false);
-          }} className='noteCancel'>x</button>
+          <button onClick={handleNoteClose} className='noteCancel'>x</button>
             <p>选中的文本: {selectedText}</p>
-            <TextArea autoFocus onChange={handleNoteText} onBlur={handleBlur} defaultValue= {noteText}>11</TextArea>
+            <TextArea autoFocus onChange={handleNoteText} onBlur={handleBlur} defaultValue= {noteText}></TextArea>
           </div>
         : <></>
       }
