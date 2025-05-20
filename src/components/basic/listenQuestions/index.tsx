@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import stores from '@/stores';
 import ReactHtmlParser from 'react-html-parser';
 import { observer } from 'mobx-react';
@@ -12,17 +12,22 @@ const questions = () => {
   const exam = stores.ExamStore.getListenExam();
 
   const [listensArr, setListensArr] = useState(exam[0]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const index = +stores.ExamStore.currentExamTitle[4] - 1;
     setListensArr(exam[index]);
-    // createInput(exam, 'listen');
+    if(containerRef.current) {
+      createInput(exam, 'read', containerRef.current);
+    }
   },[stores.ExamStore.currentExamTitle]);
 
   return (
     <div className='lllll'>
       <div className='contentTitle'>{ReactHtmlParser(listensArr.name)}</div>
-      <Questions exam={exam}/>
+      <div ref={containerRef}>
+        <Questions exam={exam}/>
+      </div>
      </div>
   )
 }

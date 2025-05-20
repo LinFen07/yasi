@@ -15,10 +15,7 @@ const questions = () => {
   useEffect(() => {
     const index = +examTitle[4] - 1;
     setReadArr(exam[index]);
-    // createInput(exam, 'read');
     if(containerRef.current) {
-      // let span = containerRef.current.querySelectorAll('.gapfilling-span') || [];
-      // console.log('span', span);
       createInput(exam, 'read', containerRef.current);
     }
   },[examTitle, exam]);
