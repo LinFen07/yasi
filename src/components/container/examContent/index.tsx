@@ -1,7 +1,7 @@
 import './index.scss'
 import stores from '@/stores'
 import { observer } from 'mobx-react'
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Input } from 'antd';
 
 import ListenQuestions from '@/components/basic/listenQuestions';
@@ -19,7 +19,7 @@ type textArr = {
     x: number;
     y: number;
   };
-  selection: Selection | null
+  selection: any
 }
 
 type propType = {
@@ -45,7 +45,6 @@ const examContent = observer((props: propType) => {
   const [noteText, setNoteText] = useState<string>('');
   const [isHightlight, setIsHightlight] = useState<boolean>(false);
 
-  const noteTextAreaRef = useRef<HTMLTextAreaElement>(null);
   //字体大小
   const [fontSize, setFontSize] = useState(stores.ExamStore.FontSize);
 
@@ -58,14 +57,6 @@ const examContent = observer((props: propType) => {
   useEffect(() => {
     setFontSize(stores.ExamStore.FontSize);
   },[stores.ExamStore.FontSize]);
-
-  const debounce = (func: any, delay: number) => {
-    let timer: any;
-    return (...args: any[]) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => func(...args), delay);
-    };
-  };
 
   const handleSelection = () => {
     if(noteVisible) return;
@@ -92,9 +83,9 @@ const examContent = observer((props: propType) => {
       setNoteVisible(false);
     }
   },[]);
-  const handleSelectionDebounced = debounce(handleSelection, 300);
 
-  useEventListener('mouseup', handleSelectionDebounced, document);
+
+  useEventListener('mouseup', handleSelection, document);
   useEventListener('click',handleCloseMenu, document);
 
   const handleNoteText = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -128,7 +119,7 @@ const examContent = observer((props: propType) => {
             x: range.getBoundingClientRect().left + window.scrollX,
             y: range.getBoundingClientRect().bottom + window.scrollY,
           },
-          selection: selection
+          selection: range.cloneRange()
         });
 
           //创建新的元素
@@ -178,7 +169,6 @@ const examContent = observer((props: propType) => {
   }
 
   const handleBlur = () => {
-    console.log('blur',noteText.length)
     if(noteText.length == 0) {
       handleClear();
       return
@@ -196,20 +186,21 @@ const examContent = observer((props: propType) => {
     const span = document.getElementById(`${selectedText}`);
 
     if(span && span.parentNode) {
+      const parent = span.parentNode;
       const spanContent = span.innerText;
-      //TODO:清除事件监听
-      span.parentNode.removeChild(span);
+
+      parent.removeChild(span);
       
       flagTextArr.forEach(item => {
         if(item.text == selectedText) {
-          const range = item.selection?.getRangeAt(0);
-          range?.insertNode(document.createTextNode(spanContent));
+          item.selection?.insertNode(document.createTextNode(spanContent));
         };
       });
       flagTextArr.filter(e => e.text == span.innerText);
       setNoteText('');
     }
   }
+  
 
   const handleClearAll = () => {
     const span = document.getElementById(`${selectedText}`);
