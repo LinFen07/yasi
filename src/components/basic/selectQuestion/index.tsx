@@ -1,5 +1,5 @@
 import {  Radio, Checkbox } from 'antd';
-import ReactHtmlParser from 'react-html-parser';
+import parse from 'html-react-parser';
 
 export default function selectQuestion({ question, onChange }: any) {
   const Component = question.topicType === '1' ? Radio.Group : Checkbox.Group;
@@ -14,7 +14,7 @@ export default function selectQuestion({ question, onChange }: any) {
           <span style={{ display: 'flex', alignItems: 'center' }}>
             {opt.prefix}
             <p style={{ width: '8px' }}></p>
-            {ReactHtmlParser(opt.content)}
+            {parse(opt.content)}
           </span>
         ),
       }))}

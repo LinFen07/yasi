@@ -1,7 +1,8 @@
 const { override, addWebpackAlias } = require('customize-cra');
+const CompressionWebpackPlugin = require('compression-webpack-plugin');
 const path = require('path');
 
-// 自定义 Webpack 配置来禁用 source-map
+// 禁用 source-map
 function disableSourceMap(config) {
   if (config && config.devtool) {
     config.devtool = false;
@@ -15,11 +16,29 @@ function splitChunks(config) {
     ...config.optimization,
     splitChunks: {
       cacheGroups: {
-        // 第三方依赖打包进 vendors.js
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
+        // React 相关库单独打包
+        react: {
+          test: /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom)[\\/]/,
+          name: 'react',
           chunks: 'all',
+          priority: 30,
+          enforce: true,
+        },
+        // lodash 单独打包
+        lodash: {
+          test: /[\\/]node_modules[\\/]lodash[\\/]/,
+          name: 'lodash',
+          chunks: 'all',
+          priority: 25,
+          enforce: true,
+        },
+        // echarts 及其依赖单独打包
+        echarts: {
+          test: /[\\/]node_modules[\\/](echarts|zrender)[\\/]/,
+          name: 'echarts',
+          chunks: 'all',
+          priority: 20,
+          enforce: true,
         },
         // 业务代码公共部分打包进 common.js
         common: {
@@ -27,13 +46,14 @@ function splitChunks(config) {
           minChunks: 2,
           chunks: 'all',
           reuseExistingChunk: true,
+          priority: 10,
         },
-        // 可选：将 echarts 单独拆包
-        echarts: {
-          test: /[\\/]node_modules[\\/](echarts|zrender)[\\/]/,
-          name: 'echarts',
+        // 其它第三方依赖打包进 vendors.js
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
           chunks: 'all',
-          enforce: true,
+          priority: 0,
         },
       },
     },
@@ -53,7 +73,23 @@ module.exports = override(
   // 拆分 chunks
   splitChunks,
 
-  // 自定义 devServer 配置
+  (config) => {
+    if (process.env.NODE_ENV === 'production') {
+      config.plugins.push(
+        new CompressionWebpackPlugin({
+          test: /\.js$|\.css$/, // 压缩 js 和 css
+          filename: '[path][base].gz', // 输出 .gz 文件
+          algorithm: 'gzip',
+          threshold: 10240,
+          minRatio: 0.8,
+          deleteOriginalAssets: true, // 删除原文件
+        })
+      );
+    }
+    return config;
+  },
+
+  // devServer 配置
   function (config, env) {
     config.devServer = {
       ...config.devServer,

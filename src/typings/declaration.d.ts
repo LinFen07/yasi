@@ -1,2 +1,2 @@
-declare module 'react-html-parser';
+declare module 'html-react-parser';
 declare module 'turndown'
