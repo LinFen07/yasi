@@ -125,9 +125,21 @@ const HeadTip = forwardRef((props: propType) => {
           </div>
         </Space>
       </div>
-      <Modal title="Basic Modal" open={isModalOpen} onOk={() => finish(props.type)} onCancel={() => {setModalOpen(false)}}>
-      <p>You have selected to end this section of the test, click OK to progress to the next section or Cancel to return to the test.
-      This function is not available in the real computer-delivered lELTs test</p>
+      <Modal 
+        centered 
+        title="Test ended" 
+        open={isModalOpen} 
+        onOk={() => finish(props.type)} 
+        onCancel={() => {setModalOpen(false)}}
+        footer={[
+          <Button key="back" type='primary' onClick={() => finish(props.type)}>
+            Continue
+          </Button>
+        ]}
+      >
+        <p style={{fontSize: '18px'}}>Your test has finished.</p>
+        <p style={{fontSize: '18px'}}>All of your answers have been stored.</p>
+        <p style={{fontSize: '18px'}}>Please wait for further instructions.</p>
       </Modal>
     </div>
   );

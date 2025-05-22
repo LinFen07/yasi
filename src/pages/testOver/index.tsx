@@ -1,14 +1,10 @@
 
 import { Button } from 'antd';
-
 import './index.scss'
 import Score from '@/components/container/score';
 import Answer from '@/components/basic/answerBox';
-//@ts-ignore
-import img from '@/assets/logo.png'
 
 export default function testOver() {
-
   const closeTest = () => {
     window.location.href = '/layout/dashboard'
   }
@@ -25,7 +21,6 @@ export default function testOver() {
         <Score />
         <Answer />
       </div>
-
     </div>
   );
 }

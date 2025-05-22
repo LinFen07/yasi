@@ -61,7 +61,7 @@ function questions({exam}: {exam: Exam[]}) {
     stores.ExamStore.updateListenExam(examIndex, index, updatedQuestions);
     runInAction(() => {
       for(let i = 0; i < questionsArr[index].correctArray.length; i++) {
-        stores.ExamStore.correctListenAnswer.push(pre + 1 + index + i);
+        stores.ExamStore.correctListenAnswer.push(pre + 1 + index * 2 + i);
       }
     });
   }
