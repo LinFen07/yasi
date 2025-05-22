@@ -1,6 +1,6 @@
 import './index.scss'
 import { useEffect, useRef, useState } from 'react';
-import ReactHtmlParser from 'react-html-parser';
+import parse from 'html-react-parser';
 import stores from '@/stores';
 import { observer } from 'mobx-react'
 import { createInput } from '@/utils/createInput';
@@ -22,7 +22,7 @@ const questions = () => {
   
   return (
     <div className='readContent'>
-      <div className='leftContent parsed-name' >{ReactHtmlParser(readArr.name)}</div>
+      <div className='leftContent parsed-name' >{parse(readArr.name)}</div>
       <div className='rightContent' ref={containerRef}>
         <Questions exam={exam}/>
       </div>

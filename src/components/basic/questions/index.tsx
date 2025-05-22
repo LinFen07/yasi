@@ -1,7 +1,7 @@
 import {  Radio, Checkbox } from 'antd';
 import { useState, useRef, useEffect } from 'react';
 import stores from '@/stores';
-import ReactHtmlParser from 'react-html-parser';
+import parse from 'html-react-parser';
 import { observer } from 'mobx-react';
 import { runInAction } from 'mobx';
 import  { computedBlanksPrevCount, computedCheckSelectPrevCount, computedPrevCount }  from '@/utils/computed';
@@ -119,7 +119,7 @@ function questions({exam}: {exam: Exam[]}) {
                 ? <DragQuestion {...questionArr}></DragQuestion>
                 : questionArr.topicType == '4'
                 ? <div style={{fontSize: `${fontSize}px`}}>
-                    {ReactHtmlParser(replaceFontSize(questionArr.title, fontSize))}
+                    {parse(replaceFontSize(questionArr.title, fontSize))}
                   </div>
                 : <div ref={el => titleRefs.current[index] = el} style={{fontSize: `${fontSize}px`}}> 
                     {stripHtmlTags(questionArr.title)}

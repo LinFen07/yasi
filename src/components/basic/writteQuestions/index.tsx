@@ -1,6 +1,6 @@
 import './index.scss';
 import { useEffect, useState } from 'react';
-import ReactHtmlParser from 'react-html-parser';
+import parse from 'html-react-parser';
 import stores from '@/stores';
 
 import { Input } from 'antd';
@@ -53,8 +53,8 @@ export default function questions() {
   return (
     <div className='readContent'>
       <div className='leftContent'>
-        {ReactHtmlParser(title)}
-        {ReactHtmlParser(content)}
+        {parse(title)}
+        {parse(content)}
       </div>
       <div className='rightContent'>
         <TextArea
