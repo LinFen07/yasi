@@ -122,12 +122,12 @@ function questions({exam}: {exam: Exam[]}) {
                     {parse(replaceFontSize(questionArr.title, fontSize))}
                   </div>
                 : <div ref={el => titleRefs.current[index] = el} style={{fontSize: `${fontSize}px`}}> 
-                    {stripHtmlTags(questionArr.title)}
+                     {parse(replaceFontSize(questionArr.title, fontSize))}
                   </div>
               }
               <div>
                 {
-                  questionArr.questionType == '1'
+                  questionArr.topicType == '1'
                   ? (<Radio.Group style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
                       onChange={onChange(index)} 
                       value={questionArr.answer ? questionArr.answer : ''}
@@ -142,7 +142,7 @@ function questions({exam}: {exam: Exam[]}) {
                       )
                       }))}>
                     </Radio.Group>) 
-                    : questionArr.questionType == '2' 
+                    : questionArr.topicType == '2' 
                     ? <Checkbox.Group style={{ width: '100%', display: 'flex', flexDirection: 'column'}}
                       onChange={checkedOnChange(index)} 
                       value={questionArr.selectionsAnswer ? questionArr.selectionsAnswer : []}
