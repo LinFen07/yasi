@@ -8,7 +8,7 @@ import { fetchLogin } from '@/api/login'
 import stores from "@/stores";
 import './index.scss'
 
-import {citys} from '@/utils/ChinaCitys2025'
+import {citys} from '@/utils/contants/ChinaCitys2025'
 import { useEffect, useState } from "react";
 
 const { Option } = Select;

@@ -2,8 +2,8 @@
 import stores from '@/stores';
 import type { Exam, ExamType } from '@/typings/exam';
 import { autorun, runInAction, set } from 'mobx';
-import  {computedPrevCount}  from '@/utils/computed';
-import { submitStudentBlankAnswer } from './submitAnswer';
+import  {computedPrevCount}  from '@/utils/helper/computed';
+import { submitStudentBlankAnswer } from '../browser/submitAnswer';
 export function createInput(exam: Array<Exam>, type: string, container: any) {
   let prevCount = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
   const index = +stores.ExamStore.currentExamTitle[4] - 1;

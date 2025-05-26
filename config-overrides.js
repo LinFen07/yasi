@@ -24,14 +24,6 @@ function splitChunks(config) {
           priority: 30,
           enforce: true,
         },
-        // lodash 单独打包
-        lodash: {
-          test: /[\\/]node_modules[\\/]lodash[\\/]/,
-          name: 'lodash',
-          chunks: 'all',
-          priority: 25,
-          enforce: true,
-        },
         // echarts 及其依赖单独打包
         echarts: {
           test: /[\\/]node_modules[\\/](echarts|zrender)[\\/]/,
@@ -44,7 +36,7 @@ function splitChunks(config) {
         common: {
           name: 'common',
           minChunks: 2,
-          chunks: 'all',
+          chunks: 'initial',
           reuseExistingChunk: true,
           priority: 10,
         },
@@ -54,7 +46,7 @@ function splitChunks(config) {
           name: 'vendors',
           chunks: 'all',
           priority: 0,
-        },
+        }
       },
     },
   };

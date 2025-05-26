@@ -5,9 +5,9 @@ import { ExamType } from "@/typings/exam";
 import TurndownService from 'turndown';
 import './index.scss';
 import stores from '@/stores';
-import { computedDragPrevCount } from '@/utils/computed';
+import { computedDragPrevCount } from '@/utils/helper/computed';
 import { runInAction } from 'mobx';
-import { submitStudentBlankAnswer } from '@/utils/submitAnswer';
+import { submitStudentBlankAnswer } from '@/utils/browser/submitAnswer';
 
 interface OptionProps {
   key: string;

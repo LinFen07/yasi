@@ -1,4 +1,4 @@
-import echarts from '@/utils/echarts';
+import echarts from '@/utils/contants/echarts';
 import { useEffect } from 'react';
 
 import './index.scss';

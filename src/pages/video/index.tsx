@@ -5,7 +5,7 @@ import "./index.scss";
 import { select } from "@/api/examPaper";
 import { useEffect } from "react";
 import stores from "@/stores";
-import { AddCorrect } from "@/utils/getCorrect";
+import { AddCorrect } from "@/utils/browser/getCorrect";
 
 const IeltsFamiliarisationTest: React.FC = () => {
   const id  = new URLSearchParams(window.location.search).get("id") || 0;
