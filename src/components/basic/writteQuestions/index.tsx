@@ -4,7 +4,7 @@ import parse from 'html-react-parser';
 import stores from '@/stores';
 
 import { Input } from 'antd';
-import { countWords } from '@/utils/computed';
+import { countWords } from '@/utils/helper/computed';
 const { TextArea } = Input;
 export default function questions() {
   const exam = stores.ExamStore.getWritteExam();

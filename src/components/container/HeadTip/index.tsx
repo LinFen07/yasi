@@ -7,7 +7,7 @@ import './index.scss'
 import IntegerStep from '@/components/basic/fontSizeSetting';
 import stores from '@/stores';
 import { requestConcurrency } from '@/utils/requestConcurrency';
-import { submitStudentWritteAnswer } from '@/utils/submitAnswer';
+import { submitStudentWritteAnswer } from '@/utils/browser/submitAnswer';
 
 
 const items: MenuProps['items'] = [

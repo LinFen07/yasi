@@ -3,10 +3,10 @@ import TurndownService from 'turndown';
 import { Table } from 'antd';
 import { ExamType } from '@/typings/exam';
 import './index.scss';
-import { computedTickPrevCount } from '@/utils/computed';
+import { computedTickPrevCount } from '@/utils/helper/computed';
 import stores from '@/stores';
 import { runInAction } from 'mobx';
-import { submitStudentBlankAnswer, submitStudentSelectAnswer } from '@/utils/submitAnswer';
+import { submitStudentBlankAnswer, submitStudentSelectAnswer } from '@/utils/browser/submitAnswer';
 
 interface RecordType {
   key: number;

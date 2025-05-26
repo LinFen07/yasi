@@ -6,12 +6,9 @@ import Layout from "@/layout";
 import Dashboard from "@/pages/dashboard";
 import stores from "@/stores";
 import type { Router } from "@/typings/router";
-
-// 快速导入工具函数
-const lazyLoad = (moduleName: string, Examtype: string = '') => {
-  const Module = lazy(() => import(`@/pages/${moduleName}`));
-  return Examtype.length ? <Module type={Examtype}/> : <Module />;
-};
+import Video from "@/pages/video";
+const ExamPage = lazy(() => import('@/pages/examPage'));
+const TextOver = lazy(() => import('@/pages/testOver'));
 
 // 路由鉴权组件
 const Appraisal = ({ children }: any) => {
@@ -45,26 +42,24 @@ const routes: Array<Router> = [
   },
   {
     path: '/listeningExam',
-    element: lazyLoad('examPage', 'listen')
+    element: <ExamPage type="listen" />
   },
   {
     path: '/readnExam',
-    element: lazyLoad('examPage', 'read')
+    element: <ExamPage type="read" />
   },
   {
     path: '/writteExam',
-    element: lazyLoad('examPage', 'weitte')
+    element: <ExamPage type="writte" />
   },
   {
     path: '/testOver',
-    element: lazyLoad('testOver')
+    element: <TextOver/>
   },
   {
     path: '/video',
-    element: lazyLoad('video')
+    element: <Video />
   }
 ]
-
-
 
 export default routes

@@ -4,7 +4,7 @@ import stores from '@/stores';
 import parse from 'html-react-parser';
 import { observer } from 'mobx-react';
 import './index.scss'
-import { createInput } from '@/utils/createInput';
+import { createInput } from '@/utils/helper/createInput';
 
 import Questions from '@/components/basic/questions'
 

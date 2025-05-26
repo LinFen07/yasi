@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import parse from 'html-react-parser';
 import stores from '@/stores';
 import { observer } from 'mobx-react'
-import { createInput } from '@/utils/createInput';
+import { createInput } from '@/utils/helper/createInput';
 import Questions from '@/components/basic/questions'
 
 const questions = () => {
