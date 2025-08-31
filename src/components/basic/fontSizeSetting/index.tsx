@@ -4,12 +4,12 @@ import { Col, InputNumber, Row, Slider } from 'antd';
 import stores from '@/stores';
 
 const IntegerStep: React.FC = () => {
-  const [inputValue, setInputValue] = useState(18);
+  const [inputValue, setInputValue] = useState(stores.ExamStore.FontSize);
 
   const onChange: InputNumberProps['onChange'] = (newValue) => {
     const fontSize = newValue as number;
     setInputValue(fontSize);
-    stores.ExamStore.changeFontSize(inputValue);
+    stores.ExamStore.changeFontSize(fontSize);
   };
 
   return (

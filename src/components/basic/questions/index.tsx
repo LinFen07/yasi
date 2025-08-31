@@ -21,6 +21,7 @@ function questions({exam}: {exam: Exam[]}) {
     const index = +stores.ExamStore.currentExamTitle[4] - 1;
     setListensArr(exam[index]);
     setQuestionArr(exam[index].questionItems);
+    console.log(questionsArr)
   },[stores.ExamStore.currentExamTitle]);
 
   const onChange = (index: number) => (e: any) => {
@@ -73,7 +74,6 @@ function questions({exam}: {exam: Exam[]}) {
     titleRefs.current[questionIndex - prevCount - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     const inputAll = document.querySelectorAll('.textInput');
-    console.log('inputAll', questionIndex);
     //@ts-ignore
     inputAll[questionIndex - BlanksprevCount - 1]?.focus();
     inputAll[questionIndex - BlanksprevCount - 1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -118,11 +118,11 @@ function questions({exam}: {exam: Exam[]}) {
                 : questionArr.topicType == '6'
                 ? <DragQuestion {...questionArr}></DragQuestion>
                 : questionArr.topicType == '4'
-                ? <div style={{fontSize: `${fontSize}px`}}>
+                ? <div>
                     {parse(replaceFontSize(questionArr.title, fontSize))}
                   </div>
-                : <div ref={el => titleRefs.current[index] = el} style={{fontSize: `${fontSize}px`}}> 
-                     {parse(replaceFontSize(questionArr.title, fontSize))}
+                : <div ref={el => titleRefs.current[index] = el}> 
+                     {parse(questionArr.title, fontSize)}
                   </div>
               }
               <div>

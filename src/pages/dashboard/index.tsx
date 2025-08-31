@@ -85,7 +85,7 @@ const Dashboard = () => {
               <p>{item.endTime}</p>
               <Button 
                 type="primary" 
-                disabled={getTime(item.endTime)} 
+                // disabled={getTime(item.endTime)} 
                 onClick={() => handleConfirmExam(item.examPaperId)}>
                 前往考试
               </Button>

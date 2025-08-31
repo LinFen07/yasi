@@ -49,10 +49,7 @@ const DropTargetItem = ({ option, originalIndex, onRemove }: { option: string; o
   const [, drag, preview] = useDrag(
     () => ({
       type: ItemTypes.OPTION,
-      item: { option, index: originalIndex },
-      collect: (monitor) => ({
-        isDragging: !!monitor.isDragging(),
-      }),
+      item: { option, index: originalIndex }
     }),
     [option, originalIndex]
   );
@@ -65,12 +62,9 @@ const DropTargetItem = ({ option, originalIndex, onRemove }: { option: string; o
 };
 
 const DropTarget = ({ questionIndex, onDrop, onRemove, droppedItems }: DropTargetProps) => {
-  const [{ isOver }, drop] = useDrop(() => ({
+  const [, drop] = useDrop(() => ({
     accept: ItemTypes.OPTION,
-    drop: (item: { option: string; index: number }) => onDrop(item, questionIndex),
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver(),
-    }),
+    drop: (item: { option: string; index: number }) => onDrop(item, questionIndex)
   }));
 
   return (
@@ -89,7 +83,7 @@ export default function DragQuestion(questionArr: ExamType) {
     const optionRegex = /^[A-Z]\s(.*)$/;
     const questionRegex = /^\*\*\d+\*\*\s*(.*)$/;
 
-    let Options: string[] = [];
+    let Options: { option: string; originalIndex: number }[] = [];
     let Questions: string[] = [];
     let questionTitle: string = lines[0].replace(/\*\*/g, '');
     let optionTitle: string = '', title: string = '';
@@ -104,7 +98,7 @@ export default function DragQuestion(questionArr: ExamType) {
       const questionMatch = line.match(questionRegex);
 
       if (optionMatch) {
-        Options.push(optionMatch[0].trim());
+        Options.push({option: optionMatch[0].trim(), originalIndex: Options.length});
       }
       else if (questionMatch) {
         let cleanedLine = questionMatch[0].replace(/\*\*/g, '');
@@ -132,18 +126,18 @@ export default function DragQuestion(questionArr: ExamType) {
   }
   const markdown = turndownService.turndown(questionArr.title);
   const { questionTitle, Questions, Options, optionTitle, title } = parseMarkdownToQuestionData(markdown);
-  const [localOptions, setLocalOptions] = useState<string[]>(Options);
+  const [localOptions, setLocalOptions] = useState<{option: string; originalIndex: number}[]>(Options);
   const [droppedItems, setDroppedItems] = useState<{ questionIndex: number; option: string; originalIndex: number }[]>([]);
   const [studentAnswers, setStudentAnswers] = useState<string[]>(stores.AnswerStore.dragAnswers);
 
   useEffect(() => {
     // 初始化 droppedItems 和 localOptions
     const initialDroppedItems: { questionIndex: number; option: string; originalIndex: number }[] = [];
-    const initialLocalOptions: string[] = [...Options];
+    const initialLocalOptions: {option: string; originalIndex: number}[] = [...Options];
 
     stores.AnswerStore.dragAnswers.forEach((answer, questionIndex) => {
       if (answer) {
-        const optionIndex = Options.indexOf(answer);
+        const optionIndex = Options.indexOf({option: answer, originalIndex: questionIndex});
         if (optionIndex !== -1) {
           initialDroppedItems.push({ questionIndex, option: answer, originalIndex: optionIndex });
           initialLocalOptions.splice(optionIndex, 1);
@@ -155,10 +149,8 @@ export default function DragQuestion(questionArr: ExamType) {
     setLocalOptions(initialLocalOptions);
   }, []);
 
-
   const dragPrevCount = computedDragPrevCount(stores.ExamStore.currentExamTitle, stores.ExamStore.currentExam);
   const handleDrop = (item: { option: string; index: number }, questionIndex: number) => {
-    console.log(item, questionIndex)
     submitStudentBlankAnswer(questionArr,questionIndex,dragPrevCount, item.option[0], questionIndex)
     stores.ExamStore.changeCurrent(dragPrevCount + questionIndex + 1);
     stores.AnswerStore.dragAnswers[questionIndex] = item.option;
@@ -168,7 +160,7 @@ export default function DragQuestion(questionArr: ExamType) {
       return newAnswers;
     });
     setDroppedItems((prevItems) => {
-      // 查找现有项
+      // // 查找现有项
       const existingItem = prevItems.find(droppedItem => droppedItem.questionIndex === questionIndex);
       let newItems = prevItems;
       // 如果存在现有项，将其移回 localOptions 并从 droppedItems 中移除
@@ -177,7 +169,7 @@ export default function DragQuestion(questionArr: ExamType) {
          // 将现有项移回 localOptions 的原始位置
         setLocalOptions((prevOptions) => {
         const newOptions = [...prevOptions];
-        newOptions.splice(originalIndex, 0, existingItem.option);
+        newOptions.splice(originalIndex, 0, {option: existingItem.option, originalIndex});
         return newOptions;
       });
         newItems = prevItems.filter(droppedItem => droppedItem.questionIndex !== questionIndex);
@@ -190,7 +182,7 @@ export default function DragQuestion(questionArr: ExamType) {
       return newItems;
     });
     // 移除已拖拽的选项
-    setLocalOptions((prevOptions) => prevOptions.filter(option => option !== item.option));
+    setLocalOptions((prevOptions) => prevOptions.filter(option => option.option !== item.option));
     runInAction(() => {
       const indexToRemove = stores.ExamStore.correctListenAnswer.indexOf(dragPrevCount + questionIndex + 1);
       if (indexToRemove == -1) {
@@ -207,11 +199,12 @@ export default function DragQuestion(questionArr: ExamType) {
       // 找到该选项的原始索引
       const originalIndex = droppedItems.find(droppedItem => droppedItem.option === item.option)?.originalIndex;
       if (originalIndex !== undefined) {
-        // 在原始索引位置插入选项
-        newOptions.splice(originalIndex, 0, item.option);
+        // 找到该选项在 newOptions 中的位置
+        const movedIndex = prevOptions.findIndex(item => item.originalIndex >= originalIndex );
+        newOptions.splice(movedIndex, 0, {option: item.option, originalIndex});
       } else {
         // 如果找不到原始索引，直接添加到末尾
-        newOptions.push(item.option);
+        newOptions.push({option: item.option, originalIndex: newOptions.length});
       }
       return newOptions;
     });
@@ -231,7 +224,7 @@ export default function DragQuestion(questionArr: ExamType) {
           <div className='drag-question-option-box'>
             <div className='drag-question-title'>{optionTitle}</div>
             {localOptions.map((option, index) => (
-              <Option key={option} option={option} index={index} />
+              <Option key={option.option} option={option.option} index={index} />
             ))}
           </div>
           <div className='drag-question-question-box'>
