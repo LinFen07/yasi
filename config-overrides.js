@@ -56,7 +56,7 @@ function splitChunks(config) {
 
 module.exports = override(
   // 禁用 source map
-  disableSourceMap,
+  // disableSourceMap,
 
   // 添加 webpack 别名
   addWebpackAlias({
@@ -64,7 +64,7 @@ module.exports = override(
   }),
 
   // 拆分 chunks
-  splitChunks,
+  // splitChunks,
 
   // (config) => {
   //   if (process.env.NODE_ENV === 'production') {

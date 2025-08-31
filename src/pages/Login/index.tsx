@@ -84,7 +84,7 @@ function LoginRoute(props: Props) {
     <div className="lowin lowin-blue">
       <div className ="lowin-brand">
         <img 
-          src='https://i.postimg.cc/L65TL5Q3/04.webp' 
+          src='http://111.230.5.159:9000/yasi/image/logo/logo-03.webp' 
           alt="logo" 
           />
       </div>

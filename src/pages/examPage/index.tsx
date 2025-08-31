@@ -4,7 +4,7 @@ import './index.scss';
 import HeadTip from '@/components/container/HeadTip';
 import PageContent from '@/components/container/examContent';
 import FooterNav from '@/components/container/FooterNav';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react'
 import stores from '@/stores';
 
@@ -13,8 +13,14 @@ const {Header, Content} = Layout;
 function ExamPage({type}: {type: string}) {
 
   const [sizes, setSizes] = React.useState<(number | string)[]>(['80%', '20%']);
+  const [scale, setFontSize] = useState(1) 
+  useEffect(() => {
+    setFontSize(stores.ExamStore.FontSize / 18);
+    console.log(stores.ExamStore.FontSize)
+  },[stores.ExamStore.FontSize])
+
   return (
-    <div className='examBox'>
+    <div className='examBox' style={{ transform: `scale(${scale})`, transformOrigin: '0 0' }}>
       <Splitter
         onResize={setSizes}
       >
