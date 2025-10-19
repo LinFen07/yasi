@@ -1,4 +1,4 @@
-import { useEffect, useState, forwardRef } from 'react'
+import { useEffect, useState, forwardRef, useRef } from 'react'
 import { useNavigate } from 'react-router';
 import { Button, Space, Avatar, Slider, Modal, Dropdown } from 'antd'
 import { FieldTimeOutlined, SoundOutlined, DownOutlined, FormOutlined } from '@ant-design/icons'
@@ -33,27 +33,66 @@ const HeadTip = forwardRef((props: propType) => {
   const [seconds, setSeconds] = useState<number>(0);
   const [minutes, setMintnue] = useState<number>(testTime);
   const [timerVisible, setTimerVisible] = useState<boolean>(false);
+  const [remainingMs, setRemainingMs] = useState<number>(testTime * 60 * 1000);
+  const storageKey = `testTimer:${examstore.paperId}:${props.type}`;
+  const durationMs = testTime * 60 * 1000;
+  const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (minutes === 0 && seconds == 0) {
-      return;
-    } else if (seconds < 0) {
-      setSeconds(59);
-      setMintnue(minutes - 1);
-    }
-
-    const intervalId = setInterval(() => {
-      if(!isModalOpen) {
-        setSeconds((prevCount) => prevCount - 1);
+    try {
+      const raw = localStorage.getItem(storageKey);
+      let startAt: number | null = null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        startAt = Number(parsed.startAt) || null;
       }
-    }, 1000);
+      if (!startAt) {
+        startAt = Date.now();
+        localStorage.setItem(storageKey, JSON.stringify({ startAt }));
+      }
 
-    return () => clearInterval(intervalId); 
-  }, [seconds, isModalOpen]);
+      const tick = () => {
+        if (isModalOpen) return;
+        const end = (startAt as number) + durationMs;
+        const remain = Math.max(0, end - Date.now());
+        setRemainingMs(remain);
+        setMintnue(Math.floor(remain / 60000));
+        setSeconds(Math.floor((remain % 60000) / 1000));
+        if (remain <= 0) {
+          setSeconds(0);
+          setMintnue(0);
+          setModalOpen(true); // 触发完成弹窗
+        }
+      };
+
+      tick();
+      intervalRef.current = window.setInterval(tick, 1000);
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      };
+    } catch {
+      // 解析失败时不影响正常倒计时
+    }
+  }, [storageKey, durationMs, isModalOpen]);
   
   const navigate = useNavigate();
 
   const finish = (type: string) => {
+    // 当前模块结束，清除该模块的计时持久化，下一模块将重新开始计时
+    try { localStorage.removeItem(storageKey); } catch {}
+    // 释放计时器与状态，避免听力结束后资源残留
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setTimerVisible(false);
+    setSeconds(0);
+    setMintnue(testTime);
+    setRemainingMs(0);
+
     if(type === 'listen'){
       navigate(`/video?id=${examstore.paperId}&type=read`, { replace: true });
       requestConcurrency(stores.AnswerStore.completedAnswers);

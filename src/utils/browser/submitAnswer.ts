@@ -2,6 +2,15 @@
 import { ExamType, StudentAnswer } from '@/typings/exam';
 import stores from '@/stores';
 
+// 将输入转为纯文本：去除所有 HTML 标签，并规范空白
+function stripTagsNormalize(input: string): string {
+  if (!input) return '';
+  const div = document.createElement('div');
+  div.innerHTML = input;
+  const text = div.textContent || '';
+  return text.replace(/\s+/g, ' ').trim();
+}
+
 const studentAnswer: StudentAnswer = {
   isCorrect: 0,
   paperId: stores.ExamStore.paperId,
@@ -20,7 +29,7 @@ export function submitStudentSelectAnswer(
   questionIndex: number,
 ): void {
   Object.assign(studentAnswer, {
-    isCorrect: value == questionsArr[index].correct  ? 1 : 0,
+    isCorrect: stripTagsNormalize(value) == stripTagsNormalize(questionsArr[index].correct) ? 1 : 0,
     paperId: stores.ExamStore.paperId,
     questionId: questionsArr[index].id,
     studentAnswer: value,
@@ -40,12 +49,12 @@ export function submitStudentBlankAnswer(
   correctIndex: number,
 ): void {
   Object.assign(studentAnswer, {
-    isCorrect: value == questionArr.correctArray[correctIndex]  ? 1 : 0,
+    isCorrect: stripTagsNormalize(value) == stripTagsNormalize(questionArr.correctArray[correctIndex]) ? 1 : 0,
     paperId: stores.ExamStore.paperId,
     questionId: questionArr.id,
     studentAnswer: value,
     studentId: stores.UserStore.userId,
-    score: value == questionArr.correctArray[correctIndex] ? questionArr.items[correctIndex].score : '0',
+    score: stripTagsNormalize(value) == stripTagsNormalize(questionArr.correctArray[correctIndex]) ? questionArr.items[correctIndex].score : '0',
     questionType: questionArr.topicType,
     questionOrder: prevCount + i + 1
   });
