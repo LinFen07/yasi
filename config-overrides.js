@@ -1,3 +1,4 @@
+// 初始版：仅保留核心功能，无额外依赖，确保启动正常
 const { override, addWebpackAlias } = require('customize-cra');
 const CompressionWebpackPlugin = require('compression-webpack-plugin');
 const path = require('path');
@@ -51,9 +52,10 @@ function splitChunks(config) {
     },
   };
   return config;
-}
+};
 
 
+// 3. 组合所有配置（初始版仅启用：路径别名 + 基础devServer）
 module.exports = override(
   // 禁用 source map
   // disableSourceMap,
@@ -91,6 +93,7 @@ module.exports = override(
       port: 3000,
       https: false,
       hotOnly: false,
+      allowedHosts: 'auto',
       proxy: {
         '/api': {
           target: 'http://111.230.5.159:8668',

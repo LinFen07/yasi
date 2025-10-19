@@ -1,20 +1,44 @@
-.readContent{
+.readContent {
   height: 100%;
   display: flex;
 }
 
-.leftContent{
+.leftContent {
   width: 50%;
   height: 100%;
   border-right: 1px solid #7e7e7e3f;
   overflow: auto;
 }
-.rightContent{
+.rightContent {
   width: 50%;
   height: 100%;
   overflow: auto;
+  font-style: normal !important;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+  padding: 10px;
+  word-wrap: break-word;
+  word-break: keep-all;
+  max-width: 800px; /* 限制最大宽度控制每行字数 */
 }
 
-.parsed-name{
-  line-height: 1.5;
+.rightContent p {
+  margin-bottom: 1em;
+  line-height: inherit;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.rightContent p span {
+}
+.rightContent em {
+  font-style: normal;
+}
+.parsed-name {
+  line-height: 1;
+  font-style: normal !important;
+  // white-space: nowrap;
+  // overflow-x: auto;
+  // padding: 5px 0;
 }

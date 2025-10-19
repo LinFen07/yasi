@@ -2,7 +2,6 @@
 import { useNavigate } from "react-router";
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Form, Input, Flex, message, Select, Cascader  } from 'antd';
-
 import { fetchRegister, getExamMeal } from "@/api/register";
 import { fetchLogin } from '@/api/login'
 import stores from "@/stores";
@@ -51,7 +50,7 @@ function LoginRoute(props: Props) {
       //@ts-ignore
       if(res.code == 1) {
         const cookies = document.cookie;
-        console.log(cookies);
+        // console.log(cookies);
         stores.UserStore.login(cookies);
         stores.UserStore.setName(values.userName);
         message.success('登录成功');

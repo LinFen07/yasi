@@ -1,79 +1,90 @@
 import { Collapse } from "antd";
-import "./index.scss"
-import { CheckOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import "./index.scss";
+import { CheckOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
-export default function ExamExplainVideo({type}: {type: string}) {
+export default function ExamExplainVideo({ type }: { type: string }) {
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [videoUrl, setVideoUrl] = useState('')
+  const [videoUrl, setVideoUrl] = useState("");
   const navigate = useNavigate();
-  const title = 
-    type == 'listen' 
-    ? 'Listening'
-    : type == 'read'
-    ? 'Reading'
-    : 'Writting'
+  const title =
+    type == "listen" ? "Listening" : type == "read" ? "Reading" : "Writting";
 
   useEffect(() => {
-    switch(type) {
-      case 'listen':
-        setVideoUrl('http://111.230.5.159:9000/yasi/video/listen.mp4')
+    switch (type) {
+      case "listen":
+        setVideoUrl("http://111.230.5.159:9000/yasi/audio/listen.mp3");
         break;
-      case 'read':
-        setVideoUrl('http://111.230.5.159:9000/yasi/video/read.mp4');
+      case "read":
+        setVideoUrl("http://111.230.5.159:9000/yasi/audio/read.mp3");
         break;
-      case 'writte':
-        setVideoUrl('http://111.230.5.159:9000/yasi/video/writing.mp4');
+      case "writte":
+        setVideoUrl("http://111.230.5.159:9000/yasi/audio/writing.mp3");
         break;
     }
-
-  }, [type])
+  }, [type]);
 
   const handlerStart = () => {
-    if(type === 'listen') {
+    if (type === "listen") {
       const au = document.querySelector("audio");
-      if(au) {
-        au.play()
-      } 
+      if (au) {
+        au.play();
+      }
       navigate(`/listeningExam`);
-    }
-    else if(type === 'read') {
+    } else if (type === "read") {
       navigate(`/readnExam`);
-    }
-    else if(type === 'writte') {
+    } else if (type === "writte") {
       navigate(`/writteExam`);
     }
-  }
+  };
 
-  return(
+  return (
     <div>
       <Collapse
         size="large"
-        items={[{ key: '1', 
-          label: 
-            <>
-            <span className="video-information-text">Test information.</span>
-            <span className="video-iscomplete-text">Not confirmed.</span>
-            </>, 
-          children: 
-          <div>
-            <video className="exam-expain-video" controls src={videoUrl} />
-            {
-              isConfirmed 
-              ? <button className="video-confirm-button" onClick={handlerStart}>
-                  <ArrowRightOutlined style={{marginRight: '12px'}}/>
-                  Start {title}
-                </button>
-              : <div className="video-confirm-container">
-                  <h4 className="video-ready">Ready?</h4>
-                  <p style={{fontSize: '18px'}}>Please confirm that you have understood the instructions above.</p>
-                  <button className="video-confirm-button" onClick={() => setIsConfirmed(true)}><CheckOutlined style={{marginRight: '12px'}}/>I confirm</button>
-                </div>
-            }
-          </div>
-         }]}
+        items={[
+          {
+            key: "1",
+            label: (
+              <>
+                <span className="video-information-text">
+                  Test information.
+                </span>
+                <span className="video-iscomplete-text">Not confirmed.</span>
+              </>
+            ),
+            children: (
+              <div>
+                <video className="exam-expain-video" controls src={videoUrl} />
+                {isConfirmed ? (
+                  <button
+                    className="video-confirm-button"
+                    onClick={handlerStart}
+                  >
+                    <ArrowRightOutlined style={{ marginRight: "12px" }} />
+                    Start {title}
+                  </button>
+                ) : (
+                  <div className="video-confirm-container">
+                    <h4 className="video-ready">Ready?</h4>
+                    <p style={{ fontSize: "18px" }}>
+                      Please confirm that you have understood the instructions
+                      above.
+                    </p>
+                    <button
+                      className="video-confirm-button"
+                      onClick={() => setIsConfirmed(true)}
+                    >
+                      <CheckOutlined style={{ marginRight: "12px" }} />I confirm
+                    </button>
+                  </div>
+                )}
+              </div>
+            ),
+          },
+        ]}
       />
     </div>
-  )
+  );
 }

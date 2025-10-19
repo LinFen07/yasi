@@ -2,7 +2,6 @@ import '@/scss/App.scss';
 import routes from './routes/index'
 import { useLocation, useRoutes } from 'react-router-dom'
 import { Suspense, useEffect, useState } from'react'
-
 import { Spin } from 'antd';
 import stores from './stores';
 import { observer } from 'mobx-react';
