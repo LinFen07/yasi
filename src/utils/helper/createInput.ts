@@ -4,6 +4,7 @@ import type { Exam, ExamType } from '@/typings/exam';
 import { autorun, runInAction, set } from 'mobx';
 import  {computedPrevCount}  from '@/utils/helper/computed';
 import { submitStudentBlankAnswer } from '../browser/submitAnswer';
+import { restrictChineseInput } from './inputRestriction';
 export function createInput(exam: Array<Exam>, type: string, container: any) {
   let prevCount = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
   const index = +stores.ExamStore.currentExamTitle[4] - 1;
@@ -68,7 +69,17 @@ export function MyInput(index: number, span: any, prevCount: number, questionArr
         placeholder.style.display = 'block';
       }
     });
-    input.addEventListener('input', () => {
+    input.addEventListener('input', (e) => {
+      const originalValue = input.value;
+      const filteredValue = restrictChineseInput(originalValue);
+      
+      // 如果输入包含中文，则替换为过滤后的值
+      if (originalValue !== filteredValue) {
+        input.value = filteredValue;
+        // 显示提示信息（可选）
+        console.warn('不允许输入中文字符');
+      }
+
       if (input.value) {
         placeholder.style.display = 'none';
         const correctIndex = questionArr.correctArray.length - (len - i);
@@ -79,6 +90,26 @@ export function MyInput(index: number, span: any, prevCount: number, questionArr
       } else {
         placeholder.style.display = 'block';
       }
+    });
+
+    // 添加键盘事件监听，阻止中文输入法
+    input.addEventListener('keydown', (e) => {
+      // 阻止中文输入法的组合键
+      if (e.key === 'Process' || e.isComposing) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    // 添加组合输入事件监听（处理输入法）
+    input.addEventListener('compositionstart', (e) => {
+      e.preventDefault();
+    });
+
+    input.addEventListener('compositionend', (e) => {
+      e.preventDefault();
+      const filteredValue = restrictChineseInput(input.value);
+      input.value = filteredValue;
     });
 
     wrapper.appendChild(placeholder);

@@ -95,26 +95,68 @@ function footerNav(props: propType) {
 
   useEffect(() => {
     setPageArr(initialPageArr);
-    setCurren(store.ExamStore.currentExamIndex);
-    store.ExamStore.changeCurrentTitle(initialPageArr[0].title);
-    store.ExamStore.changeTitleExpain(initialPageArr[0].headTitleExpain);
+    
+    // 从localStorage恢复状态
+    const savedIndex = store.ExamStore.currentExamIndex;
+    const savedTitle = store.ExamStore.currentExamTitle;
+    
+    setCurren(savedIndex);
+    
+    // 如果有保存的状态，使用保存的状态；否则使用默认状态
+    if (savedTitle && savedTitle !== "Part1") {
+      // 根据保存的currentExamIndex找到对应的页面信息
+      handleChangeTitle(savedIndex);
+    } else {
+      // 使用默认状态
+      store.ExamStore.changeCurrentTitle(initialPageArr[0].title);
+      store.ExamStore.changeTitleExpain(initialPageArr[0].headTitleExpain);
+    }
   }, []);
 
   const activeAction = (num: number) => {
     store.ExamStore.changeCurrent(num);
     setCurren(store.ExamStore.currentExamIndex);
     handleChangeTitle(num);
+    
+    // 保存页面状态到localStorage
+    try {
+      const state = {
+        currentExamIndex: num,
+        currentExamTitle: store.ExamStore.currentExamTitle,
+        currentPageType: type,
+        paperId: store.ExamStore.paperId,
+      };
+      localStorage.setItem('examPageState', JSON.stringify(state));
+    } catch (error) {
+      console.warn('保存页面状态失败:', error);
+    }
   };
 
   const handleArrowAction = (arrow: string) => {
+    let newIndex = curren;
     if (arrow == "left") {
-      setCurren(curren - 1);
-      store.ExamStore.changeCurrent(curren - 1);
-      handleChangeTitle(curren - 1);
+      newIndex = curren - 1;
+      setCurren(newIndex);
+      store.ExamStore.changeCurrent(newIndex);
+      handleChangeTitle(newIndex);
     } else if (arrow == "right") {
-      setCurren(curren + 1);
-      store.ExamStore.changeCurrent(curren + 1);
-      handleChangeTitle(curren + 1);
+      newIndex = curren + 1;
+      setCurren(newIndex);
+      store.ExamStore.changeCurrent(newIndex);
+      handleChangeTitle(newIndex);
+    }
+    
+    // 保存页面状态到localStorage
+    try {
+      const state = {
+        currentExamIndex: newIndex,
+        currentExamTitle: store.ExamStore.currentExamTitle,
+        currentPageType: type,
+        paperId: store.ExamStore.paperId,
+      };
+      localStorage.setItem('examPageState', JSON.stringify(state));
+    } catch (error) {
+      console.warn('保存页面状态失败:', error);
     }
   };
 

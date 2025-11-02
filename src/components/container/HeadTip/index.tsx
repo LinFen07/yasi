@@ -8,6 +8,7 @@ import IntegerStep from '@/components/basic/fontSizeSetting';
 import stores from '@/stores';
 import { requestConcurrency } from '@/utils/requestConcurrency';
 import { submitStudentWritteAnswer } from '@/utils/browser/submitAnswer';
+import { clearModuleData, safeSubmitAndClear } from '@/utils/helper/examDataManager';
 
 
 const items: MenuProps['items'] = [
@@ -80,6 +81,8 @@ const HeadTip = forwardRef((props: propType) => {
   
   const navigate = useNavigate();
 
+
+
   const finish = (type: string) => {
     // 当前模块结束，清除该模块的计时持久化，下一模块将重新开始计时
     try { localStorage.removeItem(storageKey); } catch {}
@@ -94,21 +97,60 @@ const HeadTip = forwardRef((props: propType) => {
     setRemainingMs(0);
 
     if(type === 'listen'){
-      navigate(`/video?id=${examstore.paperId}&type=read`, { replace: true });
-      requestConcurrency(stores.AnswerStore.completedAnswers);
-      stores.AnswerStore.clearAnswers(type);
+      // 使用安全提交和清理流程
+      safeSubmitAndClear(
+        () => requestConcurrency(stores.AnswerStore.completedAnswers),
+        () => {
+          console.log('听力答案提交成功');
+          clearModuleData(type);
+          navigate(`/video?id=${examstore.paperId}&type=read`, { replace: true });
+        },
+        (error) => {
+          console.error('听力答案提交失败:', error);
+          // 提交失败时不清除数据，但仍然跳转
+          navigate(`/video?id=${examstore.paperId}&type=read`, { replace: true });
+        }
+      );
     }else if(type === 'read'){
-      navigate(`/video?id=${examstore.paperId}&type=writte`, { replace: true });
-      requestConcurrency(stores.AnswerStore.completedAnswers);
-      stores.AnswerStore.clearAnswers(type);
+      // 使用安全提交和清理流程
+      safeSubmitAndClear(
+        () => requestConcurrency(stores.AnswerStore.completedAnswers),
+        () => {
+          console.log('阅读答案提交成功');
+          clearModuleData(type);
+          navigate(`/video?id=${examstore.paperId}&type=writte`, { replace: true });
+        },
+        (error) => {
+          console.error('阅读答案提交失败:', error);
+          // 提交失败时不清除数据，但仍然跳转
+          navigate(`/video?id=${examstore.paperId}&type=writte`, { replace: true });
+        }
+      );
     }else if(type === 'writte'){
-      // navigate('/testOver',{ replace: true });
-      navigate(`/video?id=${examstore.paperId}&type=end`, { replace: true });
-      submitStudentWritteAnswer(examstore.wirrteExam[0].questionItems[0], 0, examstore.correctWritte[0]);
-      submitStudentWritteAnswer(examstore.wirrteExam[1].questionItems[0], 1, examstore.correctWritte[1]);
-      requestConcurrency(stores.AnswerStore.writingAnswers);
-      stores.AnswerStore.resetLocalStorage();
-      examstore.resetLocalStorage();
+      try {
+        // 确保写作答案已添加到store中
+        submitStudentWritteAnswer(examstore.wirrteExam[0].questionItems[0], 0, examstore.correctWritte[0]);
+        submitStudentWritteAnswer(examstore.wirrteExam[1].questionItems[0], 1, examstore.correctWritte[1]);
+        
+        console.log('准备提交写作答案:', stores.AnswerStore.writingAnswers);
+        
+        // 使用安全提交和清理流程 - 考试完成时清除所有数据
+        safeSubmitAndClear(
+          () => requestConcurrency(stores.AnswerStore.writingAnswers),
+          () => {
+            console.log('写作答案提交成功，考试完成，所有本地数据已清除');
+            navigate(`/video?id=${examstore.paperId}&type=end`, { replace: true });
+          },
+          (error) => {
+            console.error('写作答案提交失败:', error);
+            console.warn('答案已保存在本地，网络恢复后将自动重试提交');
+            navigate(`/video?id=${examstore.paperId}&type=end`, { replace: true });
+          }
+        );
+      } catch (error) {
+        console.error('准备写作答案时出错:', error);
+        navigate(`/video?id=${examstore.paperId}&type=end`, { replace: true });
+      }
     }
     examstore.changeCurrent(1);
     examstore.changeCurrentTitle('Part1');

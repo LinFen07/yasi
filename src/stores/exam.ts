@@ -9,6 +9,9 @@ class ExamStore {
   currentExamIndex = 1;
   currentExamTitle = "Part1";
   titleExpain = "";
+  
+  // 页面类型状态保存
+  currentPageType = "listen";
 
   //字体大小
   FontSize = 18;
@@ -51,6 +54,7 @@ class ExamStore {
       paperId: this.paperId,
       currentExamIndex: this.currentExamIndex,
       currentExamTitle: this.currentExamTitle,
+      currentPageType: this.currentPageType,
       FontSize: this.FontSize,
       listenAudio: this.listenAudio,
       exam: this.exam,
@@ -72,6 +76,7 @@ class ExamStore {
       paperId: this.paperId,
       currentExamIndex: this.currentExamIndex,
       currentExamTitle: this.currentExamTitle,
+      currentPageType: this.currentPageType,
       FontSize: this.FontSize,
       listenAudio: this.listenAudio,
       exam: this.exam,
@@ -95,6 +100,7 @@ class ExamStore {
       this.paperId = parsedData.paperId || 0;
       this.currentExamIndex = parsedData.currentExamIndex || 1;
       this.currentExamTitle = parsedData.currentExamTitle || "Part1";
+      this.currentPageType = parsedData.currentPageType || "listen";
       this.FontSize = parsedData.FontSize || 18;
       this.listenAudio = parsedData.listenAudio || "";
       this.exam = parsedData.exam || [];
@@ -165,6 +171,10 @@ class ExamStore {
 
   changeTitleExpain(title: string) {
     this.titleExpain = title;
+  }
+
+  changeCurrentPageType(pageType: string) {
+    this.currentPageType = pageType;
   }
 
   //改变字体大小

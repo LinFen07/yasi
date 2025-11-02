@@ -6,7 +6,7 @@ import stores from '@/stores';
 import { observer } from 'mobx-react';
 import { useEffect, useState } from 'react';
 import { getAnswerList } from '@/api/studentAnswer';
-import { createQuestionNumberMapping, getQuestionModuleType } from '@/utils/questionNumbering';
+import { createQuestionNumberMapping, getQuestionModuleType } from '../../../utils/questionNumbering';
 
 interface DataType {
   key: string;

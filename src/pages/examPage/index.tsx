@@ -17,7 +17,27 @@ function ExamPage({type}: {type: string}) {
   useEffect(() => {
     setFontSize(stores.ExamStore.FontSize / 18);
     console.log(stores.ExamStore.FontSize)
-  },[stores.ExamStore.FontSize])
+    
+    // 保存当前页面类型到localStorage
+    stores.ExamStore.changeCurrentPageType(type);
+    
+    // 处理页面刷新后的状态恢复
+    try {
+      const savedState = localStorage.getItem('examPageState');
+      if (savedState) {
+        const state = JSON.parse(savedState);
+        // 检查是否是同一个考试和页面类型
+        if (state.paperId === stores.ExamStore.paperId && state.currentPageType === type) {
+          // 恢复保存的状态
+          stores.ExamStore.changeCurrent(state.currentExamIndex);
+          stores.ExamStore.changeCurrentTitle(state.currentExamTitle);
+          console.log('页面状态已恢复:', state);
+        }
+      }
+    } catch (error) {
+      console.warn('恢复页面状态失败:', error);
+    }
+  },[stores.ExamStore.FontSize, type])
 
   return (
     <div className='examBox' style={{ transform: `scale(${scale})`, transformOrigin: '0 0' }}>
