@@ -1,13 +1,10 @@
 <template>
   <div class="sidebar-logo-container" :class="{'collapse':collapse}">
-    <transition name="sidebarLogoFade">
-      <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
-        <img  src="@/assets/logo.png" class="sidebar-logo">
-        <h1  class="sidebar-title">{{ title }} </h1>
+    <transition name="sidebarLogoFade">      <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
+        <img src="@/assets/logoimage.png" class="sidebar-logo">
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
-        <img  src="@/assets/logo.png" class="sidebar-logo">
-        <h1 class="sidebar-title">{{ title }} </h1>
+        <img src="@/assets/logoimage.png" class="sidebar-logo">
       </router-link>
     </transition>
   </div>
@@ -23,9 +20,7 @@ export default {
     }
   },
   data () {
-    return {
-      title: '模考后台管理系统'
-    }
+    return {}
   }
 }
 </script>
@@ -48,29 +43,22 @@ export default {
   background: #2b2f3a;
   text-align: center;
   overflow: hidden;
-
   & .sidebar-logo-link {
     height: 100%;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     & .sidebar-logo {
-      width: 45px;
+      max-width: 300px;
+      height: 100px;
+      width: 200px;
+      max-height: 95px;
       vertical-align: middle;
-      margin-right: 12px;
-    }
-
-    & .sidebar-title {
-      display: inline-block;
-      margin: 0;
-      color: #fff;
-      font-weight: 600;
-      line-height: 50px;
-      font-size: 14px;
-      font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
-      vertical-align: middle;
+      margin-right: 0px;
     }
   }
-
   &.collapse {
     .sidebar-logo {
       margin-right: 0px;

@@ -2,14 +2,14 @@
   <div class="app-container">
     <el-form :model="form" ref="form" label-width="100px" v-loading="formLoading" :rules="rules">
       <el-form-item label="年级：" prop="level" required>
-        <el-select v-model="form.level" placeholder="年级"  @change="levelChange">
+        <el-select v-model="form.level" placeholder="年级" @change="levelChange">
           <el-option v-for="item in levelEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="学科：" prop="subjectId" required>
         <el-select v-model="form.subjectId" placeholder="学科">
           <el-option v-for="item in subjectFilter" :key="item.id" :value="item.id"
-                     :label="item.name+' ( '+item.levelName+' )'"></el-option>
+            :label="item.name+' ( '+item.levelName+' )'"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="试卷类型：" prop="paperType" required>
@@ -19,24 +19,29 @@
       </el-form-item>
       <el-form-item label="时间限制：" required v-show="form.paperType===4">
         <el-date-picker v-model="form.limitDateTime" value-format="yyyy-MM-dd HH:mm:ss" type="datetimerange"
-                        range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期">
+          range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期">
         </el-date-picker>
       </el-form-item>
-      <el-form-item label="试卷名称："  prop="name" required>
-        <el-input v-model="form.name"/>
+      <el-form-item label="试卷名称：" prop="name" required>
+        <el-input v-model="form.name" />
       </el-form-item>
-      <el-form-item :key="index" :label="'标题'+(index+1)+'：'" required v-for="(titleItem,index) in form.titleItems">
-        <el-input v-model="titleItem.name" style="width: 80%"/>
+      <el-form-item :key="index" :label="'标题' + (index + 1) + '：'" required v-for="(titleItem, index) in form.titleItems">
+        <div style="width: 80%; border: 1px solid #ccc">
+          <Toolbar style="border-bottom: 1px solid #ccc" :editor="titleItem.editor" :defaultConfig="toolbarConfig" />
+          <Editor style="height: 300px; overflow-y: hidden;" v-model="titleItem.name" :defaultConfig="editorConfig"
+            @onCreated="(editor) => handleEditorCreated(editor, titleItem)" />
+        </div>
+
         <el-button type="text" class="link-left" style="margin-left: 20px" size="mini" @click="addQuestion(titleItem)">
           添加题目
         </el-button>
-        <el-button type="text" class="link-left" size="mini" @click="form.titleItems.splice(index,1)">删除</el-button>
+        <el-button type="text" class="link-left" size="mini" @click="form.titleItems.splice(index, 1)">删除</el-button>
         <el-card class="exampaper-item-box" v-if="titleItem.questionItems.length!==0">
           <el-form-item :key="questionIndex" :label="'题目'+(questionIndex+1)+'：'"
-                        v-for="(questionItem,questionIndex) in titleItem.questionItems" style="margin-bottom: 15px">
+            v-for="(questionItem,questionIndex) in titleItem.questionItems" style="margin-bottom: 15px">
             <el-row>
               <el-col :span="23">
-                <QuestionShow :qType="questionItem.questionType" :question="questionItem"/>
+                <QuestionShow :qType="questionItem.questionType" :question="questionItem" />
               </el-col>
               <el-col :span="1">
                 <el-button type="text" size="mini" @click="titleItem.questionItems.splice(questionIndex,1)">删除
@@ -47,7 +52,7 @@
         </el-card>
       </el-form-item>
       <el-form-item label="建议时长：" prop="suggestTime" required>
-        <el-input v-model="form.suggestTime" placeholder="分钟"/>
+        <el-input v-model="form.suggestTime" placeholder="分钟" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">提交</el-button>
@@ -55,14 +60,15 @@
         <el-button type="success" @click="addTitle">添加标题</el-button>
       </el-form-item>
     </el-form>
-    <el-dialog :visible.sync="questionPage.showDialog"  width="70%">
+    <el-dialog :visible.sync="questionPage.showDialog" width="70%">
       <el-form :model="questionPage.queryParam" ref="queryForm" :inline="true">
         <el-form-item label="ID：">
-          <el-input v-model="questionPage.queryParam.id"  clearable></el-input>
+          <el-input v-model="questionPage.queryParam.id" clearable></el-input>
         </el-form-item>
         <el-form-item label="题型：">
           <el-select v-model="questionPage.queryParam.questionType" clearable>
-            <el-option v-for="item in questionTypeEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
+            <el-option v-for="item in questionTypeEnum" :key="item.key" :value="item.key"
+              :label="item.value"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -70,19 +76,19 @@
         </el-form-item>
       </el-form>
       <el-table v-loading="questionPage.listLoading" :data="questionPage.tableData"
-                @selection-change="handleSelectionChange" border fit highlight-current-row style="width: 100%">
+        @selection-change="handleSelectionChange" border fit highlight-current-row style="width: 100%">
         <el-table-column type="selection" width="35"></el-table-column>
-        <el-table-column prop="id" label="Id" width="60px"/>
-        <el-table-column prop="questionType" label="题型" :formatter="questionTypeFormatter" width="70px"/>
-        <el-table-column prop="shortTitle" label="题干" show-overflow-tooltip/>
+        <el-table-column prop="id" label="Id" width="60px" />
+        <el-table-column prop="questionType" label="题型" :formatter="questionTypeFormatter" width="70px" />
+        <el-table-column prop="shortTitle" label="题干" show-overflow-tooltip />
       </el-table>
       <pagination v-show="questionPage.total>0" :total="questionPage.total"
-                  :page.sync="questionPage.queryParam.pageIndex" :limit.sync="questionPage.queryParam.pageSize"
-                  @pagination="search"/>
+        :page.sync="questionPage.queryParam.pageIndex" :limit.sync="questionPage.queryParam.pageSize"
+        @pagination="search" />
       <span slot="footer" class="dialog-footer">
-          <el-button @click="questionPage.showDialog = false">取 消</el-button>
-          <el-button type="primary" @click="confirmQuestionSelect">确定</el-button>
-     </span>
+        <el-button @click="questionPage.showDialog = false">取 消</el-button>
+        <el-button type="primary" @click="confirmQuestionSelect">确定</el-button>
+      </span>
     </el-dialog>
   </div>
 </template>
@@ -94,9 +100,15 @@ import Pagination from '@/components/Pagination'
 import QuestionShow from '../question/components/Show'
 import examPaperApi from '@/api/examPaper'
 import questionApi from '@/api/question'
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+import '@wangeditor/editor/dist/css/style.css'
 
 export default {
-  components: { Pagination, QuestionShow },
+  components: {
+    Editor,
+    Toolbar,
+    Pagination,
+    QuestionShow },
   data () {
     return {
       form: {
@@ -142,7 +154,24 @@ export default {
         tableData: [],
         total: 0
       },
-      currentTitleItem: null
+      currentTitleItem: null,
+      toolbarConfig: {
+        // 工具栏配置
+        excludeKeys: [
+          'headerSelect',
+          'italic',
+          'group-more-style' // 排除菜单组
+        ]
+      },
+      editorConfig: {
+        placeholder: '请输入标题内容...',
+        MENU_CONF: {
+          uploadImage: {
+            server: '/api/upload', // 上传接口
+            fieldName: 'file'
+          }
+        }
+      }
     }
   },
   created () {
@@ -183,12 +212,12 @@ export default {
         }
       })
     },
-    addTitle () {
-      this.form.titleItems.push({
-        name: '',
-        questionItems: []
-      })
-    },
+    // addTitle () {
+    //   this.form.titleItems.push({
+    //     name: '',
+    //     questionItems: []
+    //   })
+    // },
     addQuestion (titleItem) {
       this.currentTitleItem = titleItem
       this.questionPage.showDialog = true
@@ -253,7 +282,26 @@ export default {
       this.form.id = lastId
     },
     ...mapActions('exam', { initSubject: 'initSubject' }),
-    ...mapActions('tagsView', { delCurrentView: 'delCurrentView' })
+    ...mapActions('tagsView', { delCurrentView: 'delCurrentView' }),
+    handleEditorCreated (editor, titleItem) {
+      titleItem.editor = editor // 将editor实例保存到titleItem中
+    },
+    // 在添加标题的方法中初始化editor
+    addTitle () {
+      this.form.titleItems.push({
+        name: '',
+        questionItems: [],
+        editor: null // 添加editor引用
+      })
+    },
+    // 在组件销毁时销毁editor实例
+    beforeDestroy () {
+      this.form.titleItems.forEach(item => {
+        if (item.editor) {
+          item.editor.destroy()
+        }
+      })
+    }
   },
   computed: {
     ...mapGetters('enumItem', ['enumFormat']),

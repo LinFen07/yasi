@@ -1,6 +1,7 @@
 <template>
   <div class="navbar">
-    <hamburger id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
+    <hamburger id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container"
+      @toggleClick="toggleSideBar" />
 
     <breadcrumb id="breadcrumb-container" class="breadcrumb-container" />
 
@@ -17,7 +18,7 @@
           <router-link to="/">
             <el-dropdown-item>主页</el-dropdown-item>
           </router-link>
-          <el-dropdown-item  @click.native="logout"  divided>退出</el-dropdown-item>
+          <el-dropdown-item @click.native="logout" divided>退出</el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
     </div>

@@ -2,16 +2,20 @@
   <div :class="classObj" class="app-wrapper">
     <div v-if="device==='mobile'&&sidebar.opened" class="drawer-bg" @click="handleClickOutside" />
     <sidebar class="sidebar-container" />
-    <div  class="hasTagsView main-container">
+    <div class="hasTagsView main-container">
       <div class="fixed-header">
+        <div class="back-button" @click="goBack">
+          <i class="el-icon-back"></i>
+          <span>返回</span>
+        </div>
         <navbar />
-        <tags-view/>
+        <tags-view />
       </div>
       <app-main />
       <div class="foot-copyright">
         <span>Copyright ©2019-2024 仲恺农业技术工程学院 版权所有</span>
       </div>
-      <back-to-top :visibility-height="100" :back-position="0" transition-name="fade" ref="backTop"/>
+      <back-to-top :visibility-height="100" :back-position="0" transition-name="fade" ref="backTop" />
     </div>
   </div>
 </template>
@@ -48,6 +52,9 @@ export default {
   methods: {
     handleClickOutside () {
       this.$store.dispatch('app/closeSideBar', { withoutAnimation: false })
+    },
+    goBack () {
+      this.$router.go(-1)
     }
   }
 }
@@ -79,7 +86,30 @@ export default {
     z-index: 999;
   }
 
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 15px;
+    height: 50px;
+    /* 根据您的header高度调整 */
+    cursor: pointer;
+    transition: background .3s;
+    float: left;
+    background-color: aliceblue;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.025);
+    }
+
+    i {
+      font-size: 18px;
+      margin-right: 5px;
+    }
+  }
+
   .fixed-header {
+    // display: flex;
+    align-items: center;
     position: fixed;
     top: 0;
     right: 0;

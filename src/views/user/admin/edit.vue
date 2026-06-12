@@ -2,16 +2,16 @@
   <div class="app-container">
 
     <el-form :model="form" ref="form" label-width="100px" v-loading="formLoading" :rules="rules">
-      <el-form-item label="用户名："  prop="userName" required>
+      <el-form-item label="用户名：" prop="userName" required style="width: 325px">
         <el-input v-model="form.userName"></el-input>
       </el-form-item>
-      <el-form-item label="密码：" required>
+      <el-form-item label="密码：" required style="width: 325px">
         <el-input v-model="form.password"></el-input>
       </el-form-item>
-      <el-form-item label="真实姓名：" prop="realName"   required>
+      <el-form-item label="真实姓名：" prop="realName" required style="width: 325px">
         <el-input v-model="form.realName"></el-input>
       </el-form-item>
-      <el-form-item label="年龄：">
+      <el-form-item label="年龄：" style="width: 325px">
         <el-input v-model="form.age"></el-input>
       </el-form-item>
       <el-form-item label="性别：">
@@ -20,9 +20,9 @@
         </el-select>
       </el-form-item>
       <el-form-item label="出生日期：">
-        <el-date-picker v-model="form.birthDay" value-format="yyyy-MM-dd" type="date" placeholder="选择日期"/>
+        <el-date-picker v-model="form.birthDay" value-format="yyyy-MM-dd" type="date" placeholder="选择日期" />
       </el-form-item>
-      <el-form-item label="手机：">
+      <el-form-item label="手机：" style="width: 325px">
         <el-input v-model="form.phone"></el-input>
       </el-form-item>
       <el-form-item label="状态：" required>

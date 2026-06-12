@@ -1,27 +1,36 @@
 <template>
   <div class="app-container">
-    <el-form :model="form" ref="form" label-width="100px" v-loading="formLoading"  :rules="rules">
+    <el-form :model="form" ref="form" label-width="100px" v-loading="formLoading" :rules="rules">
       <el-form-item label="年级：" prop="gradeLevel" required>
         <el-select v-model="form.gradeLevel" placeholder="年级" @change="levelChange">
           <el-option v-for="item in levelEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="学科：" prop="subjectId" required>
-        <el-select v-model="form.subjectId" placeholder="学科" >
-          <el-option v-for="item in subjectFilter" :key="item.id" :value="item.id" :label="item.name+' ( '+item.levelName+' )'"></el-option>
+        <el-select v-model="form.subjectId" placeholder="学科">
+          <el-option v-for="item in subjectFilter" :key="item.id" :value="item.id"
+            :label="item.name + ' ( ' + item.levelName + ' )'"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="题目类型：" prop="topicType">
+        <el-select v-model="form.topicType" placeholder="题目类型">
+          <el-option v-for="item in queTypeEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="题干：" prop="title" required>
-        <el-input v-model="form.title"   @focus="inputClick(form,'title')" />
+        <el-input v-model="form.title" @focus="inputClick(form, 'title')" />
       </el-form-item>
       <el-form-item label="填空答案：" required>
-        <el-form-item :label="item.prefix" :key="item.prefix"  v-for="item in form.items"  label-width="50px" class="question-item-label">
-          <el-input v-model="item.content"   @focus="inputClick(item,'content')"  class="question-item-content-input"  style="width: 80%"/>
-          <span class="question-item-span">分数：</span><el-input-number v-model="item.score" :precision="1" :step="1" :max="100"  ></el-input-number>
+        <el-form-item :label="item.prefix" :key="item.prefix" v-for="item in form.items" label-width="50px"
+          class="question-item-label">
+          <el-input v-model="item.content" class="question-item-content-input"
+            style="width: 80%" placeholder="请输入答案（纯文本）" />
+          <span class="question-item-span">分数：</span><el-input-number v-model="item.score" :precision="1" :step="1"
+            :max="100"></el-input-number>
         </el-form-item>
       </el-form-item>
       <el-form-item label="解析：" prop="analyze" required>
-        <el-input v-model="form.analyze"  @focus="inputClick(form,'analyze')" />
+        <el-input v-model="form.analyze" @focus="inputClick(form, 'analyze')" />
       </el-form-item>
       <el-form-item label="分数：" prop="score" required>
         <el-input-number v-model="form.score" :precision="1" :step="1" :max="100"></el-input-number>
@@ -35,15 +44,16 @@
         <el-button type="success" @click="showQuestion">预览</el-button>
       </el-form-item>
     </el-form>
-    <el-dialog  :visible.sync="richEditor.dialogVisible"  append-to-body :close-on-click-modal="false" style="width: 100%;height: 100%"   :show-close="false" center>
-      <Ueditor @ready="editorReady"/>
+    <el-dialog :visible.sync="richEditor.dialogVisible" append-to-body :close-on-click-modal="false"
+      style="width: 100%;height: 100%" :show-close="false" center>
+      <Ueditor @ready="editorReady" />
       <span slot="footer" class="dialog-footer">
         <el-button type="primary" @click="editorConfirm">确 定</el-button>
         <el-button @click="richEditor.dialogVisible = false">取 消</el-button>
       </span>
     </el-dialog>
     <el-dialog :visible.sync="questionShow.dialog" style="width: 100%;height: 100%">
-      <QuestionShow :qType="questionShow.qType" :question="questionShow.question" :qLoading="questionShow.loading"/>
+      <QuestionShow :qType="questionShow.qType" :question="questionShow.question" :qLoading="questionShow.loading" />
     </el-dialog>
   </div>
 </template>
@@ -65,6 +75,7 @@ export default {
         questionType: 4,
         gradeLevel: null,
         subjectId: null,
+        topicType: null,
         title: '',
         items: [
         ],
@@ -81,6 +92,9 @@ export default {
         ],
         subjectId: [
           { required: true, message: '请选择学科', trigger: 'change' }
+        ],
+        topicType: [
+          { required: false, message: '请选择题型', trigger: 'change' }
         ],
         title: [
           { required: true, message: '请输入题干', trigger: 'blur' }
@@ -215,6 +229,7 @@ export default {
         questionType: 4,
         gradeLevel: null,
         subjectId: null,
+        topicType: null,
         title: '',
         items: [
         ],
@@ -232,7 +247,8 @@ export default {
     ...mapGetters('enumItem', ['enumFormat']),
     ...mapState('enumItem', {
       questionTypeEnum: state => state.exam.question.typeEnum,
-      levelEnum: state => state.user.levelEnum
+      levelEnum: state => state.user.levelEnum,
+      queTypeEnum: state => state.exam.question.queTypeEnum
     }),
     ...mapState('exam', { subjects: state => state.subjects })
   }

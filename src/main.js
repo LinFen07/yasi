@@ -10,6 +10,11 @@ import '@/styles/index.scss' // global css
 import './icons' // icon
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
+// 在main.js或插件文件中
+import axios from 'axios'
+
+// 如果是Vue2项目
+Vue.prototype.$http = axios
 
 Vue.use(Element, {
   size: 'medium' // set element-ui default size

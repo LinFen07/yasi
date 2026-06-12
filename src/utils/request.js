@@ -1,6 +1,5 @@
 import axios from 'axios'
 import vue from 'vue'
-
 const request = function (loadtip, query) {
   let loading
   if (loadtip) {
@@ -104,10 +103,38 @@ const form = function (url, params) {
   return request(false, query)
 }
 
+const put = function (url, params) {
+  const query = {
+    baseURL: process.env.VUE_APP_URL,
+    url: url,
+    method: 'put',
+    withCredentials: true,
+    timeout: 30000,
+    data: params,
+    headers: { 'Content-Type': 'application/json', 'request-ajax': true }
+  }
+  return request(false, query)
+}
+
+const deleteRequest = function (url, params) {
+  const query = {
+    baseURL: process.env.VUE_APP_URL,
+    url: url,
+    method: 'delete',
+    withCredentials: true,
+    timeout: 30000,
+    params: params,
+    headers: { 'request-ajax': true }
+  }
+  return request(false, query)
+}
+
 export {
   post,
   postWithLoadTip,
   postWithOutLoadTip,
   get,
+  put,
+  deleteRequest,
   form
 }

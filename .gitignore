@@ -29,3 +29,4 @@ logs/
 Thumbs.db
 
 *.class
+node_modules

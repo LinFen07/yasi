@@ -19,7 +19,12 @@ module.exports = {
     hotOnly: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        // target: 'http://localhost:8000',
+        // target: 'http://120.24.144.113:8668',
+        target: 'http://111.230.5.159:8668',
+        // target: 'http://2e6bef7b.r11.vip.cpolar.cn',
+        // target: 'http://2e6bef7b.r11.vip.cpolar.cn/',
+        // target: 'http://192.168.1.149:8668',
         changeOrigin: true
       }
     }
@@ -48,5 +53,26 @@ module.exports = {
         symbolId: 'icon-[name]'
       })
       .end()
+  },
+  transpileDependencies: [
+    /quill/,
+    /quill-image-uploader/,
+    /quill-image-resize/
+  ],
+  configureWebpack: {
+    module: {
+      rules: [
+        {
+          test: /\.js$/,
+          include: /node_modules\/quill/,
+          use: {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env']
+            }
+          }
+        }
+      ]
+    }
   }
 }
