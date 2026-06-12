@@ -12,31 +12,56 @@ const request = axios.create({
     timeout: 5000
 })
 
-// request.interceptors.request.use((config) => {
-//     //操作config 注入token数据
-//     //1.获取到token
-//     //2.按照后端的格式要求做token拼接
-//     const token = getToken()
-//     if (token) {
-//         config.headers.Authorization = `Bearer ${token}`
-//     }
-//     return config
-// }, (error) => {
-//     return Promise.reject(error)
-// })
+let isRedirectingToLogin = false
 
-// request.interceptors.response.use((response) => {
-//     return response.data
-// }, (error) => {
-//     if (error.response.status === 401) {
-//         removeToken()
-//         router.navigate('/login')
-//         window.location.reload()
-//     } if (error.response.status === 400) {
-//         router.navigate('/login')
-//         window.location.reload()
-//     }
-//     return Promise.reject(error)
-// })
+const createAuthError = (errorMessage) => {
+    const error = new Error(errorMessage || "用户没有权限访问")
+    error.isAuthError = true
+    return error
+}
 
-export { request }
+const isAuthError = (error) => {
+    return Boolean(error?.isAuthError)
+}
+
+const redirectToLogin = () => {
+    removeToken()
+    if (!isRedirectingToLogin) {
+        isRedirectingToLogin = true
+        message.warning("用户没有权限访问，请重新登录")
+        Promise.resolve(router.navigate('/login')).finally(() => {
+            isRedirectingToLogin = false
+        })
+    }
+}
+
+request.interceptors.request.use((config) => {
+    //操作config 注入token数据
+    //1.获取到token
+    //2.按照后端的格式要求做token拼接
+    const token = getToken()
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+}, (error) => {
+    return Promise.reject(error)
+})
+
+request.interceptors.response.use((response) => {
+    const data = response.data
+    if (data?.code === 502 || data?.code === "502") {
+        redirectToLogin()
+        return Promise.reject(createAuthError(data.message))
+    }
+    return response
+}, (error) => {
+    const status = error.response?.status
+    if (status === 401 || status === 403 || status === 400) {
+        redirectToLogin()
+        return Promise.reject(createAuthError(error.response?.data?.message))
+    }
+    return Promise.reject(error)
+})
+
+export { request, isAuthError }

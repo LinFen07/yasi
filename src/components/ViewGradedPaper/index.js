@@ -4,6 +4,7 @@ import { Descriptions, Button, Card, Table, Space, Tag, Pagination } from 'antd'
 import ScoreInput from '../ScoreInput';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectById } from '../../store/tasks';
+import { isAuthError } from '../../utils';
 
 const AnswerTable = ({ answers, pagination }) => {
   const columns = [
@@ -93,6 +94,9 @@ const ViewGradedPaper = ({ paperData = {}, onBack, onEdit, appraiseData }) => {
             setCurrentAnswer(validAnswers[0] || null);
           }
         } catch (error) {
+          if (isAuthError(error)) {
+            return;
+          }
           console.error('获取答题数据失败:', error);
         }
       };

@@ -71,21 +71,19 @@ const fetchLogin = (loginForm) => {
                 throw new Error(`HTTP错误! 状态码: ${response.status}`);
             }
 
-            // 5. 提取JSESSIONID（修正：移到响应解析后，逻辑合理）
-            const jsessionId = getCookie('JSESSIONID') || '';
-            console.log('Extracted token:', jsessionId);
-
-            // 6. 业务状态码判断（根据后端实际成功码调整，通常是0/200，这里先保留1，需和后端确认）
+            // 5. 业务状态码判断
             if (result.code === 1) {
                 const userData = result.response;
-                // 存储userId到localStorage（修正：userData.userId → userData.id，和key对应）
-                if (userData.id) {
-                    localStorage.setItem('userId', userData.id);
+                const token = userData.token;
+                const userInfo = userData.user;
+                // 存储userId到localStorage
+                if (userInfo.id) {
+                    localStorage.setItem('userId', userInfo.id);
                 }
-                // 核心修正：dispatch token和用户信息，更新状态
-                dispatch(setToken(jsessionId));
-                dispatch(setUserInfo(userData));
-                message.success("登录成功"); // 友好提示
+                // 存储token和用户信息
+                dispatch(setToken(token));
+                dispatch(setUserInfo(userInfo));
+                message.success("登录成功");
                 return { success: true, message: "登录成功" };
             } else {
                 // 业务失败提示

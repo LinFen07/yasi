@@ -4,6 +4,7 @@ import { Form, Input, Card, Button } from 'antd';
 import ScoreInput from '../ScoreInput';
 import { useDispatch } from 'react-redux';
 import { getOriginalTitel } from '../../store/tasks';
+import { isAuthError } from '../../utils';
 
 const { TextArea } = Input;
 
@@ -34,12 +35,10 @@ const ScoringPanel = ({
     const currentEssay = paperData?.composition?.[count - 1] || {};
     const studentAnswer = currentEssay.studentAnswer || '暂无';
 
-    // 核心修复：处理评分值的类型转换
-    const rawScore = currentEssay.score;
-    // 1. 供 ScoreInput 使用的数字值（满足 propTypes）
-    const scoreValue = !isNaN(Number(rawScore)) ? Number(rawScore) : 0;
-    // 2. 供显示的文本（数字/未评分）
-    const scoreDisplayText = !isNaN(Number(rawScore)) ? Number(rawScore) : '未评分';
+    // 使用 paperData.score 作为原评分
+    const rawScore = paperData?.score;
+    const scoreValue = !isNaN(Number(rawScore)) && rawScore !== null ? Number(rawScore) : 0;
+    const scoreDisplayText = !isNaN(Number(rawScore)) && rawScore !== null ? Number(rawScore) : '未评分';
 
     // 获取作文标题
     const fetchTitle = useCallback(async () => {
@@ -49,8 +48,12 @@ const ScoringPanel = ({
         }
         try {
             const titleRes = await dispatch(getOriginalTitel(currentEssay.questionId));
+            console.log(111,currentEssay.questionId)
             setEssayTitle(titleRes?.title || titleRes?.content || '无标题');
         } catch (error) {
+            if (isAuthError(error)) {
+                return;
+            }
             console.error('获取作文标题失败:', error);
             setEssayTitle('无标题');
         }

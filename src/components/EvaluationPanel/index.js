@@ -8,6 +8,7 @@ import { Form, Card, Button, Table, Carousel, Tag, Spin, Drawer } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { getStudentsAnswers, getOriginalTitel } from '../../store/tasks';
+import { isAuthError } from '../../utils';
 
 // 转换HTML内容为纯文本
 const convertHtmlToText = (html) => {
@@ -41,16 +42,14 @@ const EvaluationPanel = ({
 
     // 修复：编辑模式下回显原评价内容
     useEffect(() => {
-        if (isEditingMode && paperData?.studentsInfo?.appraise) {
-            setEditorContent(paperData.studentsInfo.appraise);
-            // 同步到表单字段，确保校验通过
-            form.setFieldsValue({ comment: paperData.studentsInfo.appraise });
+        if (isEditingMode && paperData?.review) {
+            setEditorContent(paperData.review);
+            form.setFieldsValue({ comment: paperData.review });
         } else if (!isEditingMode) {
-            // 非编辑模式清空编辑器
             setEditorContent('');
             form.setFieldsValue({ comment: '' });
         }
-    }, [isEditingMode, paperData?.studentsInfo?.appraise, form, setEditorContent]);
+    }, [isEditingMode, paperData?.review, form, setEditorContent]);
 
     // 获取学生答题数据
     useEffect(() => {
@@ -104,6 +103,9 @@ const EvaluationPanel = ({
                                 items: detailResponse.items || []
                             };
                         } catch (err) {
+                            if (isAuthError(err)) {
+                                throw err;
+                            }
                             console.error(`获取题目详情失败:`, err);
                             return {
                                 id: group.questionId,
@@ -118,6 +120,10 @@ const EvaluationPanel = ({
                 );
                 setAnswers(answersWithDetails);
             } catch (error) {
+                if (isAuthError(error)) {
+                    setAnswers([]);
+                    return;
+                }
                 console.error('获取学生答案失败:', error);
                 setAnswers([]);
                 message.error('获取答题数据失败');
@@ -384,7 +390,7 @@ const EvaluationPanel = ({
                                 <strong>原评价：</strong>
                                 <div
                                     dangerouslySetInnerHTML={{
-                                        __html: paperData?.studentsInfo?.appraise || '<span style="color:#999">未评价</span>'
+                                        __html: paperData?.review || '<span style="color:#999">未评价</span>'
                                     }}
                                     style={{
                                         width: '100%',

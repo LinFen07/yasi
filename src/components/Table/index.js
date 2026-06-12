@@ -10,6 +10,7 @@ const TaskTable = ({
     paperName,
     handleStartGrading,
     pageNow,
+    pageSize,
     handleChange,
     filterPendingPapers,
     setEssayLoading,
@@ -150,8 +151,8 @@ const TaskTable = ({
                     },
                 ]}
                 pagination={{
-                    current: pageNow[0],
-                    pageSize: 10,
+                    current: pageNow,
+                    pageSize: pageSize || 5,
                     onChange: (page) => {
                         handleChange(page);
                         setTimeout(() => {
@@ -164,10 +165,10 @@ const TaskTable = ({
                 }}
                 dataSource={papers
                     .filter(p =>
-                        (activeSearchText === '' || p.paperName.includes(activeSearchText)) &&
-                        (activeSearchName === '' || p.studentName.includes(activeSearchName))
+                        (activeSearchText === '' || p.paperName?.includes(activeSearchText)) &&
+                        (activeSearchName === '' || p.studentName?.includes(activeSearchName))
                     )
-                    .map(item => ({ ...item, key: `${item.examPaperId}-${item.studentId}` }))
+                    .map(item => ({ ...item, key: `${item.paperId}-${item.studentId}-${item.id}` }))
                     .sort((a, b) => {
                         if (a.status === '待阅' && b.status !== '待阅') return -1;
                         if (a.status !== '待阅' && b.status === '待阅') return 1;

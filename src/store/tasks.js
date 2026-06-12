@@ -2,7 +2,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import axios from 'axios';
 import { set } from "lodash";
-import { request } from "../utils";
+import { isAuthError, request } from "../utils";
 
 const tasksStore = createSlice({
   name: "tasks",
@@ -12,11 +12,12 @@ const tasksStore = createSlice({
     article: [],
     paper: [],
     appraise: [],
-    paperName: []
+    paperName: [],
+    essayList: [],
+    essayListTotal: 0
   },
   reducers: {
     setTasks(state, action) {
-      // console.log('调用了')
       state.tasks = action.payload
       localStorage.setItem('tasks', JSON.stringify(action.payload))
     },
@@ -68,14 +69,19 @@ const tasksStore = createSlice({
       localStorage.setItem('article', JSON.stringify(state.article));
     },
     setPaperName(state, action) {
-      // console.log(111111111111)
       state.paperName = action.payload
       localStorage.setItem('paperName', JSON.stringify(action.payload))
+    },
+    setEssayList(state, action) {
+      const { dataList, total } = action.payload;
+      state.essayList = dataList || [];
+      state.essayListTotal = total || 0;
+      localStorage.setItem('essayList', JSON.stringify(dataList));
     }
   }
 })
 
-const { setTasks, setCurrentTask, updateTask, setPaper, setArticle, setAppraise, addAppraise, setConfrim, updatePaperStatus, addScore, setStudentsInfo, setStudentsAnswers, setComposition, setPaperName } = tasksStore.actions;
+const { setTasks, setCurrentTask, updateTask, setPaper, setArticle, setAppraise, addAppraise, setConfrim, updatePaperStatus, addScore, setPaperName, setEssayList } = tasksStore.actions;
 const fetchArticle = (userId, id) => {  // 接收参数 
   return async (dispatch) => {
     try {
@@ -91,6 +97,7 @@ const fetchArticle = (userId, id) => {  // 接收参数
         dispatch(setArticle(score));
       }
     } catch (error) {
+      if (isAuthError(error)) return;
       console.log(error)
     }
   };
@@ -106,6 +113,7 @@ const fetchCompositionInfo = (id) => {
       const processedData = Array.isArray(compositionInfo) ? compositionInfo : [compositionInfo];
       dispatch(setPaper(processedData));
     } catch (error) {
+      if (isAuthError(error)) return;
       console.error('获取作文信息失败:', error);
     }
   };
@@ -119,6 +127,7 @@ const getAppraise = () => {
       const appraise = res.data
       dispatch(setAppraise(appraise))
     } catch (error) {
+      if (isAuthError(error)) return;
       console.error('请求出错:', error);
     }
   };
@@ -134,6 +143,7 @@ const getConfrim = ({ paperId, questionId, studentId }) => {
       console.log(res.data)
       dispatch(setConfrim(res.data))
     } catch (error) {
+      if (isAuthError(error)) return;
       console.error('请求出错:', error);
     }
   }
@@ -147,6 +157,7 @@ const getNewAppraise = (id) => {
       const appraise = res.data
       dispatch(addAppraise({ id, appraise }));
     } catch (error) {
+      if (isAuthError(error)) return;
       console.error('请求出错:', error);
     }
   };
@@ -161,6 +172,7 @@ const getTask = (userId) => {
       const task = res_2.data
       dispatch(setTasks(task))
     } catch (error) {
+      if (isAuthError(error)) return;
       console.error('请求出错:', error)
     }
   }
@@ -243,6 +255,7 @@ const selectById = (id) => {
       }
       return null;
     } catch (error) {
+      if (isAuthError(error)) return null;
       console.error('请求出错:', error);
       return null;
     }
@@ -271,6 +284,7 @@ const getOriginalTitel = (questionId) => {
       const title = res.data.response
       return title
     } catch (error) {
+      if (isAuthError(error)) return;
       console.error(error)
     }
   }
@@ -289,7 +303,6 @@ const getPaperName = () => {
         }
       );
       const count = response.data.response.total
-      console.log(count)
       const response_2 = await request.post(
         '/api/teacher/exam/paper/pageList',
         {
@@ -300,12 +313,64 @@ const getPaperName = () => {
       );
       const paperName = response_2.data.response.list
       dispatch(setPaperName(paperName))
+      return paperName;
     } catch (error) {
+      if (isAuthError(error)) {
+        return [];
+      }
       console.error('获取试卷列表失败:', error);
       throw error;
     }
   };
 }
-// 导出相关 action
-export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle, getAppraise, getNewAppraise, getConfrim, updatePaperStatus, getTask, getStudentsInfo, getStudentsAnswers, getComposition, selectById, selectNameById, getOriginalTitel, getPaperName };
+
+const getEssayListFromServer = (userId, pageNow = 1, pageSize = 5) => {
+  return async (dispatch) => {
+    try {
+      const response = await request.get('/api/teacher/exam/paper/allIdAndJudge', {
+        params: { userId, pageNow, pageSize }
+      });
+      const result = response.data;
+      if (result.code === 1 && result.response) {
+        const items = result.response.items || [];
+        const paperListRes = await dispatch(getPaperName());
+        const paperList = paperListRes || [];
+        const dataList = items.map(item => {
+          const paperInfo = paperList.find(p => p.id === item.paperId);
+          return {
+            id: item.id,
+            studentId: item.studentId,
+            studentName: item.studentId,
+            paperId: item.paperId,
+            paperTitle: paperInfo?.name || item.composition || '无标题',
+            questionId: item.questionId,
+            score: item.score,
+            review: item.review,
+            composition: item.composition || '',
+            status: item.score !== null && item.review ? '已阅' : '未阅',
+            createTime: item.createTime
+          };
+        });
+        dispatch(setEssayList({
+          dataList: dataList,
+          total: result.response.counts || 0
+        }));
+        return {
+          dataList: dataList,
+          total: result.response.counts || 0,
+          pageNow: result.response.pageNo || pageNow,
+          pageSize: result.response.pageSize || pageSize
+        };
+      }
+      throw new Error(result.message || '获取作文列表失败');
+    } catch (error) {
+      if (isAuthError(error)) {
+        return null;
+      }
+      console.error('获取作文列表失败:', error);
+      throw error;
+    }
+  };
+}
+export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle, getAppraise, getNewAppraise, getConfrim, updatePaperStatus, getTask, getStudentsInfo, getStudentsAnswers, getComposition, selectById, selectNameById, getOriginalTitel, getPaperName, setEssayList, getEssayListFromServer };
 export default tasksStore.reducer;
