@@ -30,22 +30,20 @@ function LoginRoute(props: Props) {
   })
 
   const fetchGetExamMeal = async (pageSize: number, pageNum: number) => {
-    const res = await getExamMeal(pageSize, pageNum);
     try {
+      const res = await getExamMeal(pageSize, pageNum);
       // @ts-ignore
-      setExamMeal(res.response.items);
+      setExamMeal(res.response?.items ?? []);
     } catch (error) {
-      //
+      console.warn('获取套餐列表失败:', error);
     }
   }
 
   useEffect(() => {
-    try {
+    if (props.data === 'register') {
       fetchGetExamMeal(10, 1);
-    } catch (error) {
-      console.log(error);
     }
-  }, [])
+  }, [props.data])
 
   const onFinish = async (values: any) => {
     let res, mess, nav;
@@ -137,6 +135,7 @@ function LoginRoute(props: Props) {
                     >
                       <Input
                         prefix={<LockOutlined />}
+                        type="password"
                         placeholder="确认密码"
                         size="large"
                         className="lowin-input"
