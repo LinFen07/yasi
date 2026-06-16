@@ -68,13 +68,6 @@ import loginApi from '@/api/login'
 export default {
   name: 'Login',
   data () {
-    const validateUsername = (rule, value, callback) => {
-      if (value.length < 5) {
-        callback(new Error('用户名不能少于5个字符'))
-      } else {
-        callback()
-      }
-    }
     const validatePassword = (rule, value, callback) => {
       if (value.length < 5) {
         callback(new Error('密码不能少于5个字符'))
@@ -89,7 +82,7 @@ export default {
         remember: false
       },
       loginRules: {
-        userName: [{ required: true, trigger: 'blur', validator: validateUsername }],
+        userName: [{ required: true, message: '用户名不能为空', trigger: 'blur' }],
         password: [{ required: true, trigger: 'blur', validator: validatePassword }]
       },
       passwordType: 'password',
