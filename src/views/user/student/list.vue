@@ -60,7 +60,7 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParam.pageIndex" :limit.sync="queryParam.pageSize"
       @pagination="search" />
     <el-dialog title="试卷授权" :visible.sync="examAssignDialogVisible" width="60%">
-      <el-table :data="examPaperList" border style="width: 100%">
+      <el-table v-loading="examPaperLoading" :data="examPaperList" border style="width: 100%">
         <el-table-column prop="name" label="试卷名称"></el-table-column>
         <el-table-column label="考试时间" width="450">
           <template slot-scope="{row}">
@@ -91,7 +91,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <pagination v-show="examPaperTotal > 0" :total="examPaperTotal" :page.sync="examPaperQuery.pageNow"
+      <pagination v-show="examPaperTotal > 0" :total="examPaperTotal" :page.sync="examPaperQuery.pageIndex"
         :limit.sync="examPaperQuery.pageSize" @pagination="loadExamPaperList" />
       <span slot="footer" class="dialog-footer">
         <el-button @click="examAssignDialogVisible = false">关闭</el-button>
@@ -128,33 +128,20 @@ export default {
       examPaperList: [], // 试卷列表
       assignedExams: [], // 已授权的试卷列表
       examPaperQuery: {
-        pageNow: 1,
+        pageIndex: 1,
         pageSize: 10
       },
       examPaperTotal: 0,
+      examPaperLoading: false,
       assignedPackages: [],
-      allExamPapers: [], // 存储所有试卷ID和名称
       packageOptions: []
     }
   },
   created () {
     this.search()
-    this.loadAllExamPapers() // 加载所有试卷
     this.loadPackageTypes()
   },
   methods: {
-    loadAllExamPapers () {
-      examPaperApi.allPaper().then(response => {
-        if (response.code === 1) {
-          this.allExamPapers = response.response
-        } else {
-          this.$message.error('获取试卷列表失败')
-        }
-      }).catch(error => {
-        console.error('获取试卷列表失败:', error)
-        this.$message.error('获取试卷列表失败')
-      })
-    },
     search () {
       this.listLoading = true
       // 构建查询参数，过滤掉空值
@@ -236,21 +223,41 @@ export default {
     // 显示试卷授权对话框
     showExamAssignDialog (row) {
       this.currentStudent = row
+      this.examPaperQuery = {
+        pageIndex: 1,
+        pageSize: 10
+      }
       this.examAssignDialogVisible = true
-      this.loadExamPaperList()
-      this.loadAssignedExams()
+      this.loadAssignedExams().then(() => {
+        this.loadExamPaperList()
+      })
     },
 
     // 加载试卷列表
     loadExamPaperList () {
-      const start = (this.examPaperQuery.pageNow - 1) * this.examPaperQuery.pageSize
-      const end = start + this.examPaperQuery.pageSize
-      this.examPaperList = this.allExamPapers.slice(start, end).map(item => ({
-        ...item,
-        selectedPackages: this.getAssignedPackagesForPaper(item.id) || [],
-        examTimeRange: this.getDefaultExamTimeRange(item.id)
-      }))
-      this.examPaperTotal = this.allExamPapers.length
+      this.examPaperLoading = true
+      examPaperApi.pageList({
+        pageIndex: this.examPaperQuery.pageIndex,
+        pageSize: this.examPaperQuery.pageSize
+      }).then(data => {
+        if (data.code === 1) {
+          const re = data.response
+          this.examPaperList = re.list.map(item => ({
+            ...item,
+            selectedPackages: this.getAssignedPackagesForPaper(item.id) || [],
+            examTimeRange: this.getDefaultExamTimeRange(item.id)
+          }))
+          this.examPaperTotal = re.total
+          this.examPaperQuery.pageIndex = re.pageNum
+        } else {
+          this.$message.error(data.message || '获取试卷列表失败')
+        }
+        this.examPaperLoading = false
+      }).catch(error => {
+        console.error('获取试卷列表失败:', error)
+        this.$message.error('获取试卷列表失败')
+        this.examPaperLoading = false
+      })
     },
     getDefaultExamTimeRange (paperId) {
       // 如果有已授权的记录，使用已设置的时间
@@ -332,15 +339,10 @@ export default {
     loadAssignedExams () {
       if (!this.currentStudent) return Promise.resolve()
 
-      return examPaperApi.findList(
-        // 0, // examPaperId
-        1, // pageNow
-        1000 // pageSize
-        // 0, // reservationId
-        // this.currentStudent.id // userId
-      ).then(response => {
+      return examPaperApi.findList(1, 1000).then(response => {
         if (response.code === 1) {
-          this.assignedExams = response.response.items || []
+          const items = response.response.items || []
+          this.assignedExams = items.filter(item => item.userId === this.currentStudent.id)
         } else {
           this.$message.error(response.message || '获取已授权试卷失败')
         }
@@ -391,7 +393,9 @@ export default {
           .then(response => {
             if (response.code === 1) {
               this.$message.success('授权成功')
-              this.loadAssignedExams() // 刷新已授权列表
+              this.loadAssignedExams().then(() => {
+                this.loadExamPaperList()
+              })
             } else {
               this.$message.error(response.message || '授权失败')
             }
