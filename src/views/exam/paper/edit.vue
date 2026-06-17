@@ -75,10 +75,14 @@
           <el-button type="primary" @click="queryForm">查询</el-button>
         </el-form-item>
       </el-form>
-      <el-table v-loading="questionPage.listLoading" :data="questionPage.tableData"
+      <el-table v-loading="questionPage.listLoading" :data="questionPage.tableData" class="question-select-table"
         @selection-change="handleSelectionChange" border fit highlight-current-row style="width: 100%">
-        <el-table-column type="selection" width="35"></el-table-column>
-        <el-table-column prop="id" label="Id" width="60px" />
+        <el-table-column type="selection" width="50" align="center"></el-table-column>
+        <el-table-column label="序号" width="70" align="center">
+          <template slot-scope="scope">
+            {{ (questionPage.queryParam.pageIndex - 1) * questionPage.queryParam.pageSize + scope.$index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="questionType" label="题型" :formatter="questionTypeFormatter" width="70px" />
         <el-table-column prop="shortTitle" label="题干" show-overflow-tooltip />
       </el-table>
@@ -321,6 +325,15 @@ export default {
       margin: 0px 5px 0px 5px;
     }
     .q-item-content {
+    }
+  }
+
+  .question-select-table {
+    .el-table-column--selection .cell {
+      overflow: visible;
+      text-overflow: clip;
+      padding-left: 10px;
+      padding-right: 10px;
     }
   }
 </style>

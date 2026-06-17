@@ -12,7 +12,6 @@ export default {
   allPaper: () => post('/api/admin/exam/paper/allIdAndName'),
   grantPaperToTeacher: (examPaperId, userId) => post(`/api/admin/teacherAssignment/insert?examPaperId=${examPaperId}&userId=${userId}`),
   findList: (pageNow, pageSize) => get(`/api/admin/examassignment/page?pageNow=${pageNow}&pageSize=${pageSize}`),
-  // findList: (examPaperId, pageNow, pageSize, reservationId, userId) => get(`/api/admin/examassignment/page?examPaperId=${examPaperId}&pageNow=${pageNow}&pageSize=${pageSize}&reservationId=${reservationId}&userId=${userId}`),
   // 授权学生试卷
   save: (params) => post(`/api/admin/examassignment/add`, params),
   // 取消授权学生试卷
