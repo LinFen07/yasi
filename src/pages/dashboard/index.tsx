@@ -1,7 +1,7 @@
 import "./index.scss";
-import { Button, Card, Modal } from "antd";
+import { Button, Card, Modal, Spin } from "antd";
 import { useNavigate } from "react-router";
-import { getExam, select } from "@/api/examPaper";
+import { getExam, queryAudioUrl, parseAudioUrlResponse } from "@/api/examPaper";
 import { useEffect, useState } from "react";
 import stores from "@/stores";
 import { getStudentId } from "@/api/login";
@@ -9,8 +9,14 @@ import { getExamProgress, hasOngoingExam, initExamProgress, clearAllExamData, cl
 
 const { Meta } = Card;
 
+// 避免同一试卷并发/重复预下载
+const prefetchingPaperIds = new Set<number>();
+// 避免 dashboard 初始化（含 StrictMode 双挂载）重复执行
+let dashboardInitPromise: Promise<void> | null = null;
+
 const Dashboard = () => {
   const [examList, setExamList] = useState([]);
+  const [listLoaded, setListLoaded] = useState(false);
   const [ongoingModalVisible, setOngoingModalVisible] = useState(false);
   const [pendingExamId, setPendingExamId] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -25,6 +31,52 @@ const Dashboard = () => {
     const res = await getExam(stores.UserStore.userId);
     const items = res?.response?.items ?? res?.data?.response?.items ?? res?.data?.items ?? [];
     setExamList(items);
+    setListLoaded(true);
+    return items;
+  };
+
+  const prefetchExamAudios = async (examListData: any[]) => {
+    if (!examListData?.length) return;
+
+    const channel = new BroadcastChannel('audio_download_channel');
+
+    await Promise.allSettled(
+      examListData.map(async (exam: any) => {
+        const paperId = exam.examPaperId;
+        if (prefetchingPaperIds.has(paperId)) return;
+
+        prefetchingPaperIds.add(paperId);
+        try {
+          const audioRes = await queryAudioUrl(paperId);
+          const audioUrl = parseAudioUrlResponse(audioRes);
+
+          if (!audioUrl) {
+            console.warn(`试卷 ${paperId} 未配置听力音频`);
+            return;
+          }
+
+          const isCached = await stores.ExamStore.hasAudioCacheForPaper(paperId);
+
+          if (!isCached) {
+            console.log(`⬇️ 预下载试卷 ${paperId} 听力音频...`);
+            await stores.ExamStore.downloadAudio(paperId, audioUrl);
+            channel.postMessage({ type: 'AUDIO_DOWNLOADED', paperId });
+            return;
+          }
+
+          const needRedownload = await stores.ExamStore.shouldRedownload(paperId, audioUrl);
+          if (needRedownload) {
+            console.log(`🔄 试卷 ${paperId} 听力音频已更新，重新下载...`);
+            await stores.ExamStore.downloadAudio(paperId, audioUrl);
+            channel.postMessage({ type: 'AUDIO_DOWNLOADED', paperId });
+          }
+        } catch (error) {
+          console.warn(`⚠️ 预下载试卷 ${paperId} 听力音频失败:`, error);
+        } finally {
+          prefetchingPaperIds.delete(paperId);
+        }
+      })
+    );
   };
 
   const fetchGetStudentId = async () => {
@@ -34,86 +86,21 @@ const Dashboard = () => {
     stores.UserStore.setUserId(res.response.value);
   };
 
-  const downloadAudioIfNeeded = async () => {
-    try {
-      const userId = stores.UserStore.userId;
-      if (!userId) return;
+  useEffect(() => {
+    if (dashboardInitPromise) return;
 
-      const channel = new BroadcastChannel('audio_download_channel');
-
-      const examRes = await getExam(userId);
-      const examListData = examRes?.response?.items ?? examRes?.data?.response?.items ?? examRes?.data?.items ?? [];
-      for (const exam of examListData) {
-        try {
-          // ✅ 1. 检查缓存是否存在
-          const isCached = await stores.ExamStore.hasAudioCacheForPaper(exam.examPaperId);
-          if (!isCached) {
-            // 无缓存，获取音频地址并下载
-            console.log(`🔍 试卷 ${exam.examPaperId} 未缓存，获取音频地址...`);
-            const paperRes = await select(exam.examPaperId);
-            // @ts-ignore
-            const audioUrl = paperRes.response?.audioFileUrl;
-
-            if (audioUrl) {
-              await stores.ExamStore.downloadAudio(exam.examPaperId, audioUrl);
-              // 发送消息通知其他窗口
-              channel.postMessage({
-                type: 'AUDIO_DOWNLOADED',
-                paperId: exam.examPaperId,
-              });
-            }
-            continue;
-          }
-
-          // ✅ 2. 有缓存，检查是否需要重新下载
-          console.log(`✅ 试卷 ${exam.examPaperId} 已有缓存，检查是否需要更新...`);
-          const paperRes = await select(exam.examPaperId);
-          // @ts-ignore
-          const audioUrl = paperRes.response?.audioFileUrl;
-
-          if (audioUrl) {
-            const needRedownload = await stores.ExamStore.shouldRedownload(
-              exam.examPaperId,
-              audioUrl
-            );
-
-            if (needRedownload) {
-              console.log(`🔄 试卷 ${exam.examPaperId} 音频已更新，重新下载...`);
-              await stores.ExamStore.downloadAudio(exam.examPaperId, audioUrl);
-              // 发送消息通知其他窗口
-              channel.postMessage({
-                type: 'AUDIO_DOWNLOADED',
-                paperId: exam.examPaperId,
-              });
-            } else {
-              console.log(`⏭️ 试卷 ${exam.examPaperId} 已是最新版本，使用缓存`);
-            }
-          }
-        } catch (error) {
-          console.warn(`⚠️ 处理试卷 ${exam.examPaperId} 失败:`, error);
-        }
+    dashboardInitPromise = (async () => {
+      try {
+        await fetchGetStudentId();
+        const items = await getExamList();
+        await prefetchExamAudios(items);
+      } catch (error) {
+        dashboardInitPromise = null;
+        setListLoaded(true);
+        console.log(error);
       }
-    } catch (error) {
-      console.error('获取试卷列表失败:', error);
-    }
-  };
-
-  useEffect(() => {
-    try {
-      fetchGetStudentId();
-    } catch (error) {
-      console.log(error);
-    }
+    })();
   }, []);
-
-  useEffect(() => {
-    try {
-      getExamList();
-      downloadAudioIfNeeded();
-    } catch (error) {
-      console.log(error);
-    }
-  }, [stores.UserStore.userId]);
 
   const handleConfirmExam = async (id: number) => {
     console.log('=== handleConfirmExam ===');
@@ -191,8 +178,17 @@ const Dashboard = () => {
     <div>
       <div className="app-item-contain appContent">
         <h3 className="index-title-h3">试卷中心</h3>
-        <div style={{ paddingLeft: "15px", display: "flex" }}>
-          {examList.map((item: any) => {
+        <div className="exam-list-wrap">
+          {!listLoaded ? (
+            <div className="exam-list-loading">
+              <Spin />
+            </div>
+          ) : examList.length === 0 ? (
+            <div className="exam-empty-tip">
+              目前暂无试卷，需等老师授权派发~
+            </div>
+          ) : (
+            examList.map((item: any) => {
             return (
               <Card hoverable style={{ width: 240 }} key={item.examPaperId}>
                 <Meta title={item.examPaperName} />
@@ -221,7 +217,8 @@ const Dashboard = () => {
                 </Button>
               </Card>
             );
-          })}
+          })
+          )}
         </div>
       </div>
 

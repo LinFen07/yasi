@@ -10,8 +10,12 @@ function App() {
   const routeView = useRoutes(routes)
   const [audioSrc, setAudioSrc] = useState('');
   useEffect(() => {
-    setAudioSrc(stores.ExamStore.listenAudio);
-  }, [stores.ExamStore.listenAudio])
+    const syncAudioSrc = async () => {
+      const src = await stores.ExamStore.getListenAudioSrc();
+      setAudioSrc(src);
+    };
+    syncAudioSrc();
+  }, [stores.ExamStore.listenAudio, stores.ExamStore.paperId])
 
   const location = useLocation();
 

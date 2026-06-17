@@ -52,3 +52,30 @@
   color: #1f2f3d;
   margin-right: auto;
 }
+
+.exam-list-wrap {
+  padding-left: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.exam-list-loading {
+  width: 100%;
+  padding: 80px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.exam-empty-tip {
+  width: 100%;
+  margin-top: 48px;
+  padding: 48px 24px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #8c8c8c;
+  background: #fafafa;
+  border: 1px dashed #d9d9d9;
+  border-radius: 8px;
+}

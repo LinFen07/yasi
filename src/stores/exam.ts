@@ -471,6 +471,13 @@ class ExamStore {
     return await audioCacheManager.getAudioUrl(this.paperId);
   }
 
+  /** 优先使用 IndexedDB 缓存，避免重复请求远程音频 */
+  async getListenAudioSrc(): Promise<string> {
+    const cachedUrl = await this.getCachedAudioUrl();
+    if (cachedUrl) return cachedUrl;
+    return this.listenAudio;
+  }
+
   async getCachedAudioBlob(): Promise<Blob | null> {
     if (this.paperId === 0) return null;
     return await audioCacheManager.getCachedBlob(this.paperId);

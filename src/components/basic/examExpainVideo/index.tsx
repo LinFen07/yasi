@@ -51,10 +51,10 @@ const ExamExplainVideo = observer(({ type, isAvailable = true, shouldReset = tru
 
         if (hasCache) {
           setAudioStatus("ready");
-          console.log('✅ 音频已准备就绪');
+          console.log('✅ 正式考试听力音频已准备就绪');
         } else {
           setAudioStatus("preparing");
-          console.log('⬇️ 音频准备中...');
+          console.log('⬇️ 正式考试听力音频下载中...');
         }
       } catch (error) {
         console.error("❌ 检查音频状态失败:", error);
@@ -143,7 +143,7 @@ const ExamExplainVideo = observer(({ type, isAvailable = true, shouldReset = tru
     }
 
     if (audioStatus === "preparing") {
-      return <p style={{ fontSize: "16px", color: "#faad14", marginTop: "16px" }}>⬇️ 音频准备中...准备完成即可开始考试</p>;
+      return <p style={{ fontSize: "16px", color: "#faad14", marginTop: "16px" }}>⬇️ 音频下载中...下载完成即可开始考试</p>;
     }
 
     if (audioStatus === "error") {
@@ -151,7 +151,7 @@ const ExamExplainVideo = observer(({ type, isAvailable = true, shouldReset = tru
     }
 
     if (audioStatus === "ready") {
-      return <p style={{ fontSize: "16px", color: "#52c41a", marginTop: "16px" }}>✅ 音频已准备就绪</p>;
+      return <p style={{ fontSize: "16px", color: "#52c41a", marginTop: "16px" }}>✅ 正式考试听力音频已准备就绪</p>;
     }
 
     return null;
