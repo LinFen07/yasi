@@ -1,11 +1,8 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParam" ref="queryForm" :inline="true">
-      <el-form-item label="题目ID：">
-        <el-input v-model="queryParam.id" clearable></el-input>
-      </el-form-item>
-      <el-form-item label="题目内容：">
-        <el-input v-model="queryParam.content" clearable></el-input>
+      <el-form-item label="题干：">
+        <el-input v-model="queryParam.content" clearable placeholder="请输入题干关键词"></el-input>
       </el-form-item>
 
       <el-form-item label="年级：">
@@ -40,7 +37,11 @@
       </el-form-item>
     </el-form>
     <el-table v-loading="listLoading" :data="tableData" border fit highlight-current-row style="width: 100%">
-      <el-table-column prop="id" label="Id" width="90px" />
+      <el-table-column label="序号" width="70" align="center">
+        <template slot-scope="scope">
+          {{ (queryParam.pageIndex - 1) * queryParam.pageSize + scope.$index + 1 }}
+        </template>
+      </el-table-column>
       <el-table-column prop="subjectId" label="学科" :formatter="subjectFormatter" width="120px" />
       <el-table-column prop="questionType" label="题型" :formatter="questionTypeFormatter" width="70px" />
       <el-table-column prop="shortTitle" label="题干" show-overflow-tooltip />
@@ -74,7 +75,7 @@ export default {
   data () {
     return {
       queryParam: {
-        id: null,
+        content: '',
         questionType: null,
         level: null,
         subjectId: null,
