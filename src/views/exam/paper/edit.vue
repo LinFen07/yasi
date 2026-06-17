@@ -62,8 +62,8 @@
     </el-form>
     <el-dialog :visible.sync="questionPage.showDialog" width="70%">
       <el-form :model="questionPage.queryParam" ref="queryForm" :inline="true">
-        <el-form-item label="ID：">
-          <el-input v-model="questionPage.queryParam.id" clearable></el-input>
+        <el-form-item label="题干：">
+          <el-input v-model="questionPage.queryParam.content" clearable placeholder="请输入题干关键词"></el-input>
         </el-form-item>
         <el-form-item label="题型：">
           <el-select v-model="questionPage.queryParam.questionType" clearable>
@@ -148,7 +148,7 @@ export default {
         multipleSelection: [],
         showDialog: false,
         queryParam: {
-          id: null,
+          content: '',
           questionType: null,
           subjectId: 1,
           pageIndex: 1,
