@@ -7,7 +7,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="学科：" prop="subjectId" required>
-        <el-select v-model="form.subjectId" placeholder="学科">
+        <el-select v-model="form.subjectId" placeholder="学科" clearable @change="subjectChange">
           <el-option v-for="item in subjectFilter" :key="item.id" :value="item.id"
             :label="item.name+' ( '+item.levelName+' )'"></el-option>
         </el-select>
@@ -125,7 +125,7 @@ export default {
         suggestTime: null,
         titleItems: []
       },
-      subjectFilter: null,
+      subjectFilter: [],
       formLoading: false,
       rules: {
         level: [
@@ -148,9 +148,8 @@ export default {
         multipleSelection: [],
         showDialog: false,
         queryParam: {
-          content: '',
+          content: null,
           questionType: null,
-          subjectId: 1,
           pageIndex: 1,
           pageSize: 10
         },
@@ -181,13 +180,14 @@ export default {
   created () {
     let id = this.$route.query.id
     let _this = this
-    this.initSubject(function () {
-      _this.subjectFilter = _this.subjects
+    this.initSubject(() => {
+      _this.updateSubjectFilter()
     })
     if (id && parseInt(id) !== 0) {
       _this.formLoading = true
       examPaperApi.select(id).then(re => {
         _this.form = re.response
+        _this.updateSubjectFilter()
         _this.formLoading = false
       })
     }
@@ -224,6 +224,13 @@ export default {
     // },
     addQuestion (titleItem) {
       this.currentTitleItem = titleItem
+      this.questionPage.queryParam = {
+        content: null,
+        questionType: null,
+        pageIndex: 1,
+        pageSize: 10
+      }
+      this.questionPage.multipleSelection = []
       this.questionPage.showDialog = true
       this.search()
     },
@@ -247,13 +254,29 @@ export default {
       this.questionPage.showDialog = false
     },
     levelChange () {
-      this.form.subjectId = null
-      this.subjectFilter = this.subjects.filter(data => data.level === this.form.level)
+      this.updateSubjectFilter()
+    },
+    subjectChange (subjectId) {
+      if (!subjectId) return
+      const subject = (this.subjects || []).find(item => Number(item.id) === Number(subjectId))
+      if (subject && subject.level != null) {
+        this.form.level = Number(subject.level)
+      }
+    },
+    updateSubjectFilter () {
+      this.subjectFilter = [...(this.subjects || [])]
     },
     search () {
-      this.questionPage.queryParam.subjectId = this.form.subjectId
       this.questionPage.listLoading = true
-      questionApi.pageList(this.questionPage.queryParam).then(data => {
+      const { content, questionType, pageIndex, pageSize } = this.questionPage.queryParam
+      const params = {
+        content: content || null,
+        questionType: questionType || null,
+        subjectId: this.form.subjectId || null,
+        pageIndex,
+        pageSize
+      }
+      questionApi.pageList(params).then(data => {
         const re = data.response
         this.questionPage.tableData = re.list
         this.questionPage.total = re.total
@@ -284,6 +307,7 @@ export default {
         titleItems: []
       }
       this.form.id = lastId
+      this.updateSubjectFilter()
     },
     ...mapActions('exam', { initSubject: 'initSubject' }),
     ...mapActions('tagsView', { delCurrentView: 'delCurrentView' }),
