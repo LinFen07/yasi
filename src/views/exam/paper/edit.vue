@@ -152,7 +152,7 @@ export default {
           questionType: null,
           subjectId: 1,
           pageIndex: 1,
-          pageSize: 5
+          pageSize: 10
         },
         listLoading: true,
         tableData: [],
