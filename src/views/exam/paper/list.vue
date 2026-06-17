@@ -40,7 +40,7 @@
       @pagination="search" />
     <el-dialog title="选择听力音频" :visible.sync="audioDialogVisible" width="50%">
       <el-table :data="audioList" border style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80"></el-table-column>
+        <el-table-column type="index" label="序号" width="80"></el-table-column>
         <el-table-column prop="fileName" label="音频名称"></el-table-column>
         <el-table-column prop="fileUrl" label="文件URL" show-overflow-tooltip></el-table-column>
         <el-table-column label="操作" width="120">
@@ -144,7 +144,7 @@ export default {
                    fileName.toLowerCase().includes('.mp4') ||
                    fileType === '11002' || // 根据数据，11002是音频文件类型？
                    fileType.includes('audio')
-          })
+          }).sort((a, b) => (a.id || 0) - (b.id || 0))
           console.log('过滤后的音频文件列表:', this.audioList)
           console.log('总文件数:', response.response.items.length)
         } else {
