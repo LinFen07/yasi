@@ -192,8 +192,8 @@ function footerNav(props: propType) {
     <div className="nav">
       <div className="paginaction">
         {PageArr.map((item, index) => (
-          <ul style={{ display: "flex" }} key={index}>
-            {item.title}
+          <ul key={index}>
+            <span className="part-label">{item.title}</span>
             {item.questionArr.map((e, i) => (
               <li key={e}>
                 <button
