@@ -15,7 +15,11 @@
     </el-form>
 
     <el-table v-loading="listLoading" :data="tableData" border fit highlight-current-row style="width: 100%">
-      <el-table-column prop="id" label="Id" />
+      <el-table-column label="序号" width="70" align="center">
+        <template slot-scope="scope">
+          {{ (queryParam.pageIndex - 1) * queryParam.pageSize + scope.$index + 1 }}
+        </template>
+      </el-table-column>
       <el-table-column prop="name" label="学科"/>
       <el-table-column prop="levelName" label="年级" />
       <el-table-column width="220px" label="操作" align="center">

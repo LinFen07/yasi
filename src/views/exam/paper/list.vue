@@ -1,19 +1,8 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParam" ref="queryForm" :inline="true">
-      <el-form-item label="题目ID：">
-        <el-input v-model="queryParam.id" clearable></el-input>
-      </el-form-item>
-      <el-form-item label="年级：">
-        <el-select v-model="queryParam.level" placeholder="年级" @change="levelChange" clearable>
-          <el-option v-for="item in levelEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="学科：">
-        <el-select v-model="queryParam.subjectId" clearable>
-          <el-option v-for="item in subjectFilter" :key="item.id" :value="item.id"
-            :label="item.name+' ( '+item.levelName+' )'"></el-option>
-        </el-select>
+      <el-form-item label="名称：">
+        <el-input v-model="queryParam.name" clearable placeholder="请输入试卷名称"></el-input>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">查询</el-button>
@@ -23,8 +12,12 @@
       </el-form-item>
     </el-form>
     <el-table v-loading="listLoading" :data="tableData" border fit highlight-current-row style="width: 100%">
-      <el-table-column prop="id" label="Id" width="90px" />
-      <el-table-column prop="subjectId" label="学科" :formatter="subjectFormatter" width="120px" />
+      <el-table-column label="序号" width="70" align="center">
+        <template slot-scope="scope">
+          {{ (queryParam.pageIndex - 1) * queryParam.pageSize + scope.$index + 1 }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="subjectId" label="学科" :formatter="subjectFormatter" width="140px" />
       <el-table-column prop="name" label="名称" />
       <el-table-column prop="createTime" label="创建时间" width="160px" />
       <el-table-column label="操作" align="center" width="220px">
@@ -37,7 +30,7 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParam.pageIndex" :limit.sync="queryParam.pageSize"
-      @pagination="search" />
+      layout="total, prev, pager, next, jumper" @pagination="search" />
     <el-dialog title="选择听力音频" :visible.sync="audioDialogVisible" width="50%">
       <el-table :data="audioList" border style="width: 100%">
         <el-table-column type="index" label="序号" width="80"></el-table-column>
@@ -66,13 +59,10 @@ export default {
   data () {
     return {
       queryParam: {
-        id: null,
-        level: null,
-        subjectId: null,
+        name: '',
         pageIndex: 1,
         pageSize: 10
       },
-      subjectFilter: null,
       listLoading: true,
       tableData: [],
       total: 0,
@@ -110,10 +100,6 @@ export default {
           _this.$message.error(re.message)
         }
       })
-    },
-    levelChange () {
-      this.queryParam.subjectId = null
-      this.subjectFilter = this.subjects.filter(data => data.level === this.queryParam.level)
     },
     subjectFormatter  (row, column, cellValue, index) {
       return this.subjectEnumFormat(cellValue)
@@ -173,10 +159,6 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('enumItem', ['enumFormat']),
-    ...mapState('enumItem', {
-      levelEnum: state => state.user.levelEnum
-    }),
     ...mapGetters('exam', ['subjectEnumFormat']),
     ...mapState('exam', { subjects: state => state.subjects })
   }

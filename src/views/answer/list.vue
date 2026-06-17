@@ -1,10 +1,11 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParam" ref="queryForm" :inline="true">
-      <el-form-item label="学科：" >
-        <el-select v-model="queryParam.subjectId"  clearable>
-          <el-option v-for="item in subjects" :key="item.id" :value="item.id" :label="item.name"></el-option>
-        </el-select>
+      <el-form-item label="用户名称：">
+        <el-input v-model="queryParam.userName" clearable placeholder="请输入用户名称"></el-input>
+      </el-form-item>
+      <el-form-item label="试卷名称：">
+        <el-input v-model="queryParam.paperName" clearable placeholder="请输入试卷名称"></el-input>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">查询</el-button>
@@ -12,7 +13,11 @@
     </el-form>
 
     <el-table v-loading="listLoading" :data="tableData" border fit highlight-current-row style="width: 100%">
-      <el-table-column prop="id" label="Id"  width="100" />
+      <el-table-column label="序号" width="70" align="center">
+        <template slot-scope="scope">
+          {{ (queryParam.pageIndex - 1) * queryParam.pageSize + scope.$index + 1 }}
+        </template>
+      </el-table-column>
       <el-table-column prop="paperName" label="试卷名称"/>
       <el-table-column prop="userName" label="用户名称"/>
       <el-table-column  label="得分" width="100px" >
@@ -35,7 +40,6 @@
 
 <script>
 
-import { mapGetters, mapState, mapActions } from 'vuex'
 import Pagination from '@/components/Pagination'
 import examPaperAnswerApi from '@/api/examPaperAnwser'
 
@@ -44,7 +48,8 @@ export default {
   data () {
     return {
       queryParam: {
-        subjectId: null,
+        userName: '',
+        paperName: '',
         pageIndex: 1,
         pageSize: 10
       },
@@ -54,13 +59,17 @@ export default {
     }
   },
   created () {
-    this.initSubject()
     this.search()
   },
   methods: {
     search () {
       this.listLoading = true
-      examPaperAnswerApi.page(this.queryParam).then(data => {
+      const params = {
+        ...this.queryParam,
+        userName: this.queryParam.userName || undefined,
+        paperName: this.queryParam.paperName || undefined
+      }
+      examPaperAnswerApi.page(params).then(data => {
         const re = data.response
         this.tableData = re.list
         this.total = re.total
@@ -71,13 +80,7 @@ export default {
     submitForm () {
       this.queryParam.pageIndex = 1
       this.search()
-    },
-    ...mapActions('exam', { initSubject: 'initSubject' })
-  },
-  computed: {
-    ...mapGetters('enumItem', ['enumFormat']),
-    ...mapGetters('exam', ['subjectEnumFormat']),
-    ...mapState('exam', { subjects: state => state.subjects })
+    }
   }
 }
 </script>

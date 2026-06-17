@@ -17,6 +17,11 @@
     </el-form>
 
     <el-table v-loading="listLoading" :data="tableData" border fit highlight-current-row style="width: 100%">
+      <el-table-column label="序号" width="70" align="center">
+        <template slot-scope="scope">
+          {{ (queryParam.pageIndex - 1) * queryParam.pageSize + scope.$index + 1 }}
+        </template>
+      </el-table-column>
       <el-table-column prop="userName" label="用户名" />
       <el-table-column prop="realName" label="真实姓名" />
       <el-table-column prop="sex" label="性别" width="60px;">
