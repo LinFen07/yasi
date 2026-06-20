@@ -9,7 +9,7 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">查询</el-button>
-        <router-link :to="{ path: '/user/teacher/edit' }" class="link-left">
+        <router-link :to="{ path: '/user/teacher/edit', query: { mode: 'add' } }" class="link-left">
           <el-button type="primary">添加</el-button>
         </router-link>
         <el-button @click="resetQuery" class="link-left">重置</el-button>

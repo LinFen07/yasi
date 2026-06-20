@@ -48,12 +48,9 @@ export default {
       this.$store.dispatch('app/toggleSideBar')
     },
     logout () {
-      let _this = this
-      loginApi.logout().then(function (result) {
-        if (result && result.code === 1) {
-          _this.clearLogin()
-          _this.$router.push({ path: '/login' })
-        }
+      loginApi.logout().finally(() => {
+        this.clearLogin()
+        this.$router.replace({ path: '/login' })
       })
     },
     ...mapMutations('user', ['clearLogin'])
