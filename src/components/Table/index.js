@@ -1,18 +1,36 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
-import { Table, Tag, Button, Input, Form, AutoComplete } from "antd";
+import { Table, Tag, Button, Input, Form, AutoComplete, Tooltip, Select } from "antd";
 import "../../components/Table/index.scss"
+
+export const STATUS_GRADED = '已评阅';
+export const STATUS_PENDING = '未评阅';
+
+const stripHtml = (html) => {
+    if (!html) return '';
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return (div.textContent || div.innerText || '').trim();
+};
+
+const renderReviewCell = (review) => {
+    const text = stripHtml(review);
+    if (!text) return '-';
+    if (text.length <= 10) return text;
+    return (
+        <Tooltip title={text}>
+            <span style={{ cursor: 'default' }}>{`${text.slice(0, 10)}...`}</span>
+        </Tooltip>
+    );
+};
+
 const TaskTable = ({
     papers,
-    selectedPaper,
-    paperOptions,
-    handleSelectChange,
     paperName,
-    handleStartGrading,
     pageNow,
     pageSize,
+    total,
     handleChange,
-    filterPendingPapers,
+    onSearch,
     setEssayLoading,
     setCurrentPaper,
     setViewMode,
@@ -20,8 +38,7 @@ const TaskTable = ({
 }) => {
     const [searchText, setSearchText] = useState('');
     const [searchName, setSearchName] = useState('');
-    const [activeSearchText, setActiveSearchText] = useState('');
-    const [activeSearchName, setActiveSearchName] = useState('');
+    const [searchStatus, setSearchStatus] = useState(undefined);
 
     const handlePaperSearchChange = (value) => {
         const finalValue = typeof value === 'string'
@@ -30,20 +47,14 @@ const TaskTable = ({
         setSearchText(finalValue);
     };
 
-    const handleStudentSearchChange = (value) => {
-        const finalValue = typeof value === 'string'
-            ? value
-            : value?.value || value?.target?.value || '';
-        setSearchName(finalValue);
+    const handleStudentSearchChange = (e) => {
+        setSearchName(e.target.value);
     };
 
     const handleSearch = () => {
-        setActiveSearchText(searchText);
-        setActiveSearchName(searchName);
+        onSearch?.(searchText, searchName, searchStatus);
     };
-    // 获取教师分配的数据
-    const { tasks } = useSelector(state => state.tasks);
-    const studentNameList = tasks?.response?.items?.map(item => item.studentName) || [];
+
     return (
         <>
             <Form>
@@ -72,34 +83,28 @@ const TaskTable = ({
                         }}
                         defaultActiveFirstOption={false}
                     />
-                    <AutoComplete
+                    <Input
                         style={{ width: 200 }}
-                        placeholder="请输入考生姓名"
+                        placeholder="请输入考生真实姓名"
                         value={searchName}
                         onChange={handleStudentSearchChange}
-                        options={
-                            studentNameList && studentNameList.length > 0
-                                ? studentNameList.map(opt => ({
-                                    value: opt,
-                                    label: opt
-                                }))
-                                : []
-                        }
-                        filterOption={(inputValue, option) =>
-                            option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-                        }
-                        dropdownStyle={{
-                            zIndex: 9999,
-                            minWidth: 200,
-                            maxHeight: 250,
-                            overflow: 'auto'
-                        }}
-                        defaultActiveFirstOption={false}
+                        onPressEnter={handleSearch}
+                        allowClear
+                    />
+                    <Select
+                        style={{ width: 140 }}
+                        placeholder="选择状态"
+                        value={searchStatus}
+                        onChange={setSearchStatus}
+                        allowClear
+                        options={[
+                            { value: STATUS_GRADED, label: STATUS_GRADED },
+                            { value: STATUS_PENDING, label: STATUS_PENDING },
+                        ]}
                     />
                     <Button
                         type="primary"
                         onClick={handleSearch}
-                        disabled={papers.length === 0}
                     >
                         筛选
                     </Button>
@@ -107,6 +112,13 @@ const TaskTable = ({
             </Form>
             <Table
                 columns={[
+                    {
+                        title: '序号',
+                        key: 'index',
+                        width: 70,
+                        align: 'center',
+                        render: (_, __, index) => (pageNow - 1) * (pageSize || 10) + index + 1,
+                    },
                     {
                         title: '考生',
                         key: 'student',
@@ -127,6 +139,24 @@ const TaskTable = ({
                                 {status === '已阅' ? '已评阅' : '待评阅'}
                             </Tag>
                         )
+                    },
+                    {
+                        title: '评分',
+                        dataIndex: 'score',
+                        key: 'score',
+                        align: 'center',
+                        render: (score, record) => (
+                            record.status === '已阅' && score !== null && score !== undefined
+                                ? score
+                                : '-'
+                        )
+                    },
+                    {
+                        title: '评价',
+                        dataIndex: 'review',
+                        key: 'review',
+                        ellipsis: true,
+                        render: (review) => renderReviewCell(review)
                     },
                     {
                         title: '操作',
@@ -152,7 +182,10 @@ const TaskTable = ({
                 ]}
                 pagination={{
                     current: pageNow,
-                    pageSize: pageSize || 5,
+                    pageSize: pageSize || 10,
+                    total: total || 0,
+                    showTotal: (count) => `共 ${count} 条`,
+                    showSizeChanger: false,
                     onChange: (page) => {
                         handleChange(page);
                         setTimeout(() => {
@@ -163,17 +196,10 @@ const TaskTable = ({
                         }, 100);
                     },
                 }}
-                dataSource={papers
-                    .filter(p =>
-                        (activeSearchText === '' || p.paperName?.includes(activeSearchText)) &&
-                        (activeSearchName === '' || p.studentName?.includes(activeSearchName))
-                    )
-                    .map(item => ({ ...item, key: `${item.paperId}-${item.studentId}-${item.id}` }))
-                    .sort((a, b) => {
-                        if (a.status === '待阅' && b.status !== '待阅') return -1;
-                        if (a.status !== '待阅' && b.status === '待阅') return 1;
-                        return 0;
-                    })}
+                dataSource={papers.map(item => ({
+                    ...item,
+                    key: `${item.paperId}-${item.studentId}-${item.id}`
+                }))}
             />
         </>
     );

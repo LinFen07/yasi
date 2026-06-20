@@ -324,33 +324,39 @@ const getPaperName = () => {
   };
 }
 
-const getEssayListFromServer = (userId, pageNow = 1, pageSize = 5) => {
+const getEssayListFromServer = (userId, pageNow = 1, pageSize = 10, filters = {}) => {
   return async (dispatch) => {
     try {
+      const params = { userId, pageNow, pageSize };
+      if (filters.paperName?.trim()) {
+        params.paperName = filters.paperName.trim();
+      }
+      if (filters.studentName?.trim()) {
+        params.studentName = filters.studentName.trim();
+      }
+      if (filters.status) {
+        params.status = filters.status;
+      }
       const response = await request.get('/api/teacher/exam/paper/allIdAndJudge', {
-        params: { userId, pageNow, pageSize }
+        params
       });
       const result = response.data;
       if (result.code === 1 && result.response) {
         const items = result.response.items || [];
-        const paperListRes = await dispatch(getPaperName());
-        const paperList = paperListRes || [];
-        const dataList = items.map(item => {
-          const paperInfo = paperList.find(p => p.id === item.paperId);
-          return {
-            id: item.id,
-            studentId: item.studentId,
-            studentName: item.studentId,
-            paperId: item.paperId,
-            paperTitle: paperInfo?.name || item.composition || '无标题',
-            questionId: item.questionId,
-            score: item.score,
-            review: item.review,
-            composition: item.composition || '',
-            status: item.score !== null && item.review ? '已阅' : '未阅',
-            createTime: item.createTime
-          };
-        });
+        const dataList = items.map(item => ({
+          id: item.id,
+          studentId: item.studentId,
+          studentName: item.realName || '',
+          realName: item.realName || '',
+          paperId: item.paperId,
+          paperTitle: item.paperTitle || '无标题',
+          questionId: item.questionId,
+          score: item.score,
+          review: item.review,
+          composition: item.composition || '',
+          status: item.score !== null && item.review ? '已阅' : '未阅',
+          createTime: item.createTime
+        }));
         dispatch(setEssayList({
           dataList: dataList,
           total: result.response.counts || 0

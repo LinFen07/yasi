@@ -28,17 +28,27 @@ const Evaluation = () => {
   const [isEditingMode, setIsEditingMode] = useState(false);
 
   const [pageState, setPageState] = useState(1);
-  const [pageSize] = useState(5);
+  const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [searchFilters, setSearchFilters] = useState({ paperName: '', studentName: '', status: '' });
 
   const dispatch = useDispatch();
   const { userInfo } = useSelector(state => state.user);
-  const userId = userInfo?.userId || 7;
+  const userId = userInfo?.id || userInfo?.userId || localStorage.getItem('userId');
 
   const navigate = useNavigate()
 
   const handleChange = useCallback((page) => {
     setPageState(page);
+  }, []);
+
+  const handleSearch = useCallback((paperName, studentName, status) => {
+    setPageState(1);
+    setSearchFilters({
+      paperName: paperName || '',
+      studentName: studentName || '',
+      status: status || ''
+    });
   }, []);
 
   useEffect(() => {
@@ -49,13 +59,13 @@ const Evaluation = () => {
     const loadEssayList = async () => {
       setEssayLoading(true);
       try {
-        const result = await dispatch(getEssayListFromServer(userId, pageState, pageSize));
+        const result = await dispatch(getEssayListFromServer(userId, pageState, pageSize, searchFilters));
         if (result && result.dataList) {
           setTotal(result.total || 0);
           const transformedPapers = result.dataList.map(item => ({
             id: item.id,
             studentId: item.studentId,
-            studentName: item.studentId,
+            studentName: item.realName || item.studentName || '未知',
             paperId: item.paperId,
             paperName: item.paperTitle || '无标题',
             questionId: item.questionId,
@@ -81,7 +91,7 @@ const Evaluation = () => {
       }
     };
     loadEssayList();
-  }, [dispatch, userId, pageState, pageSize, refreshFlag]);
+  }, [dispatch, userId, pageState, pageSize, refreshFlag, searchFilters]);
 
   const handleGradeSubmit = async (values) => {
     if (!currentPaper) {
@@ -162,6 +172,8 @@ const Evaluation = () => {
                     handleChange={handleChange}
                     pageNow={pageState}
                     pageSize={pageSize}
+                    total={total}
+                    onSearch={handleSearch}
                     filterPendingPapers={filterPendingPapers}
                     setEssayLoading={setEssayLoading}
                     setCurrentPaper={setCurrentPaper}
