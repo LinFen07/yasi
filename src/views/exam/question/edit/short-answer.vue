@@ -196,10 +196,10 @@ export default {
             loading.close()
 
             // 修改判断条件为code === 0
-            if (res.code === 1) {
+            const imageUrl = uploadApi.getImageUrl(res)
+            if (imageUrl) {
               const range = quillInstance.getSelection()
-              // 使用接口返回的fileUrl字段
-              quillInstance.insertEmbed(range.index, 'image', res.response.fileUrl)
+              quillInstance.insertEmbed(range.index, 'image', imageUrl)
               this.$message.success('图片上传成功')
             } else {
               this.$message.error(res.message || '图片上传失败')

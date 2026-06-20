@@ -216,9 +216,10 @@ export default {
             const res = await uploadApi.upload(file)
             loading.close()
 
-            if (res.code === 1) {
+            const imageUrl = uploadApi.getImageUrl(res)
+            if (imageUrl) {
               const range = quillInstance.getSelection()
-              quillInstance.insertEmbed(range.index, 'image', res.response.fileUrl)
+              quillInstance.insertEmbed(range.index, 'image', imageUrl)
               this.$message.success('图片上传成功')
             } else {
               this.$message.error(res.message || '图片上传失败')

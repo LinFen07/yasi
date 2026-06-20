@@ -19,6 +19,20 @@
       </el-table-column>
       <el-table-column prop="subjectId" label="学科" :formatter="subjectFormatter" width="140px" />
       <el-table-column prop="name" label="名称" />
+      <el-table-column label="听力试题" width="150" align="center">
+        <template slot-scope="{row}">
+          <el-tag :type="hasListeningAudio(row) ? 'success' : 'info'" size="mini">
+            {{ hasListeningAudio(row) ? '有' : '无' }}
+          </el-tag>
+          <el-button
+            v-if="hasListeningAudio(row)"
+            size="mini"
+            type="primary"
+            class="link-left"
+            @click="downloadAudio(row)"
+          >下载</el-button>
+        </template>
+      </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="160px" />
       <el-table-column label="操作" align="center" width="220px">
         <template slot-scope="{row}">
@@ -104,6 +118,26 @@ export default {
     subjectFormatter  (row, column, cellValue, index) {
       return this.subjectEnumFormat(cellValue)
     },
+    hasListeningAudio (row) {
+      const url = row.audioFileUrl
+      return !!(url && String(url).trim())
+    },
+    downloadAudio (row) {
+      const url = row.audioFileUrl
+      if (!url || !String(url).trim()) {
+        this.$message.warning('暂无听力音频')
+        return
+      }
+      const fileName = decodeURIComponent(url.split('/').pop().split('?')[0]) || 'audio'
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.target = '_blank'
+      link.rel = 'noopener'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    },
     ...mapActions('exam', { initSubject: 'initSubject' }),
     // 显示音频选择对话框
     showAudioDialog (row) {
@@ -149,6 +183,7 @@ export default {
         if (response.code === 1) {
           this.$message.success('添加听力成功')
           this.audioDialogVisible = false
+          this.search()
         } else {
           this.$message.error(response.message)
         }

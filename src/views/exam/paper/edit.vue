@@ -104,6 +104,7 @@ import Pagination from '@/components/Pagination'
 import QuestionShow from '../question/components/Show'
 import examPaperApi from '@/api/examPaper'
 import questionApi from '@/api/question'
+import uploadApi from '@/api/upload'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
 
@@ -168,16 +169,14 @@ export default {
       },
       editorConfig: {
         placeholder: '请输入标题内容...',
-        MENU_CONF: {
-          uploadImage: {
-            server: '/api/upload', // 上传接口
-            fieldName: 'file'
-          }
-        }
+        MENU_CONF: {}
       }
     }
   },
   created () {
+    this.editorConfig.MENU_CONF.uploadImage = {
+      customUpload: (file, insertFn) => this.uploadEditorImage(file, insertFn)
+    }
     let id = this.$route.query.id
     let _this = this
     this.initSubject(() => {
@@ -193,6 +192,34 @@ export default {
     }
   },
   methods: {
+    async uploadEditorImage (file, insertFn) {
+      if (!file) return
+      if (file.size > uploadApi.MAX_IMAGE_SIZE) {
+        this.$message.error('图片大小不能超过3M')
+        return
+      }
+      const loading = this.$loading({
+        lock: true,
+        text: '图片上传中...',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
+      try {
+        const res = await uploadApi.upload(file)
+        const imageUrl = uploadApi.getImageUrl(res)
+        if (imageUrl) {
+          insertFn(imageUrl, file.name, imageUrl)
+          this.$message.success('图片上传成功')
+        } else {
+          this.$message.error(res.message || '图片上传失败')
+        }
+      } catch (error) {
+        console.error('图片上传失败:', error)
+        this.$message.error(error.message || '图片上传失败')
+      } finally {
+        loading.close()
+      }
+    },
     submitForm () {
       let _this = this
       this.$refs.form.validate((valid) => {
