@@ -4,6 +4,7 @@ import "../../components/Table/index.scss"
 
 export const STATUS_GRADED = '已评阅';
 export const STATUS_PENDING = '未评阅';
+const REVIEW_PREVIEW_LENGTH = 25;
 
 const stripHtml = (html) => {
     if (!html) return '';
@@ -15,10 +16,10 @@ const stripHtml = (html) => {
 const renderReviewCell = (review) => {
     const text = stripHtml(review);
     if (!text) return '-';
-    if (text.length <= 10) return text;
+    if (text.length <= REVIEW_PREVIEW_LENGTH) return text;
     return (
         <Tooltip title={text}>
-            <span style={{ cursor: 'default' }}>{`${text.slice(0, 10)}...`}</span>
+            <span style={{ cursor: 'default' }}>{`${text.slice(0, REVIEW_PREVIEW_LENGTH)}...`}</span>
         </Tooltip>
     );
 };
@@ -111,29 +112,35 @@ const TaskTable = ({
                 </div>
             </Form>
             <Table
+                tableLayout="fixed"
                 columns={[
                     {
                         title: '序号',
                         key: 'index',
-                        width: 70,
+                        width: 64,
                         align: 'center',
                         render: (_, __, index) => (pageNow - 1) * (pageSize || 10) + index + 1,
                     },
                     {
                         title: '考生',
                         key: 'student',
+                        width: 100,
+                        ellipsis: true,
                         render: (_, record) => record.studentName,
                     },
                     {
                         title: '试卷名称',
                         dataIndex: 'paperName',
                         key: 'paperName',
+                        width: 130,
+                        ellipsis: true,
                         render: (_, record) => record.paperName,
                     },
                     {
                         title: '状态',
                         dataIndex: 'status',
                         key: 'status',
+                        width: 96,
                         render: status => (
                             <Tag color={status === '已阅' ? 'green' : 'orange'}>
                                 {status === '已阅' ? '已评阅' : '待评阅'}
@@ -144,6 +151,7 @@ const TaskTable = ({
                         title: '评分',
                         dataIndex: 'score',
                         key: 'score',
+                        width: 72,
                         align: 'center',
                         render: (score, record) => (
                             record.status === '已阅' && score !== null && score !== undefined
@@ -155,12 +163,16 @@ const TaskTable = ({
                         title: '评价',
                         dataIndex: 'review',
                         key: 'review',
+                        width: 300,
+                        align: 'center',
                         ellipsis: true,
                         render: (review) => renderReviewCell(review)
                     },
                     {
                         title: '操作',
                         key: 'action',
+                        width: 80,
+                        align: 'center',
                         render: (_, record) => (
                             <Button
                                 type="link"
