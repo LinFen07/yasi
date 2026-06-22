@@ -46,8 +46,25 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParam.pageIndex" :limit.sync="queryParam.pageSize"
       layout="total, prev, pager, next, jumper" @pagination="search" />
     <el-dialog title="选择听力音频" :visible.sync="audioDialogVisible" width="50%">
-      <el-table :data="audioList" border style="width: 100%">
-        <el-table-column type="index" label="序号" width="80"></el-table-column>
+      <el-form :inline="true" @submit.native.prevent="searchAudio" class="audio-search-form">
+        <el-form-item label="音频名称：">
+          <el-input
+            v-model="audioQueryParam.fileName"
+            clearable
+            placeholder="请输入音频名称"
+            @keyup.enter.native="searchAudio"
+          ></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="searchAudio">搜索</el-button>
+        </el-form-item>
+      </el-form>
+      <el-table v-loading="audioListLoading" :data="audioList" border style="width: 100%">
+        <el-table-column label="序号" width="80" align="center">
+          <template slot-scope="scope">
+            {{ (audioQueryParam.pageNo - 1) * audioQueryParam.pageSize + scope.$index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="fileName" label="音频名称"></el-table-column>
         <el-table-column prop="fileUrl" label="文件URL" show-overflow-tooltip></el-table-column>
         <el-table-column label="操作" width="120">
@@ -56,6 +73,14 @@
           </template>
         </el-table-column>
       </el-table>
+      <pagination
+        v-show="audioTotal > 0"
+        :total="audioTotal"
+        :page.sync="audioQueryParam.pageNo"
+        :limit.sync="audioQueryParam.pageSize"
+        layout="total, prev, pager, next, jumper"
+        @pagination="loadAudioList"
+      />
       <span slot="footer" class="dialog-footer">
         <el-button @click="audioDialogVisible = false">取消</el-button>
       </span>
@@ -82,6 +107,13 @@ export default {
       total: 0,
       audioDialogVisible: false, // 控制对话框显示
       audioList: [], // 音频列表
+      audioListLoading: false,
+      audioTotal: 0,
+      audioQueryParam: {
+        pageNo: 1,
+        pageSize: 10,
+        fileName: ''
+      },
       currentExamId: null // 当前操作的试卷ID
     }
   },
@@ -142,35 +174,40 @@ export default {
     // 显示音频选择对话框
     showAudioDialog (row) {
       this.currentExamId = row.id
+      this.audioQueryParam.pageNo = 1
+      this.audioQueryParam.fileName = ''
       this.audioDialogVisible = true
       this.loadAudioList()
     },
 
-    // 加载音频列表
+    searchAudio () {
+      this.audioQueryParam.pageNo = 1
+      this.loadAudioList()
+    },
+
     loadAudioList () {
-      // 使用新的uploadFileList接口获取文件列表
-      examPaperApi.uploadFileList(1, 100, {}).then(response => {
+      this.audioListLoading = true
+      const params = { isAudio: 1 }
+      const fileName = (this.audioQueryParam.fileName || '').trim()
+      if (fileName) {
+        params.fileName = fileName
+      }
+      examPaperApi.uploadFileList(
+        this.audioQueryParam.pageNo,
+        this.audioQueryParam.pageSize,
+        params
+      ).then(response => {
         if (response.code === 1) {
-          // 过滤音频文件（根据fileName的扩展名来过滤，或者特定的fileType）
-          this.audioList = response.response.items.filter(item => {
-            const fileName = item.fileName || ''
-            const fileType = item.fileType || ''
-            // 根据文件扩展名过滤音频文件，或者特定的fileType（如11002代表音频）
-            return fileName.toLowerCase().includes('.mp3') ||
-                   fileName.toLowerCase().includes('.wav') ||
-                   fileName.toLowerCase().includes('.m4a') ||
-                   fileName.toLowerCase().includes('.aac') ||
-                   fileName.toLowerCase().includes('.mpeg') ||
-                   fileName.toLowerCase().includes('.mp4') ||
-                   fileType === '11002' || // 根据数据，11002是音频文件类型？
-                   fileType.includes('audio')
-          }).sort((a, b) => (a.id || 0) - (b.id || 0))
-          console.log('过滤后的音频文件列表:', this.audioList)
-          console.log('总文件数:', response.response.items.length)
+          const re = response.response
+          this.audioList = re.items || []
+          this.audioTotal = re.counts || 0
+          this.audioQueryParam.pageNo = re.pageNo || this.audioQueryParam.pageNo
         } else {
           this.$message.error(response.message || '获取音频列表失败')
         }
+        this.audioListLoading = false
       }).catch(error => {
+        this.audioListLoading = false
         this.$message.error('获取音频列表失败')
         console.error(error)
       })
@@ -203,6 +240,10 @@ export default {
 <style lang="scss" scoped>
 .link-left {
   margin-left: 10px;
+}
+
+.audio-search-form {
+  margin-bottom: 12px;
 }
 
 .audio-name {
