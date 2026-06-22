@@ -2,7 +2,9 @@ import axios from 'axios'
 import vue from 'vue'
 
 const IMAGE_UPLOAD_URL = '/api/upload'
+const AUDIO_UPLOAD_URL = '/api/uploadAudio'
 const MAX_IMAGE_SIZE = 3 * 1024 * 1024
+const MAX_AUDIO_SIZE = 500 * 1024 * 1024
 
 function handleUploadResponse (res) {
   const data = res.data
@@ -38,6 +40,20 @@ export default {
       headers: { 'request-ajax': true }
     }).then(handleUploadResponse)
   },
+  uploadAudio: (file, audioName) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('audioName', audioName)
+    return axios.request({
+      baseURL: process.env.VUE_APP_URL,
+      url: AUDIO_UPLOAD_URL,
+      method: 'post',
+      withCredentials: true,
+      timeout: 600000,
+      data: formData,
+      headers: { 'request-ajax': true }
+    }).then(handleUploadResponse)
+  },
   getImageUrl (response) {
     if (!response) return null
     // wangEditor 格式
@@ -56,5 +72,6 @@ export default {
     if (response.code === 1) return true
     return false
   },
-  MAX_IMAGE_SIZE
+  MAX_IMAGE_SIZE,
+  MAX_AUDIO_SIZE
 }

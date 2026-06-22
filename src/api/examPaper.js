@@ -28,5 +28,6 @@ export default {
   // 字典
   findByType: (type) => get(`/api/admin/dict/type/${type}`),
   // 分页查询上传文件列表
-  uploadFileList: (pageNo, pageSize, params) => post(`/api/admin/file/uploadFileList?pageNo=${pageNo}&pageSize=${pageSize}`, params)
+  uploadFileList: (pageNo, pageSize, params) => post(`/api/admin/file/uploadFileList?pageNo=${pageNo}&pageSize=${pageSize}`, params),
+  getAudioStreamUrl: id => `/api/admin/file/stream/${id}`
 }

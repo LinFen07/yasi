@@ -6,6 +6,7 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">查询</el-button>
+        <el-button type="primary" class="link-left" @click="openUploadAudioDialog">添加听力音频</el-button>
       </el-form-item>
     </el-form>
     <el-table v-loading="listLoading" :data="tableData" border fit highlight-current-row style="width: 100%">
@@ -42,11 +43,11 @@
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParam.pageIndex" :limit.sync="queryParam.pageSize"
       layout="total, prev, pager, next, jumper" @pagination="search" />
-    <el-dialog title="选择听力音频" :visible.sync="audioDialogVisible" width="50%">
+    <el-dialog title="选择听力音频" :visible.sync="audioDialogVisible" width="760px" @close="pauseAllAudioPlayers">
       <el-form :inline="true" @submit.native.prevent="searchAudio" class="audio-search-form">
         <el-form-item label="音频名称：">
           <el-input
-            v-model="audioQueryParam.fileName"
+            v-model="audioQueryParam.audioName"
             clearable
             placeholder="请输入音频名称"
             @keyup.enter.native="searchAudio"
@@ -57,13 +58,32 @@
         </el-form-item>
       </el-form>
       <el-table v-loading="audioListLoading" :data="audioList" border style="width: 100%">
-        <el-table-column label="序号" width="80" align="center">
+        <el-table-column label="序号" width="70" align="center">
           <template slot-scope="scope">
             {{ (audioQueryParam.pageNo - 1) * audioQueryParam.pageSize + scope.$index + 1 }}
           </template>
         </el-table-column>
-        <el-table-column prop="fileName" label="音频名称"></el-table-column>
-        <el-table-column prop="fileUrl" label="文件URL" show-overflow-tooltip></el-table-column>
+        <el-table-column prop="audioName" label="音频名称" min-width="160" show-overflow-tooltip>
+          <template slot-scope="{row}">
+            {{ row.audioName || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="文件" min-width="360">
+          <template slot-scope="{row}">
+            <audio
+              v-if="row.id"
+              :key="'audio-' + row.id"
+              class="audio-list-player"
+              :src="getAudioStreamUrl(row)"
+              controls
+              controlsList="nodownload"
+              preload="metadata"
+              @play="handleAudioPlay"
+              @error="handleAudioError(row)"
+            ></audio>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="120">
           <template slot-scope="{row}">
             <el-button size="mini" type="primary" @click="addAudioToPaper(row)">添加</el-button>
@@ -82,6 +102,47 @@
         <el-button @click="audioDialogVisible = false">取消</el-button>
       </span>
     </el-dialog>
+
+    <el-dialog
+      title="上传听力音频"
+      :visible.sync="uploadAudioDialogVisible"
+      width="480px"
+      :close-on-click-modal="!uploadAudioSubmitting"
+      :show-close="!uploadAudioSubmitting"
+      :before-close="handleUploadAudioDialogClose"
+    >
+      <el-form
+        ref="uploadAudioForm"
+        :model="uploadAudioForm"
+        :rules="uploadAudioRules"
+        label-width="100px"
+        v-loading="uploadAudioSubmitting"
+        element-loading-text="上传中..."
+      >
+        <el-form-item label="音频名称：" prop="audioName">
+          <el-input v-model="uploadAudioForm.audioName" placeholder="请输入音频名称" maxlength="100"></el-input>
+        </el-form-item>
+        <el-form-item label="音频文件：" prop="file">
+          <el-upload
+            ref="audioUpload"
+            action="#"
+            :auto-upload="false"
+            :limit="1"
+            accept=".mp3,.wav,.m4a,.aac,.mpeg,.mp4"
+            :on-change="handleAudioFileChange"
+            :on-remove="handleAudioFileRemove"
+            :file-list="uploadAudioFileList"
+          >
+            <el-button size="small" type="primary">选择文件</el-button>
+            <div slot="tip" class="el-upload__tip">支持 mp3、wav、m4a、aac、mpeg、mp4，不超过 500MB</div>
+          </el-upload>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="handleUploadAudioDialogClose()" :disabled="uploadAudioSubmitting">取消</el-button>
+        <el-button type="primary" @click="submitUploadAudio" :loading="uploadAudioSubmitting">上传</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -89,6 +150,7 @@
 import { mapGetters, mapState, mapActions } from 'vuex'
 import Pagination from '@/components/Pagination'
 import examPaperApi from '@/api/examPaper'
+import uploadApi from '@/api/upload'
 
 export default {
   components: { Pagination },
@@ -108,10 +170,34 @@ export default {
       audioTotal: 0,
       audioQueryParam: {
         pageNo: 1,
-        pageSize: 10,
-        fileName: ''
+        pageSize: 5,
+        audioName: ''
       },
-      currentExamId: null // 当前操作的试卷ID
+      currentExamId: null, // 当前操作的试卷ID
+      uploadAudioDialogVisible: false,
+      uploadAudioSubmitting: false,
+      uploadAudioFileList: [],
+      uploadAudioForm: {
+        audioName: '',
+        file: null
+      },
+      uploadAudioRules: {
+        audioName: [
+          { required: true, message: '请输入音频名称', trigger: 'blur' }
+        ],
+        file: [
+          {
+            validator: (rule, value, callback) => {
+              if (!this.uploadAudioForm.file) {
+                callback(new Error('请选择音频文件'))
+              } else {
+                callback()
+              }
+            },
+            trigger: 'change'
+          }
+        ]
+      }
     }
   },
   created () {
@@ -168,11 +254,83 @@ export default {
       document.body.removeChild(link)
     },
     ...mapActions('exam', { initSubject: 'initSubject' }),
+    openUploadAudioDialog () {
+      this.resetUploadAudioForm()
+      this.uploadAudioDialogVisible = true
+    },
+    resetUploadAudioForm () {
+      this.uploadAudioForm = {
+        audioName: '',
+        file: null
+      }
+      this.uploadAudioFileList = []
+      this.uploadAudioSubmitting = false
+      this.$nextTick(() => {
+        if (this.$refs.uploadAudioForm) {
+          this.$refs.uploadAudioForm.clearValidate()
+        }
+        if (this.$refs.audioUpload) {
+          this.$refs.audioUpload.clearFiles()
+        }
+      })
+    },
+    handleUploadAudioDialogClose (done) {
+      if (this.uploadAudioSubmitting) {
+        return
+      }
+      this.uploadAudioDialogVisible = false
+      this.resetUploadAudioForm()
+      if (typeof done === 'function') {
+        done()
+      }
+    },
+    handleAudioFileChange (file, fileList) {
+      if (file.size > uploadApi.MAX_AUDIO_SIZE) {
+        this.$message.error('音频大小不能超过500MB')
+        this.uploadAudioFileList = []
+        this.uploadAudioForm.file = null
+        if (this.$refs.audioUpload) {
+          this.$refs.audioUpload.clearFiles()
+        }
+        return
+      }
+      this.uploadAudioFileList = fileList.slice(-1)
+      this.uploadAudioForm.file = file.raw
+      this.$refs.uploadAudioForm && this.$refs.uploadAudioForm.validateField('file')
+    },
+    handleAudioFileRemove () {
+      this.uploadAudioFileList = []
+      this.uploadAudioForm.file = null
+      this.$refs.uploadAudioForm && this.$refs.uploadAudioForm.validateField('file')
+    },
+    submitUploadAudio () {
+      this.$refs.uploadAudioForm.validate(async (valid) => {
+        if (!valid) return
+        this.uploadAudioSubmitting = true
+        try {
+          const res = await uploadApi.uploadAudio(
+            this.uploadAudioForm.file,
+            this.uploadAudioForm.audioName.trim()
+          )
+          if (uploadApi.isUploadSuccess(res)) {
+            this.$message.success('上传听力音频成功')
+            this.uploadAudioDialogVisible = false
+            this.resetUploadAudioForm()
+          } else {
+            this.$message.error(res.message || '上传听力音频失败')
+          }
+        } catch (error) {
+          this.$message.error(error.message || '上传听力音频失败')
+        } finally {
+          this.uploadAudioSubmitting = false
+        }
+      })
+    },
     // 显示音频选择对话框
     showAudioDialog (row) {
       this.currentExamId = row.id
       this.audioQueryParam.pageNo = 1
-      this.audioQueryParam.fileName = ''
+      this.audioQueryParam.audioName = ''
       this.audioDialogVisible = true
       this.loadAudioList()
     },
@@ -183,11 +341,12 @@ export default {
     },
 
     loadAudioList () {
+      this.pauseAllAudioPlayers()
       this.audioListLoading = true
       const params = { isAudio: 1 }
-      const fileName = (this.audioQueryParam.fileName || '').trim()
-      if (fileName) {
-        params.fileName = fileName
+      const audioName = (this.audioQueryParam.audioName || '').trim()
+      if (audioName) {
+        params.audioName = audioName
       }
       examPaperApi.uploadFileList(
         this.audioQueryParam.pageNo,
@@ -207,6 +366,32 @@ export default {
         this.audioListLoading = false
         this.$message.error('获取音频列表失败')
         console.error(error)
+      })
+    },
+
+    handleAudioPlay (event) {
+      const current = event.target
+      const players = document.querySelectorAll('.audio-list-player')
+      players.forEach(player => {
+        if (player !== current && !player.paused) {
+          player.pause()
+        }
+      })
+    },
+
+    getAudioStreamUrl (row) {
+      if (!row || !row.id) return ''
+      return examPaperApi.getAudioStreamUrl(row.id)
+    },
+
+    handleAudioError (row) {
+      this.$message.error(`音频「${row.audioName || row.id}」加载失败，请确认后端已启动且文件存在`)
+    },
+
+    pauseAllAudioPlayers () {
+      document.querySelectorAll('.audio-list-player').forEach(player => {
+        player.pause()
+        player.currentTime = 0
       })
     },
 
@@ -241,6 +426,13 @@ export default {
 
 .audio-search-form {
   margin-bottom: 12px;
+}
+
+.audio-list-player {
+  width: 100%;
+  max-width: 360px;
+  height: 32px;
+  vertical-align: middle;
 }
 
 .audio-name {
