@@ -1,7 +1,7 @@
 import "./index.scss";
 import { Button, Card, Modal, Spin } from "antd";
 import { useNavigate } from "react-router";
-import { getExam, queryAudioUrl, parseAudioUrlResponse } from "@/api/examPaper";
+import { getExam } from "@/api/examPaper";
 import { useEffect, useState } from "react";
 import stores from "@/stores";
 import { getStudentId } from "@/api/login";
@@ -9,8 +9,6 @@ import { getExamProgress, hasOngoingExam, initExamProgress, clearAllExamData, cl
 
 const { Meta } = Card;
 
-// 避免同一试卷并发/重复预下载
-const prefetchingPaperIds = new Set<number>();
 // 避免 dashboard 初始化（含 StrictMode 双挂载）重复执行
 let dashboardInitPromise: Promise<void> | null = null;
 
@@ -35,50 +33,6 @@ const Dashboard = () => {
     return items;
   };
 
-  const prefetchExamAudios = async (examListData: any[]) => {
-    if (!examListData?.length) return;
-
-    const channel = new BroadcastChannel('audio_download_channel');
-
-    await Promise.allSettled(
-      examListData.map(async (exam: any) => {
-        const paperId = exam.examPaperId;
-        if (prefetchingPaperIds.has(paperId)) return;
-
-        prefetchingPaperIds.add(paperId);
-        try {
-          const audioRes = await queryAudioUrl(paperId);
-          const audioUrl = parseAudioUrlResponse(audioRes);
-
-          if (!audioUrl) {
-            console.warn(`试卷 ${paperId} 未配置听力音频`);
-            return;
-          }
-
-          const isCached = await stores.ExamStore.hasAudioCacheForPaper(paperId);
-
-          if (!isCached) {
-            console.log(`⬇️ 预下载试卷 ${paperId} 听力音频...`);
-            await stores.ExamStore.downloadAudio(paperId, audioUrl);
-            channel.postMessage({ type: 'AUDIO_DOWNLOADED', paperId });
-            return;
-          }
-
-          const needRedownload = await stores.ExamStore.shouldRedownload(paperId, audioUrl);
-          if (needRedownload) {
-            console.log(`🔄 试卷 ${paperId} 听力音频已更新，重新下载...`);
-            await stores.ExamStore.downloadAudio(paperId, audioUrl);
-            channel.postMessage({ type: 'AUDIO_DOWNLOADED', paperId });
-          }
-        } catch (error) {
-          console.warn(`⚠️ 预下载试卷 ${paperId} 听力音频失败:`, error);
-        } finally {
-          prefetchingPaperIds.delete(paperId);
-        }
-      })
-    );
-  };
-
   const fetchGetStudentId = async () => {
     const res = await getStudentId(stores.UserStore.userName);
     console.log(res.data)
@@ -93,7 +47,6 @@ const Dashboard = () => {
       try {
         await fetchGetStudentId();
         const items = await getExamList();
-        await prefetchExamAudios(items);
       } catch (error) {
         dashboardInitPromise = null;
         setListLoaded(true);

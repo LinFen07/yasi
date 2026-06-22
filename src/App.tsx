@@ -9,15 +9,12 @@ import { observer } from 'mobx-react';
 function App() {
   const routeView = useRoutes(routes)
   const [audioSrc, setAudioSrc] = useState('');
-  useEffect(() => {
-    const syncAudioSrc = async () => {
-      const src = await stores.ExamStore.getListenAudioSrc();
-      setAudioSrc(src);
-    };
-    syncAudioSrc();
-  }, [stores.ExamStore.listenAudio, stores.ExamStore.paperId])
-
   const location = useLocation();
+
+  useEffect(() => {
+    if (stores.ExamStore.paperId === 0) return;
+    setAudioSrc(stores.ExamStore.getListenAudioSrc());
+  }, [stores.ExamStore.paperId, location.pathname]);
 
   useEffect(() => {
     if (!location.pathname.startsWith('/listeningExam')) {

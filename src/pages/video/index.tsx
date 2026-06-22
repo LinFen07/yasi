@@ -4,7 +4,7 @@ import { Modal, Button } from 'antd';
 import { useNavigate } from 'react-router';
 
 import "./index.scss";
-import { select } from "@/api/examPaper";
+import { select, getExamInstructionMediaUrl } from "@/api/examPaper";
 import stores from "@/stores";
 import { AddCorrect } from "@/utils/browser/getCorrect";
 import { checkOngoingExamState, clearAllExamData, OngoingExamState, getExamProgress, setModuleStatus, clearModuleData } from '@/utils/helper/examDataManager';
@@ -26,6 +26,15 @@ const IeltsFamiliarisationTest: React.FC = () => {
 
   useEffect(() => {
     stores.ExamStore.changePaperId(+id);
+
+    // 进入听力说明页即预加载 37 秒说明音频
+    if (type === 'listen') {
+      const url = getExamInstructionMediaUrl('listen');
+      if (url) {
+        fetch(url, { headers: { Range: 'bytes=0-0' } }).catch(() => {});
+      }
+    }
+
     const fetchExamData = async () => {
       try {
         const res = await select(+id);
@@ -43,7 +52,7 @@ const IeltsFamiliarisationTest: React.FC = () => {
     };
 
     fetchExamData();
-  }, [id]);
+  }, [id, type]);
 
   // 检查模块超时状态
   useEffect(() => {

@@ -75,9 +75,9 @@ const HeadTip = forwardRef((props: propType) => {
         const au = document.querySelector("audio");
         if (au) {
           if (props.type === 'listen') {
-            const cachedAudioUrl = await stores.ExamStore.getCachedAudioUrl();
-            if (cachedAudioUrl) {
-              au.src = cachedAudioUrl;
+            const audioUrl = stores.ExamStore.getListenAudioSrc();
+            if (audioUrl) {
+              au.src = audioUrl;
               au.load();
             }
           }
