@@ -6,9 +6,6 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">查询</el-button>
-        <router-link :to="{path:'/exam/paper/edit'}" class="link-left">
-          <el-button type="primary">添加</el-button>
-        </router-link>
       </el-form-item>
     </el-form>
     <el-table v-loading="listLoading" :data="tableData" border fit highlight-current-row style="width: 100%">
