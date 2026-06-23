@@ -59,21 +59,67 @@
       @pagination="search" />
 
     <!-- Grant Paper Dialog -->
-    <el-dialog title="试卷授权" :visible.sync="grantDialogVisible" width="50%">
-      <el-table :data="grantedPapers" :key="grantTableKey" border fit highlight-current-row v-loading="paperLoading">
+    <el-dialog title="试卷授权" :visible.sync="grantDialogVisible" width="60%">
+      <el-form :inline="true" @submit.native.prevent="searchGrant" class="grant-search-form">
+        <el-form-item label="学生名称：">
+          <el-input
+            v-model="grantQueryParam.studentName"
+            clearable
+            placeholder="请输入学生名称"
+            @keyup.enter.native="searchGrant"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="试卷名称：">
+          <el-input
+            v-model="grantQueryParam.examPaperName"
+            clearable
+            placeholder="请输入试卷名称"
+            @keyup.enter.native="searchGrant"
+          ></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="searchGrant">搜索</el-button>
+          <el-button
+            type="success"
+            :loading="batchGrantLoading"
+            :disabled="grantSelection.length === 0"
+            @click="batchGrantPapers"
+          >批量授权</el-button>
+        </el-form-item>
+      </el-form>
+      <el-table
+        ref="grantTable"
+        :data="grantList"
+        border
+        fit
+        highlight-current-row
+        v-loading="paperLoading"
+        @selection-change="handleGrantSelectionChange"
+      >
+        <el-table-column type="selection" width="55" align="center" />
+        <el-table-column label="序号" width="70" align="center">
+          <template slot-scope="scope">
+            {{ (grantQueryParam.pageNo - 1) * grantQueryParam.pageSize + scope.$index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="realName" label="学生名称" />
         <el-table-column prop="examPaperName" label="试卷名称" />
-        <el-table-column prop="startTime" label="开始时间" />
-        <el-table-column prop="endTime" label="结束时间" />
-        <el-table-column label="操作" width="180px" align="center">
+        <el-table-column prop="startTime" label="开始时间" width="160px" />
+        <el-table-column prop="endTime" label="结束时间" width="160px" />
+        <el-table-column label="操作" width="120px" align="center">
           <template slot-scope="{row}">
-            <el-button size="mini" :type="row.isAssigned ? 'danger' : 'primary'" @click="toggleAssignment(row)"
-              :loading="row.loading">
-              {{ row.isAssigned ? '取消授权' : '授权' }}
-            </el-button>
+            <el-button size="mini" type="primary" @click="grantPaper(row)" :loading="row.loading">授权</el-button>
           </template>
         </el-table-column>
       </el-table>
+      <pagination
+        v-show="grantTotal > 0"
+        :total="grantTotal"
+        :page.sync="grantQueryParam.pageNo"
+        :limit.sync="grantQueryParam.pageSize"
+        layout="total, prev, pager, next, jumper"
+        @pagination="loadGrantPage"
+      />
       <span slot="footer" class="dialog-footer">
         <el-button @click="grantDialogVisible = false">关闭</el-button>
       </span>
@@ -103,12 +149,19 @@ export default {
       listLoading: true,
       tableData: [],
       total: 0,
-      grantTableKey: 0,
       grantDialogVisible: false,
-      grantedPapers: [], // 已授权的试卷ID列表
+      grantList: [],
+      grantTotal: 0,
+      grantQueryParam: {
+        pageNo: 1,
+        pageSize: 10,
+        studentName: '',
+        examPaperName: ''
+      },
       currentTeacherId: null,
       paperLoading: false,
-      allPapers: [] // 存储所有试卷的id和name
+      grantSelection: [],
+      batchGrantLoading: false
     }
   },
   created () {
@@ -179,90 +232,104 @@ export default {
       this.search()
     },
     showGrantDialog (row) {
-      console.log('Opening dialog for teacher:', row.id)
       this.currentTeacherId = row.id
+      this.grantQueryParam.pageNo = 1
+      this.grantQueryParam.studentName = ''
+      this.grantQueryParam.examPaperName = ''
+      this.grantSelection = []
       this.grantDialogVisible = true
+      this.loadGrantPage()
+    },
+    handleGrantSelectionChange (selection) {
+      this.grantSelection = selection
+    },
+    clearGrantSelection () {
+      this.grantSelection = []
+      this.$nextTick(() => {
+        if (this.$refs.grantTable) {
+          this.$refs.grantTable.clearSelection()
+        }
+      })
+    },
+    searchGrant () {
+      this.grantQueryParam.pageNo = 1
+      this.loadGrantPage()
+    },
+    loadGrantPage () {
       this.paperLoading = true
-
-      Promise.all([
-        this.loadAllPapers(),
-        this.loadGrantedPapers()
-      ]).then(() => {
-        // 检查返回的userId是否与当前教师一致
-        const inconsistent = this.grantedPapers.some(item => item.userId !== this.currentTeacherId)
-        if (inconsistent) {
-          console.warn('发现不一致的userId记录')
-        }
-      }).finally(() => {
-        console.log('Granted papers:', this.grantedPapers)
-        this.paperLoading = false
-      })
-    },
-    loadAllPapers () {
-      return examPaperApi.allPaper().then(response => {
-        if (response.code === 1) {
-          this.allPapers = response.response || []
-        } else {
-          this.$message.error(response.message || '获取试卷列表失败')
-        }
-      }).catch(error => {
-        console.error('获取数据失败:', error)
-        this.$message.error('获取数据失败')
-      })
-    },
-    async toggleAssignment (row) {
-      try {
-        this.$set(row, 'loading', true)
-
-        if (row.isAssigned) {
-          // 取消授权 - 使用row.id作为examPaperId
-          await examPaperApi.deleteByUserIdAndExamPaperId(row.id, this.currentTeacherId)
-          this.$message.success('取消授权成功')
-        } else {
-          // 授权 - 使用row.id作为examPaperId
-          await examPaperApi.insertTeacherAssignment(row.id, this.currentTeacherId)
-          this.$message.success('授权成功')
-        }
-
-        // 切换状态
-        row.isAssigned = !row.isAssigned
-        this.grantTableKey += 1 // 强制刷新表格
-      } catch (error) {
-        this.$message.error('操作失败')
-        console.error('操作失败:', error)
-      } finally {
-        this.$set(row, 'loading', false)
+      const params = {}
+      const studentName = (this.grantQueryParam.studentName || '').trim()
+      const examPaperName = (this.grantQueryParam.examPaperName || '').trim()
+      if (studentName) {
+        params.studentName = studentName
       }
-    },
-
-    async loadGrantedPapers () {
-      try {
-        this.paperLoading = true
-        const response = await examPaperApi.findList(1, 1000)
-
+      if (examPaperName) {
+        params.examPaperName = examPaperName
+      }
+      examPaperApi.teacherGrantPage(
+        this.currentTeacherId,
+        this.grantQueryParam.pageNo,
+        this.grantQueryParam.pageSize,
+        params
+      ).then(response => {
         if (response.code === 1) {
-          // 获取已授权的试卷列表
-          const grantedList = response.response.items || []
-
-          // 检查每份试卷是否已授权给当前教师
-          const checkAssignPromises = grantedList.map(async paper => {
-            // 使用paper.id作为examPaperId参数
-            const assignResponse = await examPaperApi.isAssign(paper.id, this.currentTeacherId)
-            return {
-              ...paper,
-              isAssigned: assignResponse.code === 1 && assignResponse.response
-            }
-          })
-
-          this.grantedPapers = await Promise.all(checkAssignPromises)
+          const re = response.response
+          this.grantList = re.items || []
+          this.grantTotal = re.counts || 0
+          this.grantQueryParam.pageNo = re.pageNo || this.grantQueryParam.pageNo
+          this.clearGrantSelection()
         } else {
           this.$message.error(response.message || '获取授权列表失败')
         }
-      } catch (error) {
-        console.error('获取授权数据失败:', error)
-        this.$message.error('获取授权数据失败')
-      } finally {
         this.paperLoading = false
+      }).catch(error => {
+        this.paperLoading = false
+        this.$message.error('获取授权列表失败')
+        console.error(error)
+      })
+    },
+    async batchGrantPapers () {
+      if (this.grantSelection.length === 0) {
+        this.$message.warning('请至少选择一条记录')
+        return
+      }
+      try {
+        this.batchGrantLoading = true
+        const examAssignmentIds = this.grantSelection.map(row => row.id)
+        const response = await examPaperApi.batchGrantTeacherAssignment(this.currentTeacherId, examAssignmentIds)
+        if (response.code === 1) {
+          const successCount = response.response || 0
+          if (successCount > 0) {
+            this.$message.success(`成功授权 ${successCount} 条`)
+            this.loadGrantPage()
+          } else {
+            this.$message.warning('没有可授权的记录')
+          }
+        } else {
+          this.$message.error(response.message || '批量授权失败')
+        }
+      } catch (error) {
+        this.$message.error('批量授权失败')
+        console.error(error)
+      } finally {
+        this.batchGrantLoading = false
+      }
+    },
+    async grantPaper (row) {
+      try {
+        this.$set(row, 'loading', true)
+        const response = await examPaperApi.insertTeacherAssignment(row.id, this.currentTeacherId)
+        if (response.code === 1) {
+          this.$message.success('授权成功')
+          this.loadGrantPage()
+        } else {
+          this.$message.error(response.message || '授权失败')
+        }
+      } catch (error) {
+        this.$message.error('授权失败')
+        console.error(error)
+      } finally {
+        this.$set(row, 'loading', false)
       }
     },
 
@@ -297,6 +364,10 @@ export default {
 <style scoped>
 .link-left {
   margin-left: 10px;
+}
+
+.grant-search-form {
+  margin-bottom: 12px;
 }
 
 .dialog-footer {

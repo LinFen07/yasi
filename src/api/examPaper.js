@@ -20,6 +20,12 @@ export default {
   teacherList: (pageNo, pageSize, type) => post(`/api/admin/teacherAssignment/pageList?pageNo=${pageNo}&pageSize=${pageSize}&type=${type}`),
   // 授权教师试卷
   insertTeacherAssignment: (examPaperId, userId) => post(`/api/admin/teacherAssignment/insert?examPaperId=${examPaperId}&userId=${userId}`),
+  // 评阅老师授权弹窗：分页查询可授权的考生试卷（新接口）
+  teacherGrantPage: (teacherId, pageNo, pageSize, params) =>
+    post(`/api/admin/teacherAssignment/grantPage?teacherId=${teacherId}&pageNo=${pageNo}&pageSize=${pageSize}`, params || {}),
+  // 评阅老师批量试卷授权（新接口）
+  batchGrantTeacherAssignment: (teacherId, examAssignmentIds) =>
+    post(`/api/admin/teacherAssignment/batchGrant?teacherId=${teacherId}`, { examAssignmentIds }),
   // 取消授权教师试卷
   // deleteTeacherAssignment: (id) => deleteRequest(`/api/admin/teacherAssignment/delete/${id}`),
   deleteByUserIdAndExamPaperId: (examPaperId, userId) => deleteRequest(`/api/admin/teacherAssignment/deleteByUserIdAndExamPaperId?examPaperId=${examPaperId}&userId=${userId}`),
