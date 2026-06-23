@@ -208,10 +208,13 @@ const examContent = observer((props: propType) => {
 
   return (
     <div className='pageContent'>
-      <div className='title'>{stores.ExamStore.currentExamTitle}
-        <div className='title-expin'>{stores.ExamStore.titleExpain}</div>
+      <div className='title'>
+        <div className='title-part'>{stores.ExamStore.currentExamTitle}</div>
+        {stores.ExamStore.titleExpain ? (
+          <div className='title-expin'>{stores.ExamStore.titleExpain}</div>
+        ) : null}
       </div>
-      <div className='exam-content' style={{fontSize: `${fontSize}px`, position: 'relative'}}>
+      <div className={`exam-content ${type === 'read' || type === 'writte' ? 'exam-content-read-scroll' : ''}`} style={{fontSize: `${fontSize}px`, position: 'relative'}}>
         {/* 高亮覆盖层 */}
         {highlights.map(highlight => {
           try {
@@ -238,7 +241,7 @@ const examContent = observer((props: propType) => {
           }
         })}
         
-        <div style={{position: 'relative', zIndex: 2}}>
+        <div style={{ position: 'relative', zIndex: 2 }}>
           {
             type === 'listen' ? (
               <ListenQuestions ></ListenQuestions>

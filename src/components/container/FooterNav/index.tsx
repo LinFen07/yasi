@@ -83,43 +83,42 @@ function footerNav(props: propType) {
 
   const [PageArr, setPageArr] = useState<Array<pageType>>([]);
 
-  const handleChangeTitle = (curren: number) => {
-    for (let page of PageArr) {
-      if (page.maxNum >= curren) {
+  const syncTitleByQuestionIndex = (pageArr: pageType[], questionIndex: number) => {
+    for (const page of pageArr) {
+      if (page.maxNum >= questionIndex) {
         store.ExamStore.changeCurrentTitle(page.title);
         store.ExamStore.changeTitleExpain(page.headTitleExpain);
-        break;
+        return;
       }
     }
   };
 
+  const handleChangeTitle = (curren: number) => {
+    syncTitleByQuestionIndex(PageArr.length > 0 ? PageArr : initialPageArr, curren);
+  };
+
   useEffect(() => {
+    if (initialPageArr.length === 0) return;
+
     setPageArr(initialPageArr);
 
-    // 从localStorage恢复状态
     const savedIndex = store.ExamStore.currentExamIndex;
     const savedTitle = store.ExamStore.currentExamTitle;
-
     setCurren(savedIndex);
 
-    // 验证保存的标题是否在当前模块中存在
     const titleExists = initialPageArr.some(page => page.title === savedTitle);
     const savedIndexValid = initialPageArr.some(page => page.maxNum >= savedIndex);
 
     runInAction(() => {
-      // 如果有保存的状态，且标题在当前模块中存在，则使用保存的状态
       if (savedTitle && titleExists && savedIndexValid) {
-        // 根据保存的currentExamIndex找到对应的页面信息
-        handleChangeTitle(savedIndex);
-      } else if (initialPageArr.length > 0) {
-        // 使用默认状态（模块切换时标题不匹配，默认从 Part1 开始）
-        store.ExamStore.changeCurrentTitle(initialPageArr[0].title);
-        store.ExamStore.changeTitleExpain(initialPageArr[0].headTitleExpain);
+        syncTitleByQuestionIndex(initialPageArr, savedIndex);
+      } else {
+        syncTitleByQuestionIndex(initialPageArr, 1);
         store.ExamStore.changeCurrent(1);
         setCurren(1);
       }
     });
-  }, []);
+  }, [type, exam.length]);
 
   const activeAction = (num: number) => {
     runInAction(() => {
@@ -172,21 +171,42 @@ function footerNav(props: propType) {
     }
   };
 
-  const [correctAnswers, setCorrectAnswers] = useState(
-    store.ExamStore.correctListenAnswer
+  const getAnsweredQuestions = (examType: string): number[] => {
+    if (examType === 'writte') {
+      return store.ExamStore.correctWritte
+        .map((answer, index) => (String(answer || '').trim() ? index + 1 : null))
+        .filter((n): n is number => n !== null);
+    }
+    return store.ExamStore.correctListenAnswer.slice();
+  };
+
+  const [correctAnswers, setCorrectAnswers] = useState<number[]>(() =>
+    getAnsweredQuestions(type)
   );
 
   useEffect(() => {
-    const dispose = reaction(
-      () => store.ExamStore.correctListenAnswer.slice(),
-      (correctListenAnswer) => {
-        setCorrectAnswers(correctListenAnswer);
+    setCurren(store.ExamStore.currentExamIndex);
+    setCorrectAnswers(getAnsweredQuestions(type));
+
+    const disposeIndex = reaction(
+      () => store.ExamStore.currentExamIndex,
+      (index) => setCurren(index)
+    );
+    const disposeAnswers = reaction(
+      () =>
+        type === 'writte'
+          ? store.ExamStore.correctWritte.slice()
+          : store.ExamStore.correctListenAnswer.slice(),
+      () => {
+        setCorrectAnswers(getAnsweredQuestions(type));
       }
     );
 
-    // 清理 reaction
-    return () => dispose();
-  }, []);
+    return () => {
+      disposeIndex();
+      disposeAnswers();
+    };
+  }, [type]);
 
   return (
     <div className="nav">
@@ -194,24 +214,26 @@ function footerNav(props: propType) {
         {PageArr.map((item, index) => (
           <ul key={index}>
             <span className="part-label">{item.title}</span>
-            {item.questionArr.map((e, i) => (
+            {item.questionArr.map((e, i) => {
+              const isCurrent = e === curren;
+              const isAnswered = correctAnswers.includes(e);
+              const btnClass = [
+                isAnswered ? 'selectedAnswer' : '',
+                isCurrent ? 'currentQuestion' : '',
+              ].filter(Boolean).join(' ');
+
+              return (
               <li key={e}>
                 <button
-                  style={
-                    e == curren
-                      ? { backgroundColor: "rgba(89, 174, 227, 0.931)" }
-                      : {}
-                  }
-                  className={`${
-                    correctAnswers.includes(e) ? "selectedAnswer" : ""
-                  } `}
+                  className={btnClass}
                   type="button"
                   onClick={() => activeAction(e)}
                 >
                   {e}
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         ))}
       </div>

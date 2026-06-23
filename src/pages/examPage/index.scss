@@ -1,17 +1,31 @@
 .examBox {
   display: flex;
-  flex-direction: row; 
+  flex-direction: row;
   height: 100vh;
 }
 
-.examHeader{
+.examHeader {
   display: flex;
   align-items: center;
 }
 
-.examContent{
+.examContent {
   flex: 1;
   background-color: #dce5f6;
+  min-height: 0;
+}
+
+.examContent-read-scroll {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.examContent-read-scroll > .pageContent {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
 }
 
 .footer {

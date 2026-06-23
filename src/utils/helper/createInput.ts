@@ -28,6 +28,10 @@ export function createInput(exam: Array<Exam>, type: string, container: any) {
         }
       }
     }
+
+    if (type === 'read') {
+      focusFirstAnswerInContainer(container);
+    }
   })
 
   autorun(() => {
@@ -36,6 +40,17 @@ export function createInput(exam: Array<Exam>, type: string, container: any) {
     inputs.forEach(input => {
       input.style.fontSize = `${fontSize}px`;
     });
+  });
+}
+
+function focusFirstAnswerInContainer(container: ParentNode) {
+  const firstTextInput = container.querySelector<HTMLInputElement>('.textInput');
+  const firstRadio = container.querySelector<HTMLInputElement>('input[type="radio"]');
+  const target = firstTextInput || firstRadio;
+  if (!target) return;
+
+  requestAnimationFrame(() => {
+    target.focus({ preventScroll: false });
   });
 }
 
@@ -100,10 +115,20 @@ export function MyInput(index: number, span: any, prevCount: number, questionArr
         const prefix = `${correctIndex + 1}`
         submitStudentBlankAnswer(questionArr, i, prevCount, input.value, correctIndex, prefix);
         runInAction(() => {
-          stores.ExamStore.correctListenAnswer.push(prevCount + i + 1);
+          const questionNo = prevCount + i + 1;
+          if (!stores.ExamStore.correctListenAnswer.includes(questionNo)) {
+            stores.ExamStore.correctListenAnswer.push(questionNo);
+          }
         });
       } else {
         placeholder.style.display = 'block';
+        runInAction(() => {
+          const questionNo = prevCount + i + 1;
+          const idx = stores.ExamStore.correctListenAnswer.indexOf(questionNo);
+          if (idx !== -1) {
+            stores.ExamStore.correctListenAnswer.splice(idx, 1);
+          }
+        });
       }
     });
 

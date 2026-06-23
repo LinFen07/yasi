@@ -13,28 +13,31 @@ function App() {
 
   useEffect(() => {
     if (stores.ExamStore.paperId === 0) return;
-    setAudioSrc(stores.ExamStore.getListenAudioSrc());
+    if (location.pathname.startsWith('/listeningExam')) {
+      setAudioSrc(stores.ExamStore.getListenAudioSrc());
+    } else {
+      setAudioSrc('');
+    }
   }, [stores.ExamStore.paperId, location.pathname]);
 
   useEffect(() => {
+    const audioRef = document.getElementById('exam-listen-audio') as HTMLAudioElement | null;
+    if (!audioRef) return;
     if (!location.pathname.startsWith('/listeningExam')) {
-      const audioRef = document.querySelector('audio');
-      if (audioRef) {
-        audioRef.pause();
-        audioRef.currentTime = 0;
-      }
+      audioRef.pause();
+      audioRef.currentTime = 0;
     }
   }, [location.pathname]);
 
   useEffect(() => {
-    const audioRef = document.querySelector('audio');
+    const audioRef = document.getElementById('exam-listen-audio') as HTMLAudioElement | null;
     if (audioRef)
       audioRef.volume = stores.ExamStore.audioVolume / 100;
   }, [stores.ExamStore.audioVolume])
 
   return (
     <div className="App">
-      <audio src={audioSrc} preload="auto" />
+      <audio id="exam-listen-audio" src={audioSrc || undefined} preload="auto" />
       <Suspense fallback={<Spin />}>
         {routeView}
       </Suspense>

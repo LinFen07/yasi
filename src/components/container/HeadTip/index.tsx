@@ -71,30 +71,42 @@ const HeadTip = forwardRef((props: propType) => {
           setModalOpen(true); // 触发完成弹窗
         }
       };
+      const audioRef = document.getElementById('exam-listen-audio') as HTMLAudioElement | null;
       const initAudioAndCountDown = async () => {
-        const au = document.querySelector("audio");
-        if (au) {
-          if (props.type === 'listen') {
-            const audioUrl = stores.ExamStore.getListenAudioSrc();
-            if (audioUrl) {
-              au.src = audioUrl;
-              au.load();
-            }
+        const tickAndStartInterval = () => {
+          tick();
+          intervalRef.current = window.setInterval(tick, 1000);
+        };
+
+        // 阅读/写作只倒计时，不播放听力
+        if (props.type !== 'listen') {
+          if (audioRef) {
+            audioRef.pause();
+            audioRef.currentTime = 0;
+          }
+          tickAndStartInterval();
+          return;
+        }
+
+        if (audioRef) {
+          const audioUrl = stores.ExamStore.getListenAudioSrc();
+          if (audioUrl) {
+            audioRef.src = audioUrl;
+            audioRef.load();
           }
 
-          au.addEventListener('playing', () => {
+          audioRef.addEventListener('playing', () => {
             tick();
             intervalRef.current = window.setInterval(tick, 1000);
           }, { once: true });
 
           try {
-            await au.play();
+            await audioRef.play();
           } catch (error) {
             console.error('音频播放失败:', error);
           }
         }
-        tick();
-        intervalRef.current = window.setInterval(tick, 1000);
+        tickAndStartInterval();
       }
       if (['listen', 'read', 'writte'].includes(stores.ExamStore.currentPageType)) {
         initAudioAndCountDown()

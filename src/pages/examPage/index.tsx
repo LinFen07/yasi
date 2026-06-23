@@ -62,11 +62,11 @@ function ExamPage({type}: {type: string}) {
         onResize={setSizes}
       >
       <Splitter.Panel size={sizes[0]} resizable={true}>
-        <Layout style={{width: '100%', height: '100%'}}>
+        <Layout style={{ width: '100%', height: '100%' }}>
           <Header className='examHeader'>
             <HeadTip type={type}></HeadTip>
           </Header>
-          <Content className='examContent'>
+          <Content className={`examContent ${type === 'read' || type === 'writte' ? 'examContent-read-scroll' : ''}`}>
             <PageContent type={type}></PageContent>
           </Content>
           <div className='footer'>

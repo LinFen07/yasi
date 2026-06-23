@@ -15,6 +15,19 @@
   font-weight: 700;
   text-align: left;
   padding: 10px;
+
+  .title-part {
+    line-height: 1.25;
+  }
+
+  .title-expin {
+    display: block;
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #1f2f3d;
+  }
 }
 
 .exam-content{
@@ -29,6 +42,21 @@
   text-align: left;
   padding: 2%;
   font-size: 18px;
+}
+
+.exam-content-read-scroll {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.exam-content-read-scroll > div:last-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .gapfilling-span {

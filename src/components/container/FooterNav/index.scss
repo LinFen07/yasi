@@ -53,10 +53,29 @@
   border: 1px solid #d9d9d9;
   border-radius: 8px;
   cursor: pointer;
+  background-color: #fff;
+}
+
+.paginaction li button.currentQuestion {
+  background-color: rgba(89, 174, 227, 0.931);
+  border-color: rgba(89, 174, 227, 0.931);
+}
+
+.paginaction li button.selectedAnswer {
+  background-color: seagreen;
+  border-color: seagreen;
+  color: #fff;
+}
+
+.paginaction li button.selectedAnswer.currentQuestion {
+  background-color: seagreen;
+  border: 2px solid rgba(89, 174, 227, 1);
+  box-shadow: 0 0 0 1px rgba(89, 174, 227, 0.4);
+  color: #fff;
 }
 
 .paginaction li button:hover {
-  background-color: rgba(89, 174, 227, 0.931);
+  filter: brightness(0.95);
 }
 
 .active {
