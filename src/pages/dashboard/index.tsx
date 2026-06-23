@@ -9,9 +9,6 @@ import { getExamProgress, hasOngoingExam, initExamProgress, clearAllExamData, cl
 
 const { Meta } = Card;
 
-// 避免 dashboard 初始化（含 StrictMode 双挂载）重复执行
-let dashboardInitPromise: Promise<void> | null = null;
-
 const Dashboard = () => {
   const [examList, setExamList] = useState([]);
   const [listLoaded, setListLoaded] = useState(false);
@@ -25,14 +22,6 @@ const Dashboard = () => {
     return current > t;
   };
 
-  const getExamList = async () => {
-    const res = await getExam(stores.UserStore.userId);
-    const items = res?.response?.items ?? res?.data?.response?.items ?? res?.data?.items ?? [];
-    setExamList(items);
-    setListLoaded(true);
-    return items;
-  };
-
   const fetchGetStudentId = async () => {
     const res = await getStudentId(stores.UserStore.userName);
     console.log(res.data)
@@ -41,18 +30,30 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (dashboardInitPromise) return;
+    let cancelled = false;
 
-    dashboardInitPromise = (async () => {
+    (async () => {
       try {
         await fetchGetStudentId();
-        const items = await getExamList();
+        if (cancelled) return;
+
+        const res = await getExam(stores.UserStore.userId);
+        if (cancelled) return;
+
+        const items = res?.response?.items ?? res?.data?.response?.items ?? res?.data?.items ?? [];
+        setExamList(items);
       } catch (error) {
-        dashboardInitPromise = null;
-        setListLoaded(true);
         console.log(error);
+      } finally {
+        if (!cancelled) {
+          setListLoaded(true);
+        }
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleConfirmExam = async (id: number) => {
@@ -141,36 +142,42 @@ const Dashboard = () => {
               目前暂无试卷，需等老师授权派发~
             </div>
           ) : (
-            examList.map((item: any) => {
-            return (
-              <Card hoverable style={{ width: 240 }} key={item.examPaperId}>
-                <Meta title={item.examPaperName} />
-                <p>考试时间：{item.startTime} ~ </p>
-                <p>{item.endTime}</p>
-                <Button
-                  type="primary"
-                  // disabled={getTime(item.endTime)}
-                  onClick={() => handleConfirmExam(item.examPaperId)}
-                >
-                  前往考试
-                </Button>
-                <Button
-                  type="primary"
-                  // disabled={!getTime(item.endTime)}
-                  style={{ marginLeft: "12px" }}
-                  onClick={() =>
-                    handleSreachTestResult(
-                      item.examPaperId,
-                      item.isAppraise,
-                      item.appraise
-                    )
-                  }
-                >
-                  查看结果
-                </Button>
-              </Card>
-            );
-          })
+            <div
+              className="exam-list-grid"
+              data-count={Math.min(examList.length, 4)}
+            >
+              {examList.map((item: any) => (
+                <Card hoverable className="exam-card" key={item.examPaperId}>
+                  <Meta title={item.examPaperName} className="exam-card-meta" />
+                  <div className="exam-card-time">
+                    <p className="exam-card-time-label">考试时间</p>
+                    <p>{item.startTime}</p>
+                    <p>~ {item.endTime}</p>
+                  </div>
+                  <div className="exam-card-actions">
+                    <Button
+                      type="primary"
+                      size="large"
+                      onClick={() => handleConfirmExam(item.examPaperId)}
+                    >
+                      前往考试
+                    </Button>
+                    <Button
+                      size="large"
+                      onClick={() =>
+                        handleSreachTestResult(
+                          item.examPaperId,
+                          item.isAppraise,
+                          item.appraise
+                        )
+                      }
+                    >
+                      查看结果
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
       </div>

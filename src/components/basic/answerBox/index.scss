@@ -4,4 +4,27 @@
   margin-top: 1.5vh;
   height: 100%;
   display: flex;
+
+  &--loading,
+  &--empty {
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    min-height: 400px;
+    background: #fff;
+    border-radius: 8px;
+  }
+
+  &-empty-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 8px;
+  }
+
+  &-empty-desc {
+    font-size: 15px;
+    color: #888;
+    margin: 0;
+  }
 }

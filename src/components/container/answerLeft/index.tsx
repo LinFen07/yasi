@@ -19,10 +19,17 @@ const AnswerLeft = observer(() => {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
 
   useEffect(() => {
-    getComposition(stores.ExamStore.paperId).then((res: any) => {
-      setArtical(res.response)
-    })
-  }, [stores.ExamStore.paperId])
+    if (!stores.ExamStore.paperId) return;
+
+    getComposition(stores.ExamStore.paperId)
+      .then((res: any) => {
+        const data = res?.response;
+        setArtical(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        setArtical([]);
+      });
+  }, [stores.ExamStore.paperId]);
 
   const handleOpenModal = (article: Article) => {
     setSelectedArticle(article)
@@ -32,7 +39,7 @@ const AnswerLeft = observer(() => {
   return (
     <div className='anlt'>
       <div className='anltContent'>
-        {articleData.length > 0 &&
+        {(articleData?.length ?? 0) > 0 ? (
           articleData.slice(0, 2).map((article, index) => (
             <div className='appraise' key={article.id}>
               <div className='title'>考生作文{index + 1}</div>
@@ -43,7 +50,10 @@ const AnswerLeft = observer(() => {
                 查看详情
               </Button>
             </div>
-          ))}
+          ))
+        ) : (
+          <p className="anlt-empty-tip">暂无作文评分</p>
+        )}
       </div>
       <Modal
         title="作文详情"
