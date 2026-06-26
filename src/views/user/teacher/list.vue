@@ -23,7 +23,14 @@
         </template>
       </el-table-column>
       <el-table-column prop="userName" label="用户名" />
-      <el-table-column prop="realName" label="真实姓名" />
+      <el-table-column prop="realName" label="真实姓名">
+        <template slot-scope="{row}">
+          <span>{{ row.realName }}</span>
+          <el-tooltip content="查看已授权试卷" placement="top">
+            <i class="el-icon-document assigned-icon" @click="showAssignedDialog(row)"></i>
+          </el-tooltip>
+        </template>
+      </el-table-column>
       <el-table-column prop="sex" label="性别" width="60px;">
         <template slot-scope="{row}">
           {{ sexFormatter(row.sex) }}
@@ -124,6 +131,53 @@
         <el-button @click="grantDialogVisible = false">关闭</el-button>
       </span>
     </el-dialog>
+
+    <!-- 已授权试卷 Dialog -->
+    <el-dialog :title="assignedDialogTitle" :visible.sync="assignedDialogVisible" width="60%">
+      <el-form :inline="true" @submit.native.prevent="searchAssigned" class="grant-search-form">
+        <el-form-item label="学生名称：">
+          <el-input
+            v-model="assignedQueryParam.studentName"
+            clearable
+            placeholder="请输入学生名称"
+            @keyup.enter.native="searchAssigned"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="试卷名称：">
+          <el-input
+            v-model="assignedQueryParam.examPaperName"
+            clearable
+            placeholder="请输入试卷名称"
+            @keyup.enter.native="searchAssigned"
+          ></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="searchAssigned">搜索</el-button>
+        </el-form-item>
+      </el-form>
+      <el-table :data="assignedList" border fit highlight-current-row v-loading="assignedLoading">
+        <el-table-column label="序号" width="70" align="center">
+          <template slot-scope="scope">
+            {{ (assignedQueryParam.pageNo - 1) * assignedQueryParam.pageSize + scope.$index + 1 }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="studentName" label="学生名称" />
+        <el-table-column prop="examPaperName" label="试卷名称" />
+        <el-table-column prop="startTime" label="开始时间" width="180px" />
+        <el-table-column prop="endTime" label="结束时间" width="180px" />
+      </el-table>
+      <pagination
+        v-show="assignedTotal > 0"
+        :total="assignedTotal"
+        :page.sync="assignedQueryParam.pageNo"
+        :limit.sync="assignedQueryParam.pageSize"
+        layout="total, prev, pager, next, jumper"
+        @pagination="loadAssignedPage"
+      />
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="assignedDialogVisible = false">关闭</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -161,7 +215,19 @@ export default {
       currentTeacherId: null,
       paperLoading: false,
       grantSelection: [],
-      batchGrantLoading: false
+      batchGrantLoading: false,
+      assignedDialogVisible: false,
+      assignedDialogTitle: '已授权试卷',
+      assignedList: [],
+      assignedTotal: 0,
+      assignedQueryParam: {
+        pageNo: 1,
+        pageSize: 10,
+        studentName: '',
+        examPaperName: ''
+      },
+      assignedLoading: false,
+      assignedTeacherId: null
     }
   },
   created () {
@@ -239,6 +305,51 @@ export default {
       this.grantSelection = []
       this.grantDialogVisible = true
       this.loadGrantPage()
+    },
+    showAssignedDialog (row) {
+      this.assignedTeacherId = row.id
+      this.assignedDialogTitle = `${row.realName || row.userName} - 已授权试卷`
+      this.assignedQueryParam.pageNo = 1
+      this.assignedQueryParam.studentName = ''
+      this.assignedQueryParam.examPaperName = ''
+      this.assignedDialogVisible = true
+      this.loadAssignedPage()
+    },
+    searchAssigned () {
+      this.assignedQueryParam.pageNo = 1
+      this.loadAssignedPage()
+    },
+    loadAssignedPage () {
+      this.assignedLoading = true
+      const params = {}
+      const studentName = (this.assignedQueryParam.studentName || '').trim()
+      const examPaperName = (this.assignedQueryParam.examPaperName || '').trim()
+      if (studentName) {
+        params.studentName = studentName
+      }
+      if (examPaperName) {
+        params.examPaperName = examPaperName
+      }
+      examPaperApi.teacherAssignedPage(
+        this.assignedTeacherId,
+        this.assignedQueryParam.pageNo,
+        this.assignedQueryParam.pageSize,
+        params
+      ).then(response => {
+        if (response.code === 1) {
+          const re = response.response
+          this.assignedList = re.items || []
+          this.assignedTotal = re.counts || 0
+          this.assignedQueryParam.pageNo = re.pageNo || this.assignedQueryParam.pageNo
+        } else {
+          this.$message.error(response.message || '获取已授权试卷失败')
+        }
+        this.assignedLoading = false
+      }).catch(error => {
+        this.assignedLoading = false
+        this.$message.error('获取已授权试卷失败')
+        console.error(error)
+      })
     },
     handleGrantSelectionChange (selection) {
       this.grantSelection = selection
@@ -373,5 +484,17 @@ export default {
 .dialog-footer {
   padding: 10px 20px;
   text-align: right;
+}
+
+.assigned-icon {
+  margin-left: 6px;
+  color: #409EFF;
+  cursor: pointer;
+  font-size: 16px;
+  vertical-align: middle;
+}
+
+.assigned-icon:hover {
+  color: #66b1ff;
 }
 </style>

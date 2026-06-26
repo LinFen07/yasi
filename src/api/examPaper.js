@@ -26,6 +26,9 @@ export default {
   // 评阅老师批量试卷授权（新接口）
   batchGrantTeacherAssignment: (teacherId, examAssignmentIds) =>
     post(`/api/admin/teacherAssignment/batchGrant?teacherId=${teacherId}`, { examAssignmentIds }),
+  // 评阅老师已授权试卷分页（新接口）
+  teacherAssignedPage: (teacherId, pageNo, pageSize, params) =>
+    post(`/api/admin/teacherAssignment/assignedPage?teacherId=${teacherId}&pageNo=${pageNo}&pageSize=${pageSize}`, params || {}),
   // 取消授权教师试卷
   // deleteTeacherAssignment: (id) => deleteRequest(`/api/admin/teacherAssignment/delete/${id}`),
   deleteByUserIdAndExamPaperId: (examPaperId, userId) => deleteRequest(`/api/admin/teacherAssignment/deleteByUserIdAndExamPaperId?examPaperId=${examPaperId}&userId=${userId}`),
