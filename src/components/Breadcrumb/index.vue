@@ -1,9 +1,19 @@
 <template>
-  <el-breadcrumb class="app-breadcrumb" separator="/">
+  <el-breadcrumb class="app-breadcrumb" separator-class="el-icon-arrow-right">
     <transition-group name="breadcrumb">
       <el-breadcrumb-item v-for="(item,index) in levelList" :key="item.path">
-        <span v-if="item.redirect==='noRedirect'||index==levelList.length-1" class="no-redirect">{{ item.meta.title }}</span>
-        <a v-else @click.prevent="handleLink(item)">{{ item.meta.title }}</a>
+        <span class="breadcrumb-item-inner">
+          <svg-icon
+            v-if="getIcon(item)"
+            :icon-class="getIcon(item)"
+            class="breadcrumb-icon"
+          />
+          <span
+            v-if="item.redirect==='noRedirect'||index==levelList.length-1"
+            class="no-redirect"
+          >{{ item.meta.title }}</span>
+          <a v-else @click.prevent="handleLink(item)">{{ item.meta.title }}</a>
+        </span>
       </el-breadcrumb-item>
     </transition-group>
   </el-breadcrumb>
@@ -20,7 +30,6 @@ export default {
   },
   watch: {
     $route (route) {
-      // if you go to the redirect page, do not update the breadcrumbs
       if (route.path.startsWith('/redirect/')) {
         return
       }
@@ -32,12 +41,11 @@ export default {
   },
   methods: {
     getBreadcrumb () {
-      // only show routes with meta.title
       let matched = this.$route.matched.filter(item => item.meta && item.meta.title)
       const first = matched[0]
 
       if (!this.isDashboard(first)) {
-        matched = [{ path: '/dashboard', meta: { title: '主页' } }].concat(matched)
+        matched = [{ path: '/dashboard', meta: { title: '主页', icon: 'home' } }].concat(matched)
       }
       this.levelList = matched.filter(item => item.meta && item.meta.title && item.meta.breadcrumb !== false)
     },
@@ -48,8 +56,16 @@ export default {
       }
       return name.trim().toLocaleLowerCase() === 'Dashboard'.toLocaleLowerCase()
     },
+    getIcon (item) {
+      if (item.meta && item.meta.icon) {
+        return item.meta.icon
+      }
+      if (this.isDashboard(item)) {
+        return 'home'
+      }
+      return null
+    },
     pathCompile (path) {
-      // To solve this problem https://github.com/PanJiaChen/vue-element-admin/issues/561
       const { params } = this.$route
       var toPath = pathToRegexp.compile(path)
       return toPath(params)
@@ -67,15 +83,46 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~@/styles/variables.scss";
+
 .app-breadcrumb.el-breadcrumb {
   display: inline-block;
   font-size: 14px;
   line-height: 50px;
-  margin-left: 8px;
+  margin-left: 4px;
+
+  ::v-deep .el-breadcrumb__separator {
+    color: $headerTextMuted;
+    font-weight: 400;
+    margin: 0 6px;
+  }
+
+  .breadcrumb-item-inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .breadcrumb-icon {
+    font-size: 15px;
+    color: $primaryStart;
+    flex-shrink: 0;
+  }
+
+  a {
+    color: $headerText;
+    font-weight: 500;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $primaryStart;
+    }
+  }
 
   .no-redirect {
-    color: #97a8be;
+    color: $primaryEnd;
     cursor: text;
+    font-weight: 600;
   }
 }
 </style>

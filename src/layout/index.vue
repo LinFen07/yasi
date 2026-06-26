@@ -89,26 +89,35 @@ export default {
   .back-button {
     display: inline-flex;
     align-items: center;
-    padding: 0 15px;
+    gap: 4px;
+    padding: 0 14px;
     height: 50px;
-    /* 根据您的header高度调整 */
     cursor: pointer;
-    transition: background .3s;
+    transition: all .25s;
     float: left;
-    background-color: aliceblue;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.025);
-    }
+    background: transparent;
+    color: $headerText;
+    font-size: 13px;
+    font-weight: 500;
+    border-right: 1px solid $headerBorder;
 
     i {
-      font-size: 18px;
-      margin-right: 5px;
+      font-size: 16px;
+      color: $primaryStart;
+      transition: transform .25s;
+    }
+
+    &:hover {
+      background: rgba(102, 126, 234, 0.06);
+      color: $primaryStart;
+
+      i {
+        transform: translateX(-2px);
+      }
     }
   }
 
   .fixed-header {
-    // display: flex;
     align-items: center;
     position: fixed;
     top: 0;
@@ -116,6 +125,9 @@ export default {
     z-index: 9;
     width: calc(100% - #{$sideBarWidth});
     transition: width 0.28s;
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9fc 100%);
+    border-bottom: 1px solid $headerBorder;
+    box-shadow: 0 2px 12px rgba(35, 40, 56, 0.06);
   }
 
   .hideSidebar .fixed-header {

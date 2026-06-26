@@ -88,7 +88,7 @@ const constantRoutes = [
         path: 'student/list',
         component: () => import('@/views/user/student/list'),
         name: 'UserStudentPageList',
-        meta: { title: '考生管理', noCache: true }
+        meta: { title: '考生管理', icon: 'user', noCache: true }
       },
       {
         path: 'student/edit',
@@ -101,7 +101,7 @@ const constantRoutes = [
         path: 'admin/list',
         component: () => import('@/views/user/admin/list'),
         name: 'UserAdminPageList',
-        meta: { title: '管理员管理', noCache: true }
+        meta: { title: '管理员管理', icon: 'people', noCache: true }
       },
       {
         path: 'admin/edit',
@@ -114,7 +114,7 @@ const constantRoutes = [
         path: 'teacher/list',
         component: () => import('@/views/user/teacher/list'),
         name: 'UserTeacherPageList',
-        meta: { title: '评阅老师管理', noCache: true }
+        meta: { title: '评阅老师管理', icon: 'skill', noCache: true }
       },
       {
         path: 'teacher/edit',
@@ -138,20 +138,20 @@ const constantRoutes = [
         path: 'paper/list',
         component: () => import('@/views/exam/paper/list'),
         name: 'ExamPaperPageList',
-        meta: { title: '试卷列表', noCache: true }
+        meta: { title: '试卷列表', icon: 'list', noCache: true }
       },
       {
         path: 'paper/edit',
         component: () => import('@/views/exam/paper/edit'),
         name: 'ExamPaperEdit',
-        meta: { title: '试卷新增', noCache: true, activeMenu: '/exam/paper/list' },
+        meta: { title: '试卷新增', icon: 'form', noCache: true, activeMenu: '/exam/paper/list' },
         hidden: false
       },
       {
         path: 'question/list',
         component: () => import('@/views/exam/question/list'),
         name: 'ExamQuestionPageList',
-        meta: { title: '题目列表', noCache: true }
+        meta: { title: '题目列表', icon: 'question', noCache: true }
       },
       {
         path: 'question/edit/singleChoice',
@@ -260,7 +260,7 @@ const constantRoutes = [
         path: 'subject/list',
         component: () => import('@/views/education/subject/list'),
         name: 'EducationSubjectPage',
-        meta: { title: '学科列表', noCache: true }
+        meta: { title: '学科列表', icon: 'tree', noCache: true }
       },
       {
         path: 'subject/edit',
@@ -285,19 +285,19 @@ const constantRoutes = [
         path: 'list',
         component: () => import('@/views/dictionary/list'),
         name: 'DictionaryList',
-        meta: { title: '字典列表', noCache: true }
+        meta: { title: '字典列表', icon: 'list', noCache: true }
       },
       {
         path: 'add',
         component: () => import('@/views/dictionary/add'),
         name: 'DictionaryAdd',
-        meta: { title: '新增字典', noCache: true }
+        meta: { title: '新增字典', icon: 'form', noCache: true }
       },
       {
         path: 'edit',
         component: () => import('@/views/dictionary/edit'),
         name: 'DictionaryEdit',
-        meta: { title: '字典编辑', noCache: true }
+        meta: { title: '字典编辑', icon: 'edit', noCache: true }
       }
     ]
   },
@@ -315,7 +315,7 @@ const constantRoutes = [
         path: 'list',
         component: () => import('@/views/answer/list'),
         name: 'AnswerPageList',
-        meta: { title: '答卷列表', noCache: true }
+        meta: { title: '答卷列表', icon: 'doexampaper', noCache: true }
       }
     ]
   }

@@ -12,7 +12,12 @@
         @click.middle.native="closeSelectedTag(tag)"
         @contextmenu.prevent.native="openMenu(tag,$event)"
       >
-        {{ tag.title }}
+        <svg-icon
+          v-if="tag.meta && tag.meta.icon"
+          :icon-class="tag.meta.icon"
+          class="tag-icon"
+        />
+        <span class="tag-title">{{ tag.title }}</span>
         <span v-if="!tag.meta.affix" class="el-icon-close" @click.prevent.stop="closeSelectedTag(tag)" />
       </router-link>
     </scroll-pane>
@@ -195,67 +200,97 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~@/styles/variables.scss";
+
 .tags-view-container {
   height: 34px;
   width: 100%;
-  background: #fff;
-  border-bottom: 1px solid #d8dce5;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .12), 0 0 3px 0 rgba(0, 0, 0, .04);
+  background: $headerBgSoft;
+  border-bottom: 1px solid $headerBorder;
+
   .tags-view-wrapper {
     .tags-view-item {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       position: relative;
       cursor: pointer;
       height: 26px;
-      line-height: 26px;
-      border: 1px solid #d8dce5;
-      color: #495060;
+      line-height: 1;
+      border: 1px solid rgba(102, 126, 234, 0.12);
+      color: $headerText;
       background: #fff;
-      padding: 0 8px;
+      padding: 0 10px;
       font-size: 12px;
-      margin-left: 5px;
+      border-radius: 13px;
+      margin-left: 6px;
       margin-top: 4px;
+      transition: all .25s;
+      box-shadow: 0 1px 3px rgba(35, 40, 56, 0.04);
+
+      .tag-icon {
+        font-size: 13px;
+        color: $primaryStart;
+        flex-shrink: 0;
+      }
+
+      .tag-title {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
       &:first-of-type {
-        margin-left: 15px;
+        margin-left: 12px;
       }
+
       &:last-of-type {
-        margin-right: 15px;
+        margin-right: 12px;
       }
+
+      &:hover {
+        border-color: rgba(102, 126, 234, 0.3);
+        color: $primaryStart;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12);
+      }
+
       &.active {
-        background-color: #42b983;
+        background: $primaryGradient;
         color: #fff;
-        border-color: #42b983;
-        &::before {
-          content: '';
-          background: #fff;
-          display: inline-block;
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          position: relative;
-          margin-right: 2px;
+        border-color: transparent;
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.35);
+
+        .tag-icon {
+          color: rgba(255, 255, 255, 0.95);
         }
       }
     }
   }
+
   .contextmenu {
     margin: 0;
     background: #fff;
     z-index: 3000;
     position: absolute;
     list-style-type: none;
-    padding: 5px 0;
-    border-radius: 4px;
+    padding: 6px 0;
+    border-radius: 8px;
     font-size: 12px;
     font-weight: 400;
     color: #333;
-    box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, .3);
+    border: 1px solid $headerBorder;
+    box-shadow: 0 4px 16px rgba(35, 40, 56, 0.12);
+
     li {
       margin: 0;
-      padding: 7px 16px;
+      padding: 8px 18px;
       cursor: pointer;
+      transition: background .2s;
+
       &:hover {
-        background: #eee;
+        background: rgba(102, 126, 234, 0.08);
+        color: $primaryStart;
       }
     }
   }
@@ -263,26 +298,35 @@ export default {
 </style>
 
 <style lang="scss">
-//reset element css of el-icon-close
+@import "~@/styles/variables.scss";
+
 .tags-view-wrapper {
   .tags-view-item {
     .el-icon-close {
       width: 16px;
       height: 16px;
-      vertical-align: 2px;
+      vertical-align: middle;
       border-radius: 50%;
       text-align: center;
-      transition: all .3s cubic-bezier(.645, .045, .355, 1);
+      transition: all .25s;
       transform-origin: 100% 50%;
+      margin-left: 2px;
+
       &:before {
         transform: scale(.6);
         display: inline-block;
         vertical-align: -3px;
       }
+
       &:hover {
-        background-color: #b4bccc;
-        color: #fff;
+        background-color: rgba(0, 0, 0, 0.12);
+        color: inherit;
       }
+    }
+
+    &.active .el-icon-close:hover {
+      background-color: rgba(255, 255, 255, 0.25);
+      color: #fff;
     }
   }
 }

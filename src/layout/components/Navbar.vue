@@ -6,19 +6,22 @@
     <breadcrumb id="breadcrumb-container" class="breadcrumb-container" />
 
     <div class="right-menu">
-      <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
+      <el-dropdown
+        class="avatar-container right-menu-item hover-effect"
+        trigger="click"
+        placement="bottom-end"
+        popper-class="user-dropdown-popper"
+      >
         <div class="avatar-wrapper">
-          <span>{{userName}}</span>
-          <i class="el-icon-caret-bottom" />
+          <span class="user-avatar">{{ userInitial }}</span>
+          <span class="user-name">{{ userName }}</span>
+          <i class="el-icon-arrow-down user-arrow" />
         </div>
-        <el-dropdown-menu slot="dropdown">
-          <router-link to="/profile/index">
-            <el-dropdown-item>个人信息</el-dropdown-item>
-          </router-link>
-          <router-link to="/">
-            <el-dropdown-item>主页</el-dropdown-item>
-          </router-link>
-          <el-dropdown-item @click.native="logout" divided>退出</el-dropdown-item>
+        <el-dropdown-menu slot="dropdown" class="user-dropdown-menu">
+          <el-dropdown-item class="logout-item" @click.native="logout">
+            <i class="el-icon-switch-button logout-icon" />
+            <span>退出登录</span>
+          </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
     </div>
@@ -41,7 +44,11 @@ export default {
       'sidebar',
       'device',
       'userName'
-    ])
+    ]),
+    userInitial () {
+      const name = (this.userName || '').trim()
+      return name ? name.charAt(0).toUpperCase() : 'U'
+    }
   },
   methods: {
     toggleSideBar () {
@@ -59,23 +66,35 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~@/styles/variables.scss";
+
 .navbar {
   height: 50px;
   overflow: hidden;
   position: relative;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  background: transparent;
 
   .hamburger-container {
     line-height: 46px;
     height: 100%;
     float: left;
     cursor: pointer;
-    transition: background .3s;
-    -webkit-tap-highlight-color:transparent;
+    transition: all .25s;
+    border-radius: 8px;
+    margin: 0 4px 0 8px;
+    -webkit-tap-highlight-color: transparent;
+
+    ::v-deep .hamburger {
+      fill: $headerText;
+      transition: fill .25s;
+    }
 
     &:hover {
-      background: rgba(0, 0, 0, .025)
+      background: rgba(102, 126, 234, 0.08);
+
+      ::v-deep .hamburger {
+        fill: $primaryStart;
+      }
     }
   }
 
@@ -83,15 +102,11 @@ export default {
     float: left;
   }
 
-  .errLog-container {
-    display: inline-block;
-    vertical-align: top;
-  }
-
   .right-menu {
     float: right;
     height: 100%;
     line-height: 50px;
+    padding-right: 16px;
 
     &:focus {
       outline: none;
@@ -102,40 +117,121 @@ export default {
       padding: 0 8px;
       height: 100%;
       font-size: 18px;
-      color: #5a5e66;
+      color: $headerText;
       vertical-align: text-bottom;
 
       &.hover-effect {
         cursor: pointer;
-        transition: background .3s;
+        transition: all .25s;
 
         &:hover {
-          background: rgba(0, 0, 0, .025)
+          background: transparent;
         }
       }
     }
 
     .avatar-container {
-      margin-right: 30px;
+      margin-right: 8px;
 
       .avatar-wrapper {
-        margin-top: 5px;
-        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 12px 5px 5px;
+        border-radius: 24px;
+        background: $headerBgSoft;
+        border: 1px solid $headerBorder;
+        transition: all .25s;
+        line-height: 1;
 
         .user-avatar {
-          cursor: pointer;
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: $primaryGradient;
+          color: #fff;
+          font-size: 13px;
+          font-weight: 600;
+          flex-shrink: 0;
+          box-shadow: 0 2px 6px rgba(102, 126, 234, 0.35);
         }
 
-        .el-icon-caret-bottom {
-          cursor: pointer;
-          position: absolute;
-          right: -20px;
-          top: 25px;
-          font-size: 12px;
+        .user-name {
+          font-size: 13px;
+          font-weight: 500;
+          color: $headerText;
+          max-width: 80px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
+
+        .user-arrow {
+          font-size: 12px;
+          color: $headerTextMuted;
+          transition: transform .25s;
+        }
+
+        &:hover {
+          border-color: rgba(102, 126, 234, 0.35);
+          background: rgba(102, 126, 234, 0.06);
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12);
+
+          .user-arrow {
+            color: $primaryStart;
+          }
+        }
+      }
+    }
+  }
+}
+</style>
+
+<style lang="scss">
+@import "~@/styles/variables.scss";
+
+.user-dropdown-popper {
+  margin-top: 8px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  .popper__arrow {
+    display: none;
+  }
+
+  .user-dropdown-menu {
+    min-width: 140px;
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid $headerBorder;
+    box-shadow: 0 8px 24px rgba(35, 40, 56, 0.12);
+    background: #fff;
+
+    .logout-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: $headerText;
+      line-height: 1;
+      transition: all .2s;
+
+      .logout-icon {
+        font-size: 15px;
+        color: $primaryStart;
+      }
+
+      &:hover {
+        background: rgba(102, 126, 234, 0.08);
+        color: $primaryStart;
       }
     }
   }
