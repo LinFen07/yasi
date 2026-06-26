@@ -10,6 +10,11 @@
       <el-form-item label="身份证号：">
         <el-input v-model="queryParam.identity" placeholder="请输入身份证号" clearable></el-input>
       </el-form-item>
+      <el-form-item label="状态：">
+        <el-select v-model="queryParam.status" placeholder="请选择状态">
+          <el-option v-for="item in statusEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">查询</el-button>
         <el-button @click="resetQuery">重置</el-button>
@@ -122,6 +127,7 @@ export default {
         email: '',
         address: '',
         role: 1,
+        status: 1,
         pageIndex: 1,
         pageSize: 10
       },
@@ -156,7 +162,8 @@ export default {
         userName: this.queryParam.userName || undefined,
         identity: this.queryParam.identity || undefined,
         email: this.queryParam.email || undefined,
-        address: this.queryParam.address || undefined
+        address: this.queryParam.address || undefined,
+        status: this.queryParam.status
       }
 
       userApi.getUserPageList(params).then(data => {
@@ -208,6 +215,7 @@ export default {
         email: '',
         address: '',
         role: 1,
+        status: 1,
         pageIndex: 1,
         pageSize: 10
       }
