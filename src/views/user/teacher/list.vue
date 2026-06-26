@@ -31,16 +31,8 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column prop="sex" label="性别" width="60px;">
-        <template slot-scope="{row}">
-          {{ sexFormatter(row.sex) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="phone" label="手机号">
-        <template slot-scope="{row}">
-          {{ row.phone || '13800000000' }}
-        </template>
-      </el-table-column>
+      <el-table-column prop="sex" label="性别" width="60px;" :formatter="sexFormatter" />
+      <el-table-column prop="phone" label="手机号" />
       <el-table-column prop="createTime" label="创建时间" width="160px" />
       <el-table-column label="状态" prop="status" width="70px">
         <template slot-scope="{row}">
@@ -444,9 +436,8 @@ export default {
       }
     },
 
-    sexFormatter (sexValue) {
-      const sexItem = this.sexEnum.find(item => item.key === sexValue)
-      return sexItem ? sexItem.value : '未知'
+    sexFormatter (row, column, cellValue) {
+      return this.enumFormat(this.sexEnum, cellValue) || ''
     },
     statusFormatter (status) {
       return this.enumFormat(this.statusEnum, status)
