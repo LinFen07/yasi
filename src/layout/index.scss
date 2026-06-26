@@ -1,24 +1,118 @@
 .headNav{
   position: sticky;
   top: 0;
+  z-index: 100;
   width: 100%;
   display: flex;
+  align-items: center;
   height: 68px;
+  padding: 0 20px 0 0 !important;
+  overflow: visible !important;
+  line-height: normal !important;
+  background: linear-gradient(135deg, #063a5c 0%, #0b5f8f 55%, #0a5685 100%) !important;
+  box-shadow: 0 4px 20px rgba(6, 58, 92, 0.18);
+}
+
+.headNav-logo {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  height: 68px;
+  margin-left: 16px;
+  overflow: visible;
 }
 
 .navImg{
   height: 200px;
-  translate: -38px;
   margin-top: -70px;
+  display: block;
 }
 
-.menuNav {
-  font-size: 16px;
+.headNav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   margin-left: auto;
+  align-self: center;
+  padding-right: 4px;
 }
 
-.avatar{
-  background-color: white;
-  margin-left: 10px;
-  margin-right: -8px;
+.headNav-page-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 4px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+
+  .anticon {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.75);
+  }
+}
+
+.headNav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 12px 0 8px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  }
+}
+
+.headNav-avatar {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #5ec4e8 0%, #0081c6 100%) !important;
+  color: #fff !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 10px rgba(0, 129, 198, 0.35);
+}
+
+.headNav-user-name {
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .headNav {
+    padding-right: 12px !important;
+  }
+
+  .headNav-right {
+    gap: 8px;
+  }
+
+  .headNav-page-title span {
+    display: none;
+  }
+
+  .headNav-user-name {
+    display: none;
+  }
+
+  .headNav-user {
+    padding: 0 8px;
+    gap: 8px;
+  }
 }
