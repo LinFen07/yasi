@@ -1,5 +1,5 @@
 
-import { Layout, Splitter } from 'antd';
+import { Layout } from 'antd';
 import './index.scss';
 import HeadTip from '@/components/container/HeadTip';
 import PageContent from '@/components/container/examContent';
@@ -8,13 +8,59 @@ import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react'
 import { runInAction } from 'mobx'
 import stores from '@/stores';
+import { select } from '@/api/examPaper';
+import { AddCorrect } from '@/utils/browser/getCorrect';
 
 const {Header, Content} = Layout;
 
 function ExamPage({type}: {type: string}) {
 
-  const [sizes, setSizes] = React.useState<(number | string)[]>(['80%', '20%']);
-  const [scale, setFontSize] = useState(1) 
+  const [scale, setFontSize] = useState(1)
+  const [examReady, setExamReady] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paperId = params.get('id');
+    if (!paperId) {
+      setExamReady(true);
+      return;
+    }
+
+    const id = +paperId;
+    stores.ExamStore.changePaperId(id);
+
+    const moduleExam =
+      type === 'listen'
+        ? stores.ExamStore.getListenExam()
+        : type === 'read'
+        ? stores.ExamStore.getReadExam()
+        : stores.ExamStore.getWritteExam();
+
+    const loadExamData = async () => {
+      if (moduleExam.length > 0 && stores.ExamStore.paperId === id) {
+        setExamReady(true);
+        return;
+      }
+
+      try {
+        const res = await select(id);
+        // @ts-ignore
+        if (res.code === 1) {
+          // @ts-ignore
+          const response = res.response;
+          stores.ExamStore.addExam(response.titleItems);
+          stores.ExamStore.addListenAudio(response.audioFileUrl);
+          AddCorrect(response.titleItems);
+        }
+      } catch (error) {
+        console.error('获取考试数据失败:', error);
+      } finally {
+        setExamReady(true);
+      }
+    };
+
+    loadExamData();
+  }, [type]);
   useEffect(() => {
     setFontSize(stores.ExamStore.FontSize / 18);
     console.log(stores.ExamStore.FontSize)
@@ -54,47 +100,25 @@ function ExamPage({type}: {type: string}) {
         stores.ExamStore.changeCurrentTitle('Part1');
       }
     });
-  },[stores.ExamStore.FontSize, type])
+  },[stores.ExamStore.FontSize, type, examReady])
+
+  if (!examReady) {
+    return null;
+  }
 
   return (
     <div className='examBox' style={{ transform: `scale(${scale})`, transformOrigin: '0 0' }}>
-      <Splitter
-        onResize={setSizes}
-      >
-      <Splitter.Panel size={sizes[0]} resizable={true}>
-        <Layout style={{ width: '100%', height: '100%' }}>
-          <Header className='examHeader'>
-            <HeadTip type={type}></HeadTip>
-          </Header>
-          <Content className={`examContent ${type === 'read' || type === 'writte' ? 'examContent-read-scroll' : ''}`}>
-            <PageContent type={type}></PageContent>
-          </Content>
-          <div className='footer'>
-            <FooterNav type={type}></FooterNav>
-          </div>
-        </Layout>
-      </Splitter.Panel>
-
-      {
-        stores.helperStore.isNoteView && 
-        (
-          <Splitter.Panel size={sizes[1]}>
-            {
-              stores.helperStore.noteText.map((item, index) => {
-                return (
-                  <div key={index} className='noteText'>
-                    <h3>{item.title}</h3>
-                    <div className='noteContent'>
-                      <p>{item.content}</p>
-                    </div>
-                  </div>
-                )
-              })
-            }
-          </Splitter.Panel>
-        )
-      }
-      </Splitter>
+      <Layout style={{ width: '100%', height: '100%' }}>
+        <Header className='examHeader'>
+          <HeadTip type={type}></HeadTip>
+        </Header>
+        <Content className={`examContent ${type === 'read' || type === 'writte' ? 'examContent-read-scroll' : ''}`}>
+          <PageContent type={type}></PageContent>
+        </Content>
+        <div className='footer'>
+          <FooterNav type={type}></FooterNav>
+        </div>
+      </Layout>
     </div>
   )
 }

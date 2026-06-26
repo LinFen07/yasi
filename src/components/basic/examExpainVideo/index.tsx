@@ -67,6 +67,10 @@ const ExamExplainVideo = observer(({ type, isAvailable = true, shouldReset = tru
     } else if (type === "read") {
       navigate(`/readnExam?id=${stores.ExamStore.paperId}&shouldReset=${shouldReset}`);
     } else if (type === "writte") {
+      if (stores.ExamStore.getWritteExam().length === 0) {
+        message.warning('该试卷暂无写作部分');
+        return;
+      }
       navigate(`/writteExam?id=${stores.ExamStore.paperId}&shouldReset=${shouldReset}`);
     }
   };

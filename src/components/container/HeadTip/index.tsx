@@ -1,7 +1,7 @@
 import { useEffect, useState, forwardRef, useRef } from 'react'
 import { useNavigate } from 'react-router';
 import { Button, Space, Avatar, Slider, Modal, Dropdown } from 'antd'
-import { FieldTimeOutlined, SoundOutlined, DownOutlined, FormOutlined } from '@ant-design/icons'
+import { FieldTimeOutlined, SoundOutlined, DownOutlined } from '@ant-design/icons'
 import type { MenuProps } from 'antd';
 import './index.scss'
 import IntegerStep from '@/components/basic/fontSizeSetting';
@@ -299,7 +299,6 @@ const HeadTip = forwardRef((props: propType) => {
       <div className='headRight'>
         <Space size={24}>
           <Button size='large' onClick={() => setModalOpen(true)}>Finish Text</Button>
-          <div className='head-note-icon' onClick={stores.helperStore.changerNoteView}><FormOutlined /></div>
           <div style={{ fontSize: '16px' }}>
             <Dropdown menu={{ items }} trigger={['click']}>
               <a onClick={(e) => e.preventDefault()}>

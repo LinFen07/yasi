@@ -13,12 +13,22 @@ const { TextArea } = Input;
 const MIN_LEFT_PERCENT = 28;
 const MAX_LEFT_PERCENT = 72;
 
+function getPartIndex(examTitle: string, examLength: number) {
+  const match = String(examTitle).match(/(\d+)/);
+  const rawIndex = match ? Number(match[1]) - 1 : 0;
+  if (examLength <= 0) return 0;
+  return Math.min(Math.max(rawIndex, 0), examLength - 1);
+}
+
 function questions() {
   const exam = stores.ExamStore.getWritteExam();
   const examTitle = stores.ExamStore.currentExamTitle;
+  const hasExam = exam.length > 0;
+  const partIndex = getPartIndex(examTitle, exam.length);
+  const currentPart = hasExam ? exam[partIndex] : null;
 
-  const [title, setTitle] = useState(exam[0]?.name || '');
-  const [content, setContent] = useState(exam[0]?.questionItems[0]?.title || '');
+  const [title, setTitle] = useState(currentPart?.name || '');
+  const [content, setContent] = useState(currentPart?.questionItems?.[0]?.title || '');
   const [value, setValue] = useState(['', '']);
   const [wordCOunt, setWordCount] = useState(0);
   const [leftPercent, setLeftPercent] = useState(48);
@@ -28,22 +38,29 @@ function questions() {
   const draggingRef = useRef(false);
 
   useEffect(() => {
-    const index = +examTitle[4] - 1;
-    setTitle(exam[index].name);
-    setContent(exam[index].questionItems[0].title);
+    if (!hasExam) return;
+
+    const index = getPartIndex(examTitle, exam.length);
+    const part = exam[index];
+    if (!part) return;
+
+    setTitle(part.name || '');
+    setContent(part.questionItems?.[0]?.title || '');
 
     setValue((prev) => {
       const updatedValues = [...prev];
       updatedValues[index] = stores.ExamStore.correctWritte[index] || '';
       return updatedValues;
     });
-  }, [examTitle, exam]);
+  }, [examTitle, exam, hasExam]);
 
   useEffect(() => {
-    const index = +examTitle[4] - 1;
+    if (!hasExam) return;
+
+    const index = getPartIndex(examTitle, exam.length);
     stores.ExamStore.changeWritteAnswer(index, value[index] || '');
     setWordCount(countWords(value[index] || ''));
-  }, [value, examTitle]);
+  }, [value, examTitle, hasExam]);
 
   const handleDividerMouseDown = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
@@ -86,7 +103,7 @@ function questions() {
       setImeWarningVisible(true);
     }
 
-    const index = +examTitle[4] - 1;
+    const index = getPartIndex(examTitle, exam.length);
     setValue((prev) => {
       const updatedValues = [...prev];
       updatedValues[index] = finalValue;
@@ -94,7 +111,16 @@ function questions() {
     });
   };
 
-  const currentIndex = +examTitle[4] - 1;
+  if (!hasExam) {
+    return (
+      <div className="writte-empty">
+        <h3>暂无写作题目</h3>
+        <p>当前试卷未配置写作部分，请联系老师确认后重试。</p>
+      </div>
+    );
+  }
+
+  const currentIndex = partIndex;
 
   return (
     <div
