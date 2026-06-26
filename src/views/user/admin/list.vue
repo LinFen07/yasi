@@ -2,7 +2,12 @@
   <div class="app-container">
     <el-form :model="queryParam" ref="queryForm" :inline="true">
       <el-form-item label="用户名：">
-        <el-input v-model="queryParam.userName"></el-input>
+        <el-input v-model="queryParam.userName" placeholder="请输入用户名" clearable></el-input>
+      </el-form-item>
+      <el-form-item label="状态：">
+        <el-select v-model="queryParam.status" placeholder="请选择状态">
+          <el-option v-for="item in statusEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">查询</el-button>
@@ -59,6 +64,7 @@ export default {
       queryParam: {
         userName: '',
         role: 3,
+        status: 1,
         pageIndex: 1,
         pageSize: 10
       },
