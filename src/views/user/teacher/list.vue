@@ -155,6 +155,7 @@
         </el-table-column>
         <el-table-column prop="studentName" label="学生名称" />
         <el-table-column prop="examPaperName" label="试卷名称" />
+        <el-table-column prop="createTime" label="授权时间" width="180px" />
         <el-table-column prop="startTime" label="开始时间" width="180px" />
         <el-table-column prop="endTime" label="结束时间" width="180px" />
       </el-table>
