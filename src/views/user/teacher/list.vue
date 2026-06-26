@@ -7,6 +7,11 @@
       <el-form-item label="用户名：">
         <el-input v-model="queryParam.userName" placeholder="请输入用户名" clearable></el-input>
       </el-form-item>
+      <el-form-item label="状态：">
+        <el-select v-model="queryParam.status" placeholder="请选择状态">
+          <el-option v-for="item in statusEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">查询</el-button>
         <router-link :to="{ path: '/user/teacher/edit', query: { mode: 'add' } }" class="link-left">
@@ -190,6 +195,7 @@ export default {
         identity: '',
         email: '',
         role: 2, // Teacher role
+        status: 1,
         pageIndex: 1,
         pageSize: 10
       },
@@ -235,7 +241,8 @@ export default {
         realName: this.queryParam.realName || undefined,
         userName: this.queryParam.userName || undefined,
         identity: this.queryParam.identity || undefined,
-        email: this.queryParam.email || undefined
+        email: this.queryParam.email || undefined,
+        status: this.queryParam.status
       }
 
       userApi.getUserPageList(params).then(data => {
@@ -252,25 +259,46 @@ export default {
         this.listLoading = false
       })
     },
-    changeStatus (row) {
-      let _this = this
+    async checkTeacherHasAssigned (row) {
+      try {
+        const response = await examPaperApi.teacherAssignedPage(row.id, 1, 1, {})
+        if (response.code === 1) {
+          return (response.response?.counts || 0) > 0
+        }
+      } catch (error) {
+        console.error(error)
+      }
+      return false
+    },
+    async changeStatus (row) {
+      if (row.status === 1) {
+        const hasAssigned = await this.checkTeacherHasAssigned(row)
+        if (hasAssigned) {
+          this.$message.warning('该老师存在已授权试卷，无法禁用')
+          return
+        }
+      }
       userApi.changeStatus(row.id).then(re => {
         if (re.code === 1) {
           row.status = re.response
-          _this.$message.success(re.message)
+          this.$message.success(re.message)
         } else {
-          _this.$message.error(re.message)
+          this.$message.error(re.message)
         }
       })
     },
-    deleteUser (row) {
-      let _this = this
+    async deleteUser (row) {
+      const hasAssigned = await this.checkTeacherHasAssigned(row)
+      if (hasAssigned) {
+        this.$message.warning('该老师存在已授权试卷，无法删除')
+        return
+      }
       userApi.deleteUser(row.id).then(re => {
         if (re.code === 1) {
-          _this.search()
-          _this.$message.success(re.message)
+          this.search()
+          this.$message.success(re.message)
         } else {
-          _this.$message.error(re.message)
+          this.$message.error(re.message)
         }
       })
     },
@@ -285,6 +313,7 @@ export default {
         identity: '',
         email: '',
         role: 2, // Teacher role
+        status: 1,
         pageIndex: 1,
         pageSize: 10
       }
