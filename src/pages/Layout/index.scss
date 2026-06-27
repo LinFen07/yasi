@@ -1,8 +1,8 @@
 // 定义变量
-$sidebar-bg: #304156;
+$sidebar-bg: #1e293b;
 $header-bg: #fff;
-$content-bg: #f0f2f5;
-$primary-color: #42b983;
+$content-bg: #f1f5f9;
+$primary-color: #2563eb;
 $text-color: #333;
 $light-text: #666;
 $border-color: #e6ebf5;
@@ -40,20 +40,77 @@ body {
     display: flex;
     align-items: center;
     height: 100%;
+  }
+}
 
-    .user-name {
-      margin-right: 15px;
-      color: $text-color;
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 6px 12px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+
+  &__profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  &__avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  }
+
+  &__name {
+    color: $text-color;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__divider {
+    width: 1px;
+    height: 20px;
+    background: #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  &__logout {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: #64748b;
+    font-size: 13px;
+    cursor: pointer;
+    transition: color 0.2s, background-color 0.2s;
+
+    .anticon {
+      font-size: 14px;
     }
 
-    .logout {
-      cursor: pointer;
-      color: $light-text;
-      transition: color 0.3s;
-
-      &:hover {
-        color: $primary-color;
-      }
+    &:hover {
+      color: #dc2626;
+      background: #fef2f2;
     }
   }
 }
@@ -148,9 +205,10 @@ body {
 // 内容区域
 .content {
   flex: 1;
-  padding: 20px;
+  padding: 24px;
   background-color: $content-bg;
   overflow: auto;
+  min-height: calc(100vh - 60px);
 }
 
 .stats-container {

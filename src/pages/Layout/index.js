@@ -1,18 +1,15 @@
-import { Layout, Menu, Popconfirm, Card, Row, Col, Button, message, Input } from 'antd';
+import { Layout, Menu, Button } from 'antd';
 import {
-    HomeOutlined,
     EditOutlined,
     LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-
 } from '@ant-design/icons';
 import './index.scss';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { clearUserInfo } from '../../store/user';
-import axios from 'axios';
 const { Header, Sider, Content } = Layout;
 
 // 保存当前路由到localStorage
@@ -38,6 +35,8 @@ const GeekLayout = () => {
     const location = useLocation();
     const dispatch = useDispatch();
     const [collapsed, setCollapsed] = useState(false);
+    const userInfo = useSelector((state) => state.user.userInfo);
+    const displayName = userInfo?.realName || userInfo?.userName || '用户';
 
     // 初始化时检查保存的路由
     useEffect(() => {
@@ -54,8 +53,7 @@ const GeekLayout = () => {
 
     // const name = useSelector((state) => state.user.userInfo.name);
 
-    // 退出登录
-    const onConfirm = () => {
+    const handleLogout = () => {
         dispatch(clearUserInfo());
         navigate('/login');
     };
@@ -91,7 +89,7 @@ const GeekLayout = () => {
                 <div className="logo">
                     <img src="http://111.230.5.159:9000/yasi/image/logo/logo-07-3.png" alt="logo" style={{ height: '50px', paddingLeft: '0' }} />
                     {!collapsed && (
-                        <div style={{ color: '#fff', fontSize: '14px', marginTop: '8px' }}>模考教师阅卷系统</div>
+                        <div style={{ color: '#fff', fontSize: '14px', marginTop: '8px' }}>教师阅卷系统</div>
                     )}
                 </div>
 
@@ -119,15 +117,19 @@ const GeekLayout = () => {
                         />
                     </div>
                     <div className="header-right">
-                        <span className="user-name">{useSelector(state => state.user.userInfo?.userName) || 'admin'}</span>
-                        <Popconfirm
-                            title="是否确认退出？"
-                            onConfirm={onConfirm}
-                        >
-                            <span className="logout">
-                                <LogoutOutlined /> 退出
-                            </span>
-                        </Popconfirm>
+                        <div className="header-user">
+                            <div className="header-user__profile">
+                                <span className="header-user__avatar">
+                                    {displayName.charAt(0)}
+                                </span>
+                                <span className="header-user__name">{displayName}</span>
+                            </div>
+                            <span className="header-user__divider" />
+                            <button type="button" className="header-user__logout" onClick={handleLogout}>
+                                <LogoutOutlined />
+                                <span>退出</span>
+                            </button>
+                        </div>
                     </div>
                 </Header>
                 <Content className="content">

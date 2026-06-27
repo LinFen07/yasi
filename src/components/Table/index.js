@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Table, Tag, Button, Input, Form, AutoComplete, Tooltip, Select } from "antd";
-import "../../components/Table/index.scss"
+import { Table, Tag, Button, Input, AutoComplete, Tooltip, Select } from "antd";
+import { SearchOutlined } from '@ant-design/icons';
+import "./index.scss";
 
 export const STATUS_GRADED = '已评阅';
 export const STATUS_PENDING = '未评阅';
@@ -13,13 +14,36 @@ const stripHtml = (html) => {
     return (div.textContent || div.innerText || '').trim();
 };
 
+const formatSubmitTime = (value) => {
+    if (!value) return '-';
+    const text = String(value).trim();
+    if (!text) return '-';
+
+    const matched = text.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    if (matched) {
+        return `${matched[1]}年${matched[2]}月${matched[3]}日 ${matched[4]}:${matched[5]}`;
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '-';
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    return `${year}年${month}月${day}日 ${hour}:${minute}`;
+};
+
 const renderReviewCell = (review) => {
     const text = stripHtml(review);
     if (!text) return '-';
     if (text.length <= REVIEW_PREVIEW_LENGTH) return text;
     return (
         <Tooltip title={text}>
-            <span style={{ cursor: 'default' }}>{`${text.slice(0, REVIEW_PREVIEW_LENGTH)}...`}</span>
+            <span className="task-table__review-text">{`${text.slice(0, REVIEW_PREVIEW_LENGTH)}...`}</span>
         </Tooltip>
     );
 };
@@ -48,53 +72,44 @@ const TaskTable = ({
         setSearchText(finalValue);
     };
 
-    const handleStudentSearchChange = (e) => {
-        setSearchName(e.target.value);
-    };
-
     const handleSearch = () => {
         onSearch?.(searchText, searchName, searchStatus);
     };
 
     return (
-        <>
-            <Form>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div className="task-table">
+            <div className="task-table__toolbar">
+                <div className="task-table__field-wrap">
                     <AutoComplete
-                        style={{ width: 200 }}
-                        placeholder="输入试卷名称筛选"
+                        className="task-table__field"
+                        placeholder="试卷名称"
                         value={searchText}
                         onChange={handlePaperSearchChange}
                         options={
-                            paperName && paperName.length > 0
-                                ? paperName.map(opt => ({
-                                    value: opt.name,
-                                    label: opt.name
-                                }))
+                            paperName?.length > 0
+                                ? paperName.map(opt => ({ value: opt.name, label: opt.name }))
                                 : []
                         }
                         filterOption={(inputValue, option) =>
                             option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
                         }
-                        dropdownStyle={{
-                            zIndex: 9999,
-                            minWidth: 200,
-                            maxHeight: 250,
-                            overflow: 'auto'
-                        }}
                         defaultActiveFirstOption={false}
                     />
+                </div>
+                <div className="task-table__field-wrap">
                     <Input
-                        style={{ width: 200 }}
-                        placeholder="请输入考生真实姓名"
+                        className="task-table__field"
+                        placeholder="考生姓名"
                         value={searchName}
-                        onChange={handleStudentSearchChange}
+                        onChange={(e) => setSearchName(e.target.value)}
                         onPressEnter={handleSearch}
                         allowClear
                     />
+                </div>
+                <div className="task-table__field-wrap task-table__field-wrap--status">
                     <Select
-                        style={{ width: 140 }}
-                        placeholder="选择状态"
+                        className="task-table__field"
+                        placeholder="状态"
                         value={searchStatus}
                         onChange={setSearchStatus}
                         allowClear
@@ -103,15 +118,19 @@ const TaskTable = ({
                             { value: STATUS_PENDING, label: STATUS_PENDING },
                         ]}
                     />
-                    <Button
-                        type="primary"
-                        onClick={handleSearch}
-                    >
-                        筛选
-                    </Button>
                 </div>
-            </Form>
+                <Button
+                    type="primary"
+                    icon={<SearchOutlined />}
+                    onClick={handleSearch}
+                    className="task-table__search-btn"
+                >
+                    筛选
+                </Button>
+            </div>
+
             <Table
+                className="task-table__table"
                 tableLayout="fixed"
                 columns={[
                     {
@@ -134,15 +153,27 @@ const TaskTable = ({
                         key: 'paperName',
                         width: 130,
                         ellipsis: true,
-                        render: (_, record) => record.paperName,
+                    },
+                    {
+                        title: '提交时间',
+                        dataIndex: 'createTime',
+                        key: 'createTime',
+                        width: 168,
+                        align: 'center',
+                        render: (createTime) => (
+                            <span className="task-table__submit-time">{formatSubmitTime(createTime)}</span>
+                        )
                     },
                     {
                         title: '状态',
                         dataIndex: 'status',
                         key: 'status',
                         width: 96,
+                        align: 'center',
                         render: status => (
-                            <Tag color={status === '已阅' ? 'green' : 'orange'}>
+                            <Tag
+                                className={`task-table__tag ${status === '已阅' ? 'task-table__tag--done' : 'task-table__tag--pending'}`}
+                            >
                                 {status === '已阅' ? '已评阅' : '待评阅'}
                             </Tag>
                         )
@@ -154,9 +185,9 @@ const TaskTable = ({
                         width: 72,
                         align: 'center',
                         render: (score, record) => (
-                            record.status === '已阅' && score !== null && score !== undefined
-                                ? score
-                                : '-'
+                            <span className={record.status === '已阅' ? 'task-table__score' : 'task-table__score--empty'}>
+                                {record.status === '已阅' && score !== null && score !== undefined ? score : '-'}
+                            </span>
                         )
                     },
                     {
@@ -171,11 +202,12 @@ const TaskTable = ({
                     {
                         title: '操作',
                         key: 'action',
-                        width: 80,
+                        width: 88,
                         align: 'center',
                         render: (_, record) => (
                             <Button
                                 type="link"
+                                className="task-table__action"
                                 onClick={() => {
                                     setEssayLoading(true);
                                     try {
@@ -200,12 +232,7 @@ const TaskTable = ({
                     showSizeChanger: false,
                     onChange: (page) => {
                         handleChange(page);
-                        setTimeout(() => {
-                            window.scrollTo({
-                                top: 0,
-                                behavior: 'smooth'
-                            });
-                        }, 100);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     },
                 }}
                 dataSource={papers.map(item => ({
@@ -213,7 +240,7 @@ const TaskTable = ({
                     key: `${item.paperId}-${item.studentId}-${item.id}`
                 }))}
             />
-        </>
+        </div>
     );
 };
 

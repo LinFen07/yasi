@@ -2,7 +2,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { removeToken, request } from "../utils/index.js";
 import { setToken as _setToken, getToken } from "../utils/index.js";
-import { message } from 'antd'
 
 const userStore = createSlice({
     name: "user",
@@ -26,7 +25,9 @@ const userStore = createSlice({
             state.token = ''
             state.userInfo = {}
             removeToken()
-            localStorage.removeItem('user_message') // 补充：清空用户信息
+            localStorage.removeItem('user_message')
+            localStorage.removeItem('userId')
+            localStorage.removeItem('lastRoute')
         },
         toggleTheme(state) {
             state.theme = state.theme === 'light' ? 'dark' : 'light'
@@ -83,25 +84,20 @@ const fetchLogin = (loginForm) => {
                 // 存储token和用户信息
                 dispatch(setToken(token));
                 dispatch(setUserInfo(userInfo));
-                message.success("登录成功");
                 return { success: true, message: "登录成功" };
             } else {
-                // 业务失败提示
-                message.error(result.message || "登录失败");
                 return { success: false, message: result.message || "登录失败" };
             }
         } catch (error) {
-            // 统一错误处理
             console.error('登录请求失败:', error);
             let errorMsg = "登录异常，请稍后重试";
             if (error.message.includes('HTTP错误')) {
                 errorMsg = error.message;
             } else if (error.response?.data?.message) {
-                errorMsg = error.response.data.message; // 后端返回的错误信息
+                errorMsg = error.response.data.message;
             } else if (error.message.includes('Network Error')) {
                 errorMsg = "网络异常，请检查网络";
             }
-            message.error(errorMsg);
             return { success: false, message: errorMsg };
         }
     };

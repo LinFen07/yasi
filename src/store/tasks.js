@@ -378,5 +378,31 @@ const getEssayListFromServer = (userId, pageNow = 1, pageSize = 10, filters = {}
     }
   };
 }
-export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle, getAppraise, getNewAppraise, getConfrim, updatePaperStatus, getTask, getStudentsInfo, getStudentsAnswers, getComposition, selectById, selectNameById, getOriginalTitel, getPaperName, setEssayList, getEssayListFromServer };
+
+const getJudgeStatsFromServer = (userId) => {
+  return async () => {
+    try {
+      const response = await request.get('/api/teacher/exam/paper/judgeStats', {
+        params: { userId }
+      });
+      const result = response.data;
+      if (result.code === 1 && result.response) {
+        return {
+          total: result.response.total || 0,
+          pending: result.response.pending || 0,
+          graded: result.response.graded || 0
+        };
+      }
+      throw new Error(result.message || '获取评阅统计失败');
+    } catch (error) {
+      if (isAuthError(error)) {
+        return null;
+      }
+      console.error('获取评阅统计失败:', error);
+      throw error;
+    }
+  };
+}
+
+export { setTasks, setCurrentTask, updateTask, setPaper, fetchCompositionInfo, fetchArticle, setArticle, getAppraise, getNewAppraise, getConfrim, updatePaperStatus, getTask, getStudentsInfo, getStudentsAnswers, getComposition, selectById, selectNameById, getOriginalTitel, getPaperName, setEssayList, getEssayListFromServer, getJudgeStatsFromServer };
 export default tasksStore.reducer;
