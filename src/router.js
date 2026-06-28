@@ -141,11 +141,17 @@ const constantRoutes = [
         meta: { title: '试卷列表', icon: 'list', noCache: true }
       },
       {
+        path: 'paper/add',
+        component: () => import('@/views/exam/paper/add'),
+        name: 'ExamPaperAdd',
+        meta: { title: '试卷新增', icon: 'form', noCache: true }
+      },
+      {
         path: 'paper/edit',
         component: () => import('@/views/exam/paper/edit'),
         name: 'ExamPaperEdit',
-        meta: { title: '试卷新增', icon: 'form', noCache: true, activeMenu: '/exam/paper/list' },
-        hidden: false
+        meta: { title: '试卷编辑', icon: 'edit', noCache: true, activeMenu: '/exam/paper/list' },
+        hidden: true
       },
       {
         path: 'question/list',

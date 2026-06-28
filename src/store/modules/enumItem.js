@@ -11,10 +11,11 @@ const state = {
     statusBtn: [{ key: 1, value: '禁用' }, { key: 2, value: '启用' }],
     payType: [{ key: 1, value: '微信' }, { key: 2, value: '支付宝' }]
   },
-  exam: {
-    examPaper: {
-      paperTypeEnum: [{ key: 1, value: '固定试卷' }, { key: 4, value: '时段试卷' }, { key: 6, value: '任务试卷' }]
-    },
+    exam: {
+      examPaper: {
+        paperTypeEnum: [{ key: 1, value: '固定试卷' }, { key: 4, value: '时段试卷' }, { key: 6, value: '任务试卷' }],
+        moduleTypeEnum: [{ key: 1, value: '听力' }, { key: 2, value: '阅读' }, { key: 3, value: '写作' }]
+      },
     question: {
       typeEnum: [{ key: 1, value: '单选题' }, { key: 2, value: '多选题' }, { key: 3, value: '判断题' }, { key: 4, value: '填空题' }, { key: 5, value: '作文题' }],
       queTypeEnum: [{ key: 1, value: '单选题' }, { key: 2, value: '多选题' }, { key: 3, value: '判断题' }, { key: 4, value: '填空题' }, { key: 5, value: '打勾题' }, { key: 6, value: '拖拽配对' }, { key: 7, value: '作文题' }],

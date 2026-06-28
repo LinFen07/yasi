@@ -8,6 +8,14 @@ import './styles/element-variables.scss'
 
 import '@/styles/index.scss' // global css
 import './icons' // icon
+import '@wangeditor/editor/dist/css/style.css'
+import ListeningSection from '@/views/exam/paper/components/ListeningSection.vue'
+import ReadingSection from '@/views/exam/paper/components/ReadingSection.vue'
+import WritingSection from '@/views/exam/paper/components/WritingSection.vue'
+
+Vue.component('ListeningSection', ListeningSection)
+Vue.component('ReadingSection', ReadingSection)
+Vue.component('WritingSection', WritingSection)
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
 // 在main.js或插件文件中

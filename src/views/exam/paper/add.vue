@@ -242,7 +242,6 @@ import uploadApi from '@/api/upload'
 import {
   IELTS_SECTIONS,
   initModuleTitleItems,
-  groupTitleItemsForEdit,
   flattenModuleTitleItems,
   getModuleQuestionCount,
   destroyModuleEditors,
@@ -257,7 +256,7 @@ import {
 } from './paperModule'
 
 export default {
-  name: 'ExamPaperEdit',
+  name: 'ExamPaperAdd',
   components: {
     Pagination
   },
@@ -271,7 +270,7 @@ export default {
         limitDateTime: [],
         name: '',
         suggestTime: null,
-        titleItems: []
+        titleItems: initModuleTitleItems()
       },
       subjectFilter: [],
       formLoading: false,
@@ -360,27 +359,14 @@ export default {
     this.editorConfig.MENU_CONF.uploadImage = {
       customUpload: (file, insertFn) => this.uploadEditorImage(file, insertFn)
     }
-    const id = this.$route.query.id
-    if (!id || parseInt(id) === 0) {
-      this.$message.warning('缺少试卷 ID')
-      this.$router.replace('/exam/paper/list')
-      return
-    }
     let _this = this
     this.initSubject(() => {
       _this.updateSubjectFilter()
     })
-    this.formLoading = true
-    examPaperApi.select(id).then(re => {
-      _this.form = re.response
-      _this.form.titleItems = groupTitleItemsForEdit(re.response.titleItems)
-      _this.ensurePaperModules()
-      _this.updateSubjectFilter()
-      _this.formLoading = false
-    }).catch(() => {
-      _this.formLoading = false
-      _this.$router.replace('/exam/paper/list')
-    })
+    this.form.titleItems = initModuleTitleItems()
+  },
+  activated () {
+    this.ensurePaperModules()
   },
   beforeDestroy () {
     destroyModuleEditors(this.form.titleItems)
@@ -388,6 +374,7 @@ export default {
   methods: {
     ensurePaperModules () {
       if (!this.form.titleItems || this.form.titleItems.length === 0) {
+        this.form.titleItems = initModuleTitleItems()
         return
       }
       if (this.form.titleItems[0]) {
@@ -547,7 +534,6 @@ export default {
       return this.enumFormat(this.questionTypeEnum, cellValue)
     },
     resetForm () {
-      let lastId = this.form.id
       this.$refs['form'].resetFields()
       this.form = {
         id: null,
@@ -559,7 +545,6 @@ export default {
         suggestTime: null,
         titleItems: []
       }
-      this.form.id = lastId
       this.form.titleItems = initModuleTitleItems()
       this.ensurePaperModules()
       this.activeSectionTab = '0'
@@ -888,21 +873,6 @@ export default {
   }
 }
 
-.editor-placeholder {
-  min-height: 280px;
-  padding: 16px;
-  background: #fafbfc;
-  color: #606266;
-  font-size: 14px;
-  line-height: 1.6;
-  overflow: auto;
-  cursor: pointer;
-
-  &:hover {
-    background: #f5f7fa;
-  }
-}
-
 .title-block {
   margin-bottom: 8px;
   padding: 20px;
@@ -1006,6 +976,21 @@ export default {
   &__body {
     height: 280px !important;
     overflow-y: hidden !important;
+  }
+}
+
+.editor-placeholder {
+  min-height: 280px;
+  padding: 16px;
+  background: #fafbfc;
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow: auto;
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f7fa;
   }
 }
 
