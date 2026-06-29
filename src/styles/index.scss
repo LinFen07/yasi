@@ -239,10 +239,20 @@ aside {
 }
 
 .q-title {
-  margin: 0px 5px;
+  margin: 0 5px;
+  overflow-x: auto;
+  word-break: break-word;
 
-  p {
-    display: inline !important;
+  p,
+  p.ueditor-p {
+    display: block !important;
+    margin: 8px 0;
+    line-height: 1.6;
+  }
+
+  table p,
+  table p.ueditor-p {
+    margin: 4px 0;
   }
 }
 
@@ -271,10 +281,21 @@ aside {
 }
 
 .gapfilling-span {
-  color: red;
-  padding: 0px 30px;
-  margin: 0px 5px;
-  border-bottom: 3px double red;
+  display: inline-block;
+  min-width: 48px;
+  height: 22px;
+  line-height: 20px;
+  text-align: center;
+  border: 1px solid #409EFF;
+  border-radius: 4px;
+  background-color: #ecf5ff;
+  color: #409EFF;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 0 6px;
+  margin: 0 2px;
+  vertical-align: baseline;
+  box-sizing: border-box;
 }
 
 .exampaper-item-box {
@@ -286,9 +307,26 @@ aside {
 }
 
 .ueditor-p {
-  display: inline !important;
+  display: block;
 }
 
+.q-title .ueditor-p {
+  display: block !important;
+}
+
+.question-preview-dialog {
+  .el-dialog__header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .el-dialog__body {
+    padding: 16px 20px 24px;
+    max-height: calc(90vh - 110px);
+    overflow: auto;
+    background: #fff;
+  }
+}
 
 .foot-copyright {
   position: absolute;

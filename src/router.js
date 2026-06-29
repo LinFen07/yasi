@@ -188,6 +188,20 @@ const constantRoutes = [
         hidden: true
       },
       {
+        path: 'question/edit/pick',
+        component: () => import('@/views/exam/question/edit/pick'),
+        name: 'pickPage',
+        meta: { title: '打勾题编辑', noCache: true, activeMenu: '/exam/question/list' },
+        hidden: true
+      },
+      {
+        path: 'question/edit/drag',
+        component: () => import('@/views/exam/question/edit/drag'),
+        name: 'dragPage',
+        meta: { title: '拖拽配对编辑', noCache: true, activeMenu: '/exam/question/list' },
+        hidden: true
+      },
+      {
         path: 'question/edit/shortAnswer',
         component: () => import('@/views/exam/question/edit/short-answer'),
         name: 'shortAnswerPage',

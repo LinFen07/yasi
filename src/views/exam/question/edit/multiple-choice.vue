@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <QuestionEditHeader :question-type="2" />
     <el-form :model="form" ref="form" label-width="100px" v-loading="formLoading" :rules="rules">
       <el-form-item label="年级：" prop="gradeLevel" required>
         <el-select v-model="form.gradeLevel" placeholder="年级" @change="levelChange" clearable>
@@ -12,11 +13,8 @@
             :label="item.name + ' ( ' + item.levelName + ' )'"></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="题目类型：" prop="topicType" required>
-        <el-select v-model="form.topicType" placeholder="题目类型">
-          <el-option v-for="item in queTypeEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
-        </el-select>
-      </el-form-item>
+
+      <QuestionPaperFields :form="form" />
 
       <!-- 题干富文本编辑器 -->
       <el-form-item label="题干：" prop="title" required>
@@ -39,17 +37,32 @@
         <el-input v-model="form.analyze" />
       </el-form-item>
 
-      <el-form-item label="分数：" prop="score" required>
-        <el-input-number v-model="form.score" :precision="1" :step="1" :max="100"></el-input-number>
-      </el-form-item>
-      <el-form-item label="难度：" required>
-        <el-rate v-model="form.difficult" class="question-item-rate"></el-rate>
-      </el-form-item>
       <el-form-item label="正确答案：" prop="correctArray" required>
-        <el-checkbox-group v-model="form.correctArray">
+        <el-checkbox-group v-model="form.correctArray" @change="syncTotalScore">
           <el-checkbox v-for="item in form.items" :label="item.prefix" :key="item.prefix">{{ item.prefix
             }}</el-checkbox>
         </el-checkbox-group>
+      </el-form-item>
+
+      <el-form-item label="每正确选项分值：" required>
+        <el-input-number
+          v-model="scorePerCorrect"
+          :precision="1"
+          :step="0.5"
+          :min="0.1"
+          :max="100"
+          @change="syncTotalScore"
+        />
+      </el-form-item>
+      <el-form-item label="分数：">
+        <span class="mc-total-score">{{ totalScoreText }}</span>
+        <span v-if="form.correctArray.length" class="form-tip mc-total-tip">
+          分（{{ form.correctArray.length }} 个正确选项 × {{ scorePerCorrectText }}，自动合计）
+        </span>
+        <span v-else class="form-tip mc-total-tip">请先选择正确答案</span>
+      </el-form-item>
+      <el-form-item label="难度：" required>
+        <el-rate v-model="form.difficult" class="question-item-rate"></el-rate>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">提交</el-button>
@@ -59,14 +72,20 @@
       </el-form-item>
     </el-form>
 
-    <el-dialog :visible.sync="questionShow.dialog" style="width: 100%;height: 100%">
-      <QuestionShow :qType="questionShow.qType" :question="questionShow.question" :qLoading="questionShow.loading" />
-    </el-dialog>
+    <QuestionPreviewDialog
+      :visible.sync="questionShow.dialog"
+      :q-type="questionShow.qType"
+      :question="questionShow.question"
+      :q-loading="questionShow.loading"
+    />
   </div>
 </template>
 
 <script>
-import QuestionShow from '../components/Show'
+import QuestionPreviewDialog from '../components/QuestionPreviewDialog'
+import QuestionPaperFields from '../components/QuestionPaperFields'
+import QuestionEditHeader from '../components/QuestionEditHeader'
+import questionEditPage from '../mixins/questionEditPage'
 import { mapGetters, mapState, mapActions } from 'vuex'
 import questionApi from '@/api/question'
 import uploadApi from '@/api/upload'
@@ -74,8 +93,11 @@ import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
 
 export default {
+  mixins: [questionEditPage],
   components: {
-    QuestionShow
+    QuestionPreviewDialog,
+    QuestionPaperFields,
+    QuestionEditHeader
   },
   data () {
     return {
@@ -84,7 +106,10 @@ export default {
         questionType: 2, // 多选题类型为2
         gradeLevel: null,
         subjectId: null,
-        topicType: null,
+        topicType: 2,
+        paperName: '',
+        moduleType: null,
+        partNo: null,
         title: '',
         items: [
           { prefix: 'A', content: '' },
@@ -95,7 +120,7 @@ export default {
         analyze: '',
         correctArray: [],
         score: '',
-        difficult: 0
+        difficult: 1
       },
       subjectFilter: null,
       formLoading: false,
@@ -107,7 +132,7 @@ export default {
           { required: true, message: '请选择学科', trigger: 'change' }
         ],
         topicType: [
-          { required: true, message: '请选择题型', trigger: 'change' }
+          { required: false, message: '请选择题型', trigger: 'change' }
         ],
         title: [
           { required: true, message: '请输入题干', trigger: 'blur' }
@@ -115,13 +140,11 @@ export default {
         analyze: [
           { required: true, message: '请输入解析', trigger: 'blur' }
         ],
-        score: [
-          { required: true, message: '请输入分数', trigger: 'blur' }
-        ],
         correctArray: [
           { required: true, message: '请选择正确答案', trigger: 'change' }
         ]
       },
+      scorePerCorrect: 1,
       questionShow: {
         qType: 0,
         dialog: false,
@@ -155,13 +178,14 @@ export default {
   created () {
     let id = this.$route.query.id
     let _this = this
-    this.initSubject(function () {
-      _this.subjectFilter = _this.subjects
-    })
+    this.bootstrapQuestionEdit()
     if (id && parseInt(id) !== 0) {
       _this.formLoading = true
       questionApi.select(id).then(re => {
+        if (!_this.ensureQuestionTypePage(re.response, 2)) return
         _this.form = re.response
+        _this.updateSubjectFilter()
+        _this.inferScorePerCorrect()
         _this.$nextTick(() => {
           if (_this.titleQuill) {
             _this.titleQuill.root.innerHTML = _this.form.title || ''
@@ -236,7 +260,12 @@ export default {
       titleToolbar.addHandler('image', () => handleImageUpload(this.titleQuill))
     },
     questionItemRemove (index) {
+      const removed = this.form.items[index]
+      if (removed && removed.prefix) {
+        this.form.correctArray = this.form.correctArray.filter(p => p !== removed.prefix)
+      }
       this.form.items.splice(index, 1)
+      this.syncTotalScore()
     },
     questionItemAdd () {
       let items = this.form.items
@@ -249,12 +278,62 @@ export default {
       }
       items.push({ id: null, prefix: newLastPrefix, content: '' })
     },
+    inferScorePerCorrect () {
+      const correct = this.form.correctArray || []
+      const items = this.form.items || []
+      if (correct.length) {
+        const scored = items.find(item =>
+          correct.includes(item.prefix) && item.score != null && item.score !== ''
+        )
+        if (scored) {
+          this.scorePerCorrect = Number(scored.score)
+          this.syncTotalScore()
+          return
+        }
+      }
+      if (correct.length && this.form.score) {
+        this.scorePerCorrect = Math.round(Number(this.form.score) / correct.length * 10) / 10
+      } else {
+        this.scorePerCorrect = 1
+      }
+      this.syncTotalScore()
+    },
+    applyItemScores () {
+      const per = Number(this.scorePerCorrect || 0)
+      this.form.items.forEach(item => {
+        if ((this.form.correctArray || []).includes(item.prefix)) {
+          item.score = per
+        } else {
+          item.score = null
+        }
+      })
+    },
+    syncTotalScore () {
+      const count = (this.form.correctArray || []).length
+      const per = Number(this.scorePerCorrect || 0)
+      this.form.score = Math.round(count * per * 10) / 10
+    },
+    validateMultipleChoiceForm () {
+      if (!this.form.correctArray || !this.form.correctArray.length) {
+        this.$message.error('请至少选择一个正确答案')
+        return false
+      }
+      if (!this.scorePerCorrect || Number(this.scorePerCorrect) <= 0) {
+        this.$message.error('请设置每正确选项分值')
+        return false
+      }
+      this.syncTotalScore()
+      this.applyItemScores()
+      return true
+    },
     submitForm () {
       let _this = this
+      if (!this.validateMultipleChoiceForm()) return
       this.$refs.form.validate((valid) => {
         if (valid) {
           // 确保获取最新的编辑器内容
           this.form.title = this.titleQuill.root.innerHTML
+          this.finalizeQuestionForm(this.form)
 
           this.formLoading = true
           questionApi.edit(this.form).then(re => {
@@ -283,7 +362,10 @@ export default {
         questionType: 2,
         gradeLevel: null,
         subjectId: null,
-        topicType: null,
+        topicType: 2,
+        paperName: '',
+        moduleType: null,
+        partNo: null,
         title: '',
         items: [
           { prefix: 'A', content: '' },
@@ -293,21 +375,20 @@ export default {
         ],
         analyze: '',
         correctArray: [],
-        score: '',
-        difficult: 0
+        score: 0,
+        difficult: 1
       }
       this.form.id = lastId
+      this.scorePerCorrect = 1
 
       // 清空编辑器内容
       if (this.titleQuill) {
         this.titleQuill.root.innerHTML = ''
       }
-    },
-    levelChange () {
-      this.form.subjectId = null
-      this.subjectFilter = this.subjects.filter(data => data.level === this.form.gradeLevel)
+      this.syncTotalScore()
     },
     showQuestion () {
+      if (!this.validateMultipleChoiceForm()) return
       // 确保获取最新的编辑器内容
       this.form.title = this.titleQuill.root.innerHTML
 
@@ -322,10 +403,15 @@ export default {
     ...mapGetters('enumItem', ['enumFormat']),
     ...mapState('enumItem', {
       questionTypeEnum: state => state.exam.question.typeEnum,
-      levelEnum: state => state.user.levelEnum,
-      queTypeEnum: state => state.exam.question.queTypeEnum
+      levelEnum: state => state.user.levelEnum
     }),
-    ...mapState('exam', { subjects: state => state.subjects })
+    ...mapState('exam', { subjects: state => state.subjects }),
+    totalScoreText () {
+      return Number(this.form.score || 0).toFixed(1)
+    },
+    scorePerCorrectText () {
+      return Number(this.scorePerCorrect || 0).toFixed(1)
+    }
   },
   beforeDestroy () {
     // 组件销毁时，清理编辑器实例
@@ -357,5 +443,22 @@ export default {
 
 .question-item-rate {
   margin-top: 10px;
+}
+
+.form-tip {
+  margin-top: 6px;
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.mc-total-score {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.mc-total-tip {
+  margin-left: 8px;
 }
 </style>

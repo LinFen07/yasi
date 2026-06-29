@@ -13,6 +13,12 @@ export default {
       default: function () {
         return ''
       }
+    },
+    editorConfig: {
+      type: Object,
+      default: function () {
+        return {}
+      }
     }
   },
   data () {
@@ -27,7 +33,7 @@ export default {
     value: function (val, oldVal) {
       if (val != null && this.ready) {
         // eslint-disable-next-line no-undef
-        this.instance = UE.getEditor(this.randomId)
+        this.instance = UE.getEditor(this.randomId, this.editorConfig)
         this.instance.setContent(val)
       }
     }
@@ -45,7 +51,7 @@ export default {
     initEditor () {
       this.$nextTick(() => {
         // eslint-disable-next-line no-undef
-        this.instance = UE.getEditor(this.randomId)
+        this.instance = UE.getEditor(this.randomId, this.editorConfig)
         this.instance.addListener('ready', () => {
           this.ready = true
           this.$emit('ready', this.instance)
@@ -57,7 +63,7 @@ export default {
     },
     setText (con) {
       // eslint-disable-next-line no-undef
-      this.instance = UE.getEditor(this.randomId)
+      this.instance = UE.getEditor(this.randomId, this.editorConfig)
       this.instance.setContent(con)
     }
   }

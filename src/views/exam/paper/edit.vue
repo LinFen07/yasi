@@ -174,8 +174,9 @@
       </div>
 
       <div class="form-actions">
-        <el-button type="primary" icon="el-icon-check" @click="submitForm">提交保存</el-button>
+        <el-button type="primary" icon="el-icon-check" :loading="formLoading" @click="submitForm">保存</el-button>
         <el-button icon="el-icon-refresh-left" @click="resetForm">重置</el-button>
+        <span class="form-actions__tip">可先保存已填写的模块，后续再继续补充其他内容</span>
       </div>
     </el-form>
 
@@ -193,6 +194,22 @@
           <el-select v-model="questionPage.queryParam.questionType" clearable placeholder="全部题型">
             <el-option v-for="item in questionTypeEnum" :key="item.key" :value="item.key" :label="item.value" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="试卷名称">
+          <el-input v-model="questionPage.queryParam.paperName" clearable placeholder="建议填写，便于筛选" />
+        </el-form-item>
+        <el-form-item label="所属模块">
+          <el-select v-model="questionPage.queryParam.moduleType" clearable placeholder="全部">
+            <el-option v-for="item in moduleTypeEnum" :key="item.key" :value="item.key" :label="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Part">
+          <el-input
+            v-model.number="questionPage.queryParam.partNo"
+            clearable
+            placeholder="如 1"
+            style="width: 100px"
+          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="el-icon-search" @click="queryForm">查询</el-button>
@@ -215,6 +232,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="questionType" label="题型" :formatter="questionTypeFormatter" width="90" />
+        <el-table-column prop="paperName" label="试卷名称" show-overflow-tooltip width="140" />
+        <el-table-column prop="partNo" label="Part" width="70" align="center" :formatter="partNoFormatter" />
+        <el-table-column prop="moduleType" label="所属模块" :formatter="moduleTypeFormatter" width="90" />
         <el-table-column prop="shortTitle" label="题干" show-overflow-tooltip />
       </el-table>
       <pagination
@@ -243,12 +263,11 @@ import {
   IELTS_SECTIONS,
   initModuleTitleItems,
   groupTitleItemsForEdit,
-  flattenModuleTitleItems,
+  flattenModuleTitleItemsForSave,
+  validatePaperModulesForSave,
+  normalizePaperQuestionItem,
   getModuleQuestionCount,
   destroyModuleEditors,
-  validateListeningModule,
-  validateReadingModule,
-  validateWritingModule,
   normalizeListeningModule,
   normalizeReadingModule,
   normalizeWritingModule,
@@ -298,6 +317,9 @@ export default {
         queryParam: {
           content: null,
           questionType: null,
+          paperName: null,
+          moduleType: null,
+          partNo: null,
           pageIndex: 1,
           pageSize: 10
         },
@@ -328,6 +350,7 @@ export default {
     ...mapState('enumItem', {
       questionTypeEnum: state => state.exam.question.typeEnum,
       paperTypeEnum: state => state.exam.examPaper.paperTypeEnum,
+      moduleTypeEnum: state => state.exam.examPaper.moduleTypeEnum,
       levelEnum: state => state.user.levelEnum
     }),
     ...mapState('exam', { subjects: state => state.subjects }),
@@ -429,50 +452,33 @@ export default {
       }
     },
     submitForm () {
-      let _this = this
-      const listeningErrors = validateListeningModule(this.form.titleItems[0])
-      if (listeningErrors.length > 0) {
-        this.$message.warning(listeningErrors[0].message)
-        this.activeSectionTab = '0'
-        this.activeSubsectionTab = String(listeningErrors[0].partIndex)
-        return
-      }
-      const readingErrors = validateReadingModule(this.form.titleItems[1])
-      if (readingErrors.length > 0) {
-        this.$message.warning(readingErrors[0].message)
-        this.activeSectionTab = '1'
-        this.activeSubsectionTab = String(readingErrors[0].partIndex)
-        return
-      }
-      const writingErrors = validateWritingModule(this.form.titleItems[2])
-      if (writingErrors.length > 0) {
-        this.$message.warning(writingErrors[0].message)
-        this.activeSectionTab = '2'
-        this.activeSubsectionTab = String(writingErrors[0].partIndex)
+      const moduleErrors = validatePaperModulesForSave(this.form.titleItems)
+      if (moduleErrors.length > 0) {
+        this.$message.warning(moduleErrors[0].message)
         return
       }
       this.$refs.form.validate((valid) => {
-        if (valid) {
-          this.formLoading = true
-          const payload = Object.assign({}, this.form, {
-            titleItems: flattenModuleTitleItems(this.form.titleItems)
-          })
-          examPaperApi.edit(payload).then(re => {
-            if (re.code === 1) {
-              _this.$message.success(re.message)
-              _this.delCurrentView(_this).then(() => {
-                _this.$router.push('/exam/paper/list')
-              })
-            } else {
-              _this.$message.error(re.message)
-              this.formLoading = false
+        if (!valid) return
+        this.formLoading = true
+        const payload = Object.assign({}, this.form, {
+          titleItems: flattenModuleTitleItemsForSave(this.form.titleItems)
+        })
+        examPaperApi.edit(payload).then(re => {
+          if (re.code === 1) {
+            const saved = re.response
+            this.$message.success('保存成功，可继续编辑其他模块')
+            if (saved && saved.titleItems) {
+              this.form.titleItems = groupTitleItemsForEdit(saved.titleItems)
+              this.ensurePaperModules()
             }
-          }).catch(e => {
             this.formLoading = false
-          })
-        } else {
-          return false
-        }
+          } else {
+            this.$message.error(re.message)
+            this.formLoading = false
+          }
+        }).catch(() => {
+          this.formLoading = false
+        })
       })
     },
     addQuestion (subsection, sectionIndex) {
@@ -486,6 +492,9 @@ export default {
       this.questionPage.queryParam = {
         content: null,
         questionType: section ? section.suggestQuestionType : null,
+        paperName: this.form.name || null,
+        moduleType: section ? section.key : null,
+        partNo: parseInt(this.activeSubsectionTab, 10) + 1,
         pageIndex: 1,
         pageSize: 10
       }
@@ -504,7 +513,7 @@ export default {
       let _this = this
       this.questionPage.multipleSelection.forEach(q => {
         questionApi.select(q.id).then(re => {
-          _this.currentTitleItem.questionItems.push(re.response)
+          _this.currentTitleItem.questionItems.push(normalizePaperQuestionItem(re.response))
         })
       })
       this.questionPage.showDialog = false
@@ -524,10 +533,13 @@ export default {
     },
     search () {
       this.questionPage.listLoading = true
-      const { content, questionType, pageIndex, pageSize } = this.questionPage.queryParam
+      const { content, questionType, paperName, moduleType, partNo, pageIndex, pageSize } = this.questionPage.queryParam
       const params = {
         content: content || null,
         questionType: questionType || null,
+        paperName: paperName || null,
+        moduleType: moduleType || null,
+        partNo: partNo != null && partNo !== '' ? Number(partNo) : null,
         subjectId: this.form.subjectId || null,
         pageIndex,
         pageSize
@@ -545,6 +557,12 @@ export default {
     },
     questionTypeFormatter (row, column, cellValue, index) {
       return this.enumFormat(this.questionTypeEnum, cellValue)
+    },
+    moduleTypeFormatter (row, column, cellValue, index) {
+      return this.enumFormat(this.moduleTypeEnum, cellValue)
+    },
+    partNoFormatter (row, column, cellValue) {
+      return cellValue != null && cellValue !== '' ? cellValue : '-'
     },
     resetForm () {
       let lastId = this.form.id
@@ -1096,6 +1114,13 @@ export default {
   position: sticky;
   bottom: 16px;
   z-index: 10;
+}
+
+.form-actions__tip {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .paper-form {

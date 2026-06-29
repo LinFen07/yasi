@@ -16,7 +16,7 @@ export const IELTS_SECTIONS = [
     icon: 'message',
     theme: 'listening',
     desc: '共 4 个 Part，每 Part 固定 10 题，合计 40 题',
-    defaultName: '<p><strong>Part 1 · Listening 听力</strong></p><p>请填写本 Part 说明（题型要求、注意事项等）</p>',
+    defaultName: '<p><strong>Part 1</strong></p><p><em>Listen and answer questions 1–10.</em></p>',
     suggestQuestionType: null,
     tip: '听力共 4 个 Part，每 Part 10 题；音频请在「试卷列表」页对应试卷的「听力」按钮中上传'
   },
@@ -39,7 +39,7 @@ export const IELTS_SECTIONS = [
     theme: 'writing',
     desc: '共 2 个 Task，每 Task 固定 1 道作文题',
     defaultName: '<p><strong>Task 1 · Writing 写作</strong></p><p>请填写 Task 1 要求（如图表描述、字数限制等）</p>',
-    suggestQuestionType: 5,
+    suggestQuestionType: 7,
     tip: '写作共 Task 1、Task 2，各添加 1 道作文题，提交后由评阅老师批改'
   }
 ]
@@ -62,7 +62,7 @@ export function detectModuleKey (nameHtml) {
 export function listeningPartDefaultName (partIndex) {
   const start = partIndex * LISTENING_PART_SIZE + 1
   const end = start + LISTENING_PART_SIZE - 1
-  return `<p><strong>Part ${partIndex + 1} · Listening 听力</strong></p><p><em>Listen and answer questions ${start}–${end}.</em></p><p>请填写本 Part 说明（题型要求、注意事项等）</p>`
+  return `<p><strong>Part ${partIndex + 1}</strong></p><p><em>Listen and answer questions ${start}–${end}.</em></p>`
 }
 
 export function getListeningPartRange (partIndex) {
@@ -355,14 +355,118 @@ export function flattenModuleTitleItems (moduleItems) {
   return flat
 }
 
+/** 仅提交已添加题目的 Part，支持分步保存 */
+export function flattenModuleTitleItemsForSave (moduleItems) {
+  const flat = []
+  ;(moduleItems || []).forEach(module => {
+    ;(module.subsections || []).forEach(sub => {
+      const questionItems = sub.questionItems || []
+      if (!questionItems.length) return
+      const name = sub.name && stripHtml(sub.name) ? sub.name : '<p>—</p>'
+      flat.push({ name, questionItems })
+    })
+  })
+  return flat
+}
+
+export function validatePaperModulesForSave (moduleItems) {
+  const flat = flattenModuleTitleItemsForSave(moduleItems)
+  if (!flat.length) {
+    return [{ message: '请至少在某个 Part / Passage / Task 中添加题目后再保存' }]
+  }
+  return []
+}
+
 export const GAP_FILLING_TYPE = 4
+export const MULTIPLE_CHOICE_TYPE = 2
+export const PICK_TICK_TYPE = 5
+export const DRAG_MATCHING_TYPE = 6
+
+const CHOOSE_COUNT_WORDS = {
+  ONE: 1,
+  TWO: 2,
+  THREE: 3,
+  FOUR: 4,
+  FIVE: 5,
+  SIX: 6
+}
+
+function parseCorrectPrefixes (question) {
+  if (question.correctArray && question.correctArray.length) {
+    return question.correctArray.map(item => String(item).trim()).filter(Boolean)
+  }
+  if (question.correct) {
+    return String(question.correct).split(',').map(item => item.trim()).filter(Boolean)
+  }
+  return []
+}
+
+function inferMultipleChoiceSlotsFromTitle (question) {
+  const title = stripHtml(question.title || question.shortTitle || '')
+  if (!title) return 0
+
+  const chooseMatch = title.match(/\bchoose\s+(one|two|three|four|five|six|\d+)\b/i)
+  if (chooseMatch) {
+    const token = chooseMatch[1].toUpperCase()
+    if (CHOOSE_COUNT_WORDS[token]) return CHOOSE_COUNT_WORDS[token]
+    const num = parseInt(token, 10)
+    if (!Number.isNaN(num) && num > 0) return num
+  }
+
+  const rangeMatch = title.match(/(?:^|questions?\s+)(\d+)\s*[-–—]\s*(\d+)\b/i)
+  if (rangeMatch) {
+    const start = parseInt(rangeMatch[1], 10)
+    const end = parseInt(rangeMatch[2], 10)
+    if (!Number.isNaN(start) && !Number.isNaN(end) && end >= start) {
+      return end - start + 1
+    }
+  }
+
+  return 0
+}
+
+function countMultipleChoiceSlots (question) {
+  const correct = parseCorrectPrefixes(question)
+  const scoredItems = (question.items || []).filter(item => item.score != null && Number(item.score) > 0)
+  const fromTitle = inferMultipleChoiceSlotsFromTitle(question)
+  const score = Number(question.score)
+  const scoreSlots = !Number.isNaN(score) && score > 1 ? Math.round(score) : 0
+
+  const candidates = [correct.length, scoredItems.length, fromTitle, scoreSlots].filter(n => n > 0)
+  if (candidates.length > 0) {
+    return Math.max(...candidates)
+  }
+  return 1
+}
+
+export function normalizePaperQuestionItem (question) {
+  if (!question) return question
+  if ((!question.correctArray || !question.correctArray.length) && question.correct) {
+    question.correctArray = String(question.correct)
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean)
+  }
+  return question
+}
 
 export function countQuestionSlots (question) {
   if (!question) return 0
+  const type = Number(question.questionType)
+  if (type === MULTIPLE_CHOICE_TYPE || type === PICK_TICK_TYPE) {
+    return countMultipleChoiceSlots(question)
+  }
   if (Number(question.questionType) === GAP_FILLING_TYPE) {
     const items = question.items || question.questionItemObjects
     if (items && items.length > 0) {
       return items.length
+    }
+  }
+  if (Number(question.questionType) === DRAG_MATCHING_TYPE) {
+    const items = question.items || question.questionItemObjects || []
+    const prompts = items.filter(item => item.itemUuid === 'prompt')
+    if (prompts.length > 0) {
+      return prompts.length
     }
   }
   return 1

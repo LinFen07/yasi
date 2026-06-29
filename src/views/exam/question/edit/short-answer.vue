@@ -1,5 +1,6 @@
 <template>
   <div class="app-container">
+    <QuestionEditHeader :question-type="7" />
     <el-form :model="form" ref="form" label-width="100px" v-loading="formLoading" :rules="rules">
       <el-form-item label="年级：" prop="gradeLevel" required>
         <el-select v-model="form.gradeLevel" placeholder="年级" @change="levelChange">
@@ -12,11 +13,8 @@
             :label="item.name + ' ( ' + item.levelName + ' )'"></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="题目类型：" prop="topicType">
-        <el-select v-model="form.topicType" placeholder="题目类型">
-          <el-option v-for="item in queTypeEnum" :key="item.key" :value="item.key" :label="item.value"></el-option>
-        </el-select>
-      </el-form-item>
+
+      <QuestionPaperFields :form="form" />
 
       <!-- 题干富文本编辑器 -->
       <el-form-item label="题干：" prop="title" required>
@@ -43,14 +41,20 @@
       </el-form-item>
     </el-form>
 
-    <el-dialog :visible.sync="questionShow.dialog" style="width: 100%;height: 100%">
-      <QuestionShow :qType="questionShow.qType" :question="questionShow.question" :qLoading="questionShow.loading" />
-    </el-dialog>
+    <QuestionPreviewDialog
+      :visible.sync="questionShow.dialog"
+      :q-type="questionShow.qType"
+      :question="questionShow.question"
+      :q-loading="questionShow.loading"
+    />
   </div>
 </template>
 
 <script>
-import QuestionShow from '../components/Show'
+import QuestionPreviewDialog from '../components/QuestionPreviewDialog'
+import QuestionPaperFields from '../components/QuestionPaperFields'
+import QuestionEditHeader from '../components/QuestionEditHeader'
+import questionEditPage from '../mixins/questionEditPage'
 import { mapGetters, mapState, mapActions } from 'vuex'
 import questionApi from '@/api/question'
 import uploadApi from '@/api/upload'
@@ -58,22 +62,28 @@ import Quill from 'quill'
 import 'quill/dist/quill.snow.css'
 
 export default {
+  mixins: [questionEditPage],
   components: {
-    QuestionShow
+    QuestionPreviewDialog,
+    QuestionPaperFields,
+    QuestionEditHeader
   },
   data () {
     return {
       form: {
         id: null,
-        questionType: 5,
+        questionType: 7,
         gradeLevel: null,
         subjectId: null,
         topicType: 7,
+        paperName: '',
+        moduleType: null,
+        partNo: null,
         title: '',
         items: [],
         analyze: '',
         score: '',
-        difficult: 0
+        difficult: 1
       },
       subjectFilter: null,
       formLoading: false,
@@ -134,13 +144,13 @@ export default {
   created () {
     let id = this.$route.query.id
     let _this = this
-    this.initSubject(function () {
-      _this.subjectFilter = _this.subjects
-    })
+    this.bootstrapQuestionEdit()
     if (id && parseInt(id) !== 0) {
       _this.formLoading = true
       questionApi.select(id).then(re => {
+        if (!_this.ensureQuestionTypePage(re.response, 7)) return
         _this.form = re.response
+        _this.updateSubjectFilter()
         _this.$nextTick(() => {
           if (_this.titleQuill) {
             _this.titleQuill.root.innerHTML = _this.form.title || ''
@@ -236,6 +246,7 @@ export default {
         if (valid) {
           // 确保获取最新的编辑器内容
           this.form.title = this.titleQuill.root.innerHTML
+          this.finalizeQuestionForm(this.form)
 
           this.formLoading = true
           questionApi.edit(this.form).then(re => {
@@ -262,15 +273,18 @@ export default {
       this.$refs['form'].resetFields()
       this.form = {
         id: null,
-        questionType: 5,
+        questionType: 7,
         gradeLevel: null,
         subjectId: null,
-        topicType: null,
+        topicType: 7,
+        paperName: '',
+        moduleType: null,
+        partNo: null,
         title: '',
         items: [],
         analyze: '',
         score: '',
-        difficult: 0
+        difficult: 1
       }
       this.form.id = lastId
 
@@ -278,11 +292,6 @@ export default {
       if (this.titleQuill) {
         this.titleQuill.root.innerHTML = ''
       }
-    },
-
-    levelChange () {
-      this.form.subjectId = null
-      this.subjectFilter = this.subjects.filter(data => data.level === this.form.gradeLevel)
     },
 
     showQuestion () {
@@ -308,8 +317,7 @@ export default {
     ...mapGetters('enumItem', ['enumFormat']),
     ...mapState('enumItem', {
       questionTypeEnum: state => state.exam.question.queTypeEnum,
-      levelEnum: state => state.user.levelEnum,
-      queTypeEnum: state => state.exam.question.queTypeEnum
+      levelEnum: state => state.user.levelEnum
     }),
     ...mapState('exam', { subjects: state => state.subjects })
   },

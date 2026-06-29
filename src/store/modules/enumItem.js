@@ -17,15 +17,15 @@ const state = {
         moduleTypeEnum: [{ key: 1, value: '听力' }, { key: 2, value: '阅读' }, { key: 3, value: '写作' }]
       },
     question: {
-      typeEnum: [{ key: 1, value: '单选题' }, { key: 2, value: '多选题' }, { key: 3, value: '判断题' }, { key: 4, value: '填空题' }, { key: 5, value: '作文题' }],
+      typeEnum: [{ key: 1, value: '单选题' }, { key: 2, value: '多选题' }, { key: 3, value: '判断题' }, { key: 4, value: '填空题' }, { key: 5, value: '打勾题' }, { key: 6, value: '拖拽配对' }, { key: 7, value: '作文题' }],
       queTypeEnum: [{ key: 1, value: '单选题' }, { key: 2, value: '多选题' }, { key: 3, value: '判断题' }, { key: 4, value: '填空题' }, { key: 5, value: '打勾题' }, { key: 6, value: '拖拽配对' }, { key: 7, value: '作文题' }],
       editUrlEnum: [{ key: 1, value: '/exam/question/edit/singleChoice', name: '单选题' },
         { key: 2, value: '/exam/question/edit/multipleChoice', name: '多选题' },
         { key: 3, value: '/exam/question/edit/trueFalse', name: '判断题' },
         { key: 4, value: '/exam/question/edit/gapFilling', name: '填空题' },
-        // { key: 5, value: '/exam/question/edit/pick', name: '打勾题' },
-        // { key: 6, value: '/exam/question/edit/drag', name: '拖拽配对题' },
-        { key: 5, value: '/exam/question/edit/shortAnswer', name: '作文题' }]
+        { key: 5, value: '/exam/question/edit/pick', name: '打勾题' },
+        { key: 6, value: '/exam/question/edit/drag', name: '拖拽配对' },
+        { key: 7, value: '/exam/question/edit/shortAnswer', name: '作文题' }]
     }
   }
 }
