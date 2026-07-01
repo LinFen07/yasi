@@ -1,0 +1,42 @@
+.evaluation-panel {
+  &__card {
+    .ant-card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+
+  &__original {
+    strong {
+      color: #374151;
+    }
+  }
+
+  &__original-content {
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    background: #fafafa;
+    min-height: 32px;
+    max-height: 150px;
+    overflow-y: auto;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  &__editor {
+    height: 280px;
+    width: 100%;
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+  }
+}

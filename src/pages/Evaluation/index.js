@@ -119,8 +119,8 @@ const Evaluation = () => {
       return;
     }
     const score = values.score1 ?? values.score2 ?? values.score;
-    const review = values.comment ?? values.review ?? '';
-    const editing = values.isEditingMode ?? false;
+    const review = values.comment ?? values.review ?? editorContent ?? '';
+    const editing = isEditingMode;
     if (!editing && (score === undefined || score === null || score === '')) {
       message.warning('分数不能为空');
       return;
@@ -216,29 +216,19 @@ const Evaluation = () => {
             >
               返回列表
             </Button>
-            <div className="evaluation-page__grade-panel">
-              <EvaluationPanel
-                form={form}
-                editorContent={editorContent}
-                setEditorContent={setEditorContent}
-                onSubmit={handleGradeSubmit}
-                onCancel={() => setViewMode('list')}
-                isEditingMode={isEditingMode}
-                paperData={currentPaper}
-                answers={currentPaper.questions}
-              />
-            </div>
-            <div className="evaluation-page__grade-panel">
-              <ScoringPanel
-                form={form}
-                editorContent={editorContent}
-                setEditorContent={setEditorContent}
-                onSubmit={handleGradeSubmit}
-                onCancel={() => setViewMode('list')}
-                isEditingMode={isEditingMode}
-                paperData={currentPaper}
-              />
-            </div>
+            <Form form={form} onFinish={handleGradeSubmit} layout="vertical">
+              <div className="evaluation-page__grade-panel">
+                <ScoringPanel paperData={currentPaper} />
+              </div>
+              <div className="evaluation-page__grade-panel">
+                <EvaluationPanel
+                  editorContent={editorContent}
+                  setEditorContent={setEditorContent}
+                  isEditingMode={isEditingMode}
+                  paperData={currentPaper}
+                />
+              </div>
+            </Form>
           </div>
         )}
       </div>
