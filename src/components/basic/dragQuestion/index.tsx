@@ -125,20 +125,21 @@ function matchSavedOption(savedAnswer: string, options: DragOption[]) {
   );
 }
 
-function getSavedDragAnswer(globalIndex: number, options: DragOption[]) {
-  const completedContent = stores.AnswerStore.completedAnswers[globalIndex]?.content?.trim();
-  if (completedContent) {
-    const matched = matchSavedOption(completedContent, options);
-    if (matched) return matched.option;
+function getSavedDragAnswer(globalIndex: number, options: DragOption[], questionId: number) {
+  const completed = stores.AnswerStore.completedAnswers[globalIndex];
+  if (
+    !completed ||
+    typeof completed !== 'object' ||
+    completed.questionId !== questionId
+  ) {
+    return '';
   }
 
-  const legacyAnswer = stores.AnswerStore.dragAnswers[globalIndex]?.trim();
-  if (legacyAnswer) {
-    const matched = matchSavedOption(legacyAnswer, options);
-    if (matched) return matched.option;
-  }
+  const completedContent = completed.content?.trim();
+  if (!completedContent) return '';
 
-  return '';
+  const matched = matchSavedOption(completedContent, options);
+  return matched ? matched.option : '';
 }
 
 const Option = ({ option, index }: { option: string; index: number }) => {
@@ -201,7 +202,7 @@ export default function DragQuestion(questionArr: ExamType & { exam?: Exam[] }) 
     const usedOptionIndexes = new Set<number>();
 
     Questions.forEach((_, questionIndex) => {
-      const savedAnswer = getSavedDragAnswer(getGlobalIndex(questionIndex), Options);
+      const savedAnswer = getSavedDragAnswer(getGlobalIndex(questionIndex), Options, questionArr.id);
       if (!savedAnswer) return;
 
       const matched = matchSavedOption(savedAnswer, Options);

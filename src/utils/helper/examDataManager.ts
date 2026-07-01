@@ -28,9 +28,12 @@ export const prepareExamModuleStart = (
 
   localStorage.removeItem('examPageState');
 
+  if (moduleType === 'listen' || moduleType === 'read') {
+    stores.AnswerStore.dragAnswers = Array(40).fill('');
+  }
+
   if (moduleType === 'listen') {
     localStorage.removeItem('listen_state');
-    stores.AnswerStore.dragAnswers = Array(40).fill('');
     stores.AnswerStore.tickAnswers = [];
   }
 
