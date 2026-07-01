@@ -79,7 +79,7 @@ const Evaluation = () => {
           const transformedPapers = result.dataList.map(item => ({
             id: item.id,
             studentId: item.studentId,
-            studentName: item.realName || item.studentName || '未知',
+            studentName: item.userName || item.realName || item.studentName || '未知',
             paperId: item.paperId,
             paperName: item.paperTitle || '无标题',
             questionId: item.questionId,

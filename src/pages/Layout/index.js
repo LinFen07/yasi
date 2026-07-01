@@ -36,7 +36,7 @@ const GeekLayout = () => {
     const dispatch = useDispatch();
     const [collapsed, setCollapsed] = useState(false);
     const userInfo = useSelector((state) => state.user.userInfo);
-    const displayName = userInfo?.realName || userInfo?.userName || '用户';
+    const displayName = userInfo?.userName || userInfo?.realName || '用户';
 
     // 初始化时检查保存的路由
     useEffect(() => {

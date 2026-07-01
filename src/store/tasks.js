@@ -346,8 +346,9 @@ const getEssayListFromServer = (userId, pageNow = 1, pageSize = 10, filters = {}
         const dataList = items.map(item => ({
           id: item.id,
           studentId: item.studentId,
-          studentName: item.realName || '',
+          studentName: item.userName || item.realName || '',
           realName: item.realName || '',
+          userName: item.userName || '',
           paperId: item.paperId,
           paperTitle: item.paperTitle || '无标题',
           questionId: item.questionId,
