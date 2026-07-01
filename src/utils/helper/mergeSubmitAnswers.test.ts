@@ -1,4 +1,4 @@
-import { mergeSubmitAnswerItems } from './mergeSubmitAnswers'
+import { mergeSubmitAnswerItems, collectListenReadSubmitItems } from './mergeSubmitAnswers'
 
 describe('mergeSubmitAnswerItems', () => {
   it('keeps separate rows per prefix instead of merging into one comma string', () => {
@@ -28,5 +28,16 @@ describe('mergeSubmitAnswerItems', () => {
   it('defaults missing prefix to 1', () => {
     const merged = mergeSubmitAnswerItems([{ questionId: 5, content: 'x' }])
     expect(merged[0].prefix).toBe('1')
+  })
+
+  it('collectListenReadSubmitItems merges localStorage drafts', () => {
+    const key = 'answer-input-99-1'
+    localStorage.setItem(key, 'draft-answer')
+    const items = collectListenReadSubmitItems(
+      [{ questionId: 10, prefix: '1', content: '' }],
+      99,
+    )
+    expect(items).toEqual([{ questionId: 10, prefix: '1', content: 'draft-answer' }])
+    localStorage.removeItem(key)
   })
 })

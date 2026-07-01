@@ -1,266 +1,455 @@
-/**
- * 成绩报告：答题记录展开、正确性判断、模块统计（与前端 report 逻辑对齐，供测试与页面共用）
- */
-
 export type ReportRow = {
   key: string;
-  module: string;
   moduleNumber: number;
-  questionType: number | null;
-  prefix: string;
+  module: '听力' | '阅读';
+  answer: string;
+  isCorrect: number;
   studentAnswer: string;
-  correctAnswer: string;
-  isCorrect: boolean;
-  apiScore: number;
+  score: number;
 };
 
-const LISTENING_TYPES = new Set([1, 2, 4, 6])
-const READING_TYPES = new Set([1, 2, 4, 6])
+const LISTEN_QUESTION_COUNT = 40;
+const READ_QUESTION_COUNT = 40;
+const DUAL_SELECT_TYPES = new Set([2, 5]);
+const MULTI_SLOT_TYPES = new Set([4, 6]); // 填空、拖拽：一题多空
 
-export const DRAG_OPTIONS: Array<[string, string]> = [
-  ['A', 'A'],
-  ['B', 'B'],
-  ['C', 'C'],
-  ['D', 'D'],
-  ['E', 'E'],
-  ['F', 'F'],
-  ['G', 'G'],
-  ['H', 'H'],
-  ['I', 'I'],
-  ['J', 'J'],
-  ['K', 'K'],
-  ['L', 'L'],
-  ['M', 'M'],
-  ['N', 'N'],
-  ['O', 'O'],
-  ['P', 'P'],
-  ['Q', 'Q'],
-  ['R', 'R'],
-  ['S', 'S'],
-  ['T', 'T'],
-  ['U', 'U'],
-  ['V', 'V'],
-  ['W', 'W'],
-  ['X', 'X'],
-  ['Y', 'Y'],
-  ['Z', 'Z'],
-]
-
-export const LISTENING_DRAG_OPTIONS = DRAG_OPTIONS.slice(0, 7)
-export const READING_DRAG_OPTIONS = DRAG_OPTIONS
-
-export const TABLE_ROW_PREFIX_COUNTS: Record<number, number> = {
-  1: 6,
-  2: 7,
-  3: 7,
-  4: 6,
-  5: 6,
-  6: 7,
-  7: 7,
-  8: 6,
-  9: 7,
-  10: 6,
+/** API 分数为十分位（5 → 0.5 分） */
+function apiScore(value: unknown) {
+  const n = Number(value);
+  if (!n) return 0;
+  return n / 10;
 }
 
-function normalizeAnswer(value: string | null | undefined): string {
-  if (value == null) return ''
-  return String(value).replace(/\s+/g, ' ').trim().toLowerCase()
+function normalizeAnswer(value: unknown) {
+  if (value === null || value === undefined) return '';
+  return String(value).trim();
 }
 
-function splitByComma(value: string): string[] {
-  if (!value || !String(value).trim()) return []
-  return String(value)
-    .split(',')
-    .map((p) => p.trim())
-    .filter(Boolean)
+function splitOptions(value: unknown): string[] {
+  const normalized = normalizeAnswer(value);
+  if (!normalized) return [];
+  return normalized
+    .split(/[,，]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
-function splitMergedTableContent(content: string, rowIndex: number): string[] {
-  const parts = splitByComma(content)
-  if (!parts.length) return []
-  const expected = TABLE_ROW_PREFIX_COUNTS[rowIndex]
-  if (expected == null || parts.length <= expected) return parts
-  const head = parts.slice(0, expected - 1)
-  const tail = parts.slice(expected - 1).join(',')
-  return [...head, tail]
+function pushSubItem(
+  allSubItems: any[],
+  item: any,
+  overrides: Partial<any> & { subKey: string }
+) {
+  allSubItems.push({
+    ...item,
+    studentAnswer: normalizeAnswer(overrides.studentAnswer ?? item.studentAnswer) || '未作答',
+    correctAnswer: overrides.correctAnswer ?? item.correctAnswer,
+    isCorrect: overrides.isCorrect ?? item.isCorrect,
+    score: overrides.score ?? apiScore(item.score) ?? 0,
+    subKey: overrides.subKey,
+  });
 }
 
-function expandMultiSlotGroup(group: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
-  if (group.length === 0) return group
+function isDualSelectQuestion(item: any, group: any[]) {
+  if (DUAL_SELECT_TYPES.has(Number(item.questionType))) return true;
+  return collectCorrectOptions(group, item).length > 1;
+}
 
-  const first = group[0]
-  const qtype = first.questionType as number | undefined
+/** 从分组记录中汇总考生选项（逗号合并 + 多条 prefix 记录） */
+function collectStudentOptions(group: any[]): string[] {
+  const options: string[] = [];
+  for (const row of group) {
+    splitOptions(row.studentAnswer).forEach((opt) => {
+      if (opt && !options.includes(opt)) options.push(opt);
+    });
+  }
+  return options;
+}
 
-  if (group.length === 1 && (qtype === 1 || qtype === 2)) {
-    const parts = splitByComma(String(first.content ?? ''))
-    if (parts.length > 1) {
-      return parts.map((part, i) => ({ ...first, prefix: String(i + 1), content: part }))
+function collectCorrectOptions(group: any[], item: any): string[] {
+  if (group.length >= 2) {
+    const perRow = group
+      .map((row) => normalizeAnswer(row.correctAnswer))
+      .filter(Boolean);
+    const allSingleLetter = perRow.every((ans) => ans.length === 1 && !ans.includes(','));
+    if (allSingleLetter && perRow.length > 1) {
+      return perRow;
     }
-    return group
   }
-
-  if (group.length <= 1) return group
-
-  if (qtype === 4 || qtype === 6) {
-    const expanded: Array<Record<string, unknown>> = []
-    for (const item of group) {
-      const prefix = String(item.prefix ?? '1')
-      let rowIndex = 1
-      try {
-        rowIndex = parseInt(prefix, 10)
-      } catch {
-        rowIndex = 1
-      }
-      const parts = splitMergedTableContent(String(item.content ?? ''), rowIndex)
-      parts.forEach((part, i) => {
-        expanded.push({ ...item, prefix: String(i + 1), content: part })
-      })
-    }
-    return expanded.length ? expanded : group
-  }
-
-  if (qtype === 1 || qtype === 2) {
-    const expanded: Array<Record<string, unknown>> = []
-    for (const item of group) {
-      const parts = splitByComma(String(item.content ?? ''))
-      parts.forEach((part, i) => {
-        expanded.push({ ...item, prefix: String(i + 1), content: part })
-      })
-    }
-    return expanded.length ? expanded : group
-  }
-
-  return group
+  return splitOptions(item.correctAnswer);
 }
 
-function splitLegacyMergedFirstRow(group: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
-  if (group.length <= 1) return group
-  const first = group[0]
-  const content = String(first.content ?? '').trim()
-  if (!content || !content.includes(',')) return group
-  const restEmpty = group.slice(1).every((it) => !String(it.content ?? '').trim())
-  if (!restEmpty) return group
-  const parts = splitByComma(content)
-  if (parts.length !== group.length) return group
-  return group.map((it, idx) => ({ ...it, content: parts[idx] }))
+function resolveSlotScore(group: any[], item: any, correctOptions: string[], isCorrect: number, optIdx: number) {
+  if (isCorrect !== 1) return 0;
+  const prefixRow = group[optIdx];
+  if (prefixRow && Number(prefixRow.score) > 0) {
+    return apiScore(prefixRow.score);
+  }
+  const totalScore =
+    group.reduce((sum, row) => sum + apiScore(row.score), 0) || apiScore(item.score);
+  return correctOptions.length ? totalScore / correctOptions.length : totalScore;
 }
 
-export function expandAnswerItemsForReport(items: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
-  if (!items?.length) return []
+/** 双选题：按选项集合匹配（不依赖顺序） */
+function expandDualSelect(item: any, group: any[]) {
+  const studentOptions = collectStudentOptions(group);
+  const correctOptions = collectCorrectOptions(group, item);
 
-  const byQid = new Map<unknown, Array<Record<string, unknown>>>()
-  for (const item of items) {
-    const qid = item.questionId
-    if (!byQid.has(qid)) byQid.set(qid, [])
-    byQid.get(qid)!.push(item)
+  if (correctOptions.length <= 1) {
+    const studentAnswer = studentOptions[0] || normalizeAnswer(item.studentAnswer) || '未作答';
+    const correctAnswer = correctOptions[0] || normalizeAnswer(item.correctAnswer);
+    const isCorrect =
+      studentAnswer !== '未作答' &&
+      studentAnswer.toUpperCase() === correctAnswer.toUpperCase()
+        ? 1
+        : 0;
+    return [
+      {
+        ...item,
+        studentAnswer,
+        correctAnswer,
+        isCorrect,
+        score: isCorrect === 1 ? apiScore(item.score) : 0,
+        subKey: `${item.questionId}-${item.prefix || ''}`,
+      },
+    ];
   }
 
-  const expanded: Array<Record<string, unknown>> = []
-  const sortedKeys = [...byQid.keys()].sort((a, b) => {
-    if (a == null && b == null) return 0
-    if (a == null) return 1
-    if (b == null) return -1
-    return Number(a) - Number(b)
-  })
+  const usedStudentIdx = new Set<number>();
 
-  for (const qid of sortedKeys) {
-    const group = [...byQid.get(qid)!]
-    group.sort((a, b) => {
-      const pa = parseInt(String(a.prefix ?? 0), 10)
-      const pb = parseInt(String(b.prefix ?? 0), 10)
-      return (Number.isNaN(pa) ? 0 : pa) - (Number.isNaN(pb) ? 0 : pb)
-    })
-    let processed = splitLegacyMergedFirstRow(group)
-    processed = expandMultiSlotGroup(processed)
-    expanded.push(...processed)
-  }
+  return correctOptions.map((correctOpt, optIdx) => {
+    let studentOpt = '未作答';
+    let isOptionCorrect = 0;
 
-  return expanded
-}
-
-function isCorrectStudentAnswer(student: string, correct: string, qtype: number | null | undefined): boolean {
-  const s = normalizeAnswer(student)
-  const c = normalizeAnswer(correct)
-  if (!s && !c) return true
-  if (qtype === 1 || qtype === 2) {
-    const ss = new Set(splitByComma(s))
-    const cs = new Set(splitByComma(c))
-    if (ss.size !== cs.size) return false
-    for (const x of ss) {
-      if (!cs.has(x)) return false
-    }
-    return true
-  }
-  return s === c
-}
-
-export function processAnswerItems(items: Array<Record<string, unknown>>): ReportRow[] {
-  const rows: ReportRow[] = []
-  let listenNum = 0
-  let readNum = 0
-
-  for (const item of expandAnswerItemsForReport(items)) {
-    const qtype = item.questionType as number | null | undefined
-    let module = '未知'
-    if (qtype != null && LISTENING_TYPES.has(qtype)) module = '听力'
-    else if (qtype != null && READING_TYPES.has(qtype)) module = '阅读'
-
-    let moduleNumber: number
-    if (module === '听力') {
-      listenNum += 1
-      moduleNumber = listenNum
-    } else if (module === '阅读') {
-      readNum += 1
-      moduleNumber = readNum
+    const matchIdx = studentOptions.findIndex(
+      (opt, idx) =>
+        opt.toUpperCase() === correctOpt.toUpperCase() && !usedStudentIdx.has(idx)
+    );
+    if (matchIdx >= 0) {
+      usedStudentIdx.add(matchIdx);
+      studentOpt = correctOpt;
+      isOptionCorrect = 1;
     } else {
-      moduleNumber = rows.length + 1
+      const wrongIdx = studentOptions.findIndex(
+        (opt, idx) => !usedStudentIdx.has(idx) && !correctOptions.includes(opt)
+      );
+      if (wrongIdx >= 0) {
+        usedStudentIdx.add(wrongIdx);
+        studentOpt = studentOptions[wrongIdx];
+      } else {
+        const leftoverIdx = studentOptions.findIndex((_, idx) => !usedStudentIdx.has(idx));
+        if (leftoverIdx >= 0) {
+          usedStudentIdx.add(leftoverIdx);
+          studentOpt = studentOptions[leftoverIdx];
+          isOptionCorrect = studentOpt === correctOpt ? 1 : 0;
+        }
+      }
     }
 
-    const studentRaw = String(item.content ?? '')
-    const correctRaw = String(item.correctAnswer ?? item.correct_answer ?? '')
-    const isCorrect = isCorrectStudentAnswer(studentRaw, correctRaw, qtype ?? null)
-    const scoreRaw = item.score
-    let apiScore: number
-    try {
-      apiScore = scoreRaw != null ? Number(scoreRaw) / 10 : isCorrect ? 1 : 0
-    } catch {
-      apiScore = isCorrect ? 1 : 0
-    }
+    const prefix = group[optIdx]?.prefix ?? `${optIdx + 1}`;
 
-    rows.push({
-      key: `${item.questionId}-${item.prefix ?? ''}-${moduleNumber}`,
-      module,
-      moduleNumber,
-      questionType: qtype ?? null,
-      prefix: String(item.prefix ?? ''),
-      studentAnswer: studentRaw || '未作答',
-      correctAnswer: correctRaw || '—',
+    return {
+      ...item,
+      studentAnswer: studentOpt,
+      correctAnswer: correctOpt,
+      isCorrect: isOptionCorrect,
+      score: resolveSlotScore(group, item, correctOptions, isOptionCorrect, optIdx),
+      subKey: `${item.questionId}-${prefix}-${optIdx}`,
+    };
+  });
+}
+
+/** prefix 分组：每条记录对应一个空，按内容判对错 */
+function expandDualSelectPrefixGroup(group: any[], correctOptions: string[]) {
+  return group.map((subItem, idx) => {
+    const studentAnswer = normalizeAnswer(subItem.studentAnswer);
+    const correctAnswer =
+      normalizeAnswer(subItem.correctAnswer) || correctOptions[idx] || '';
+    const isCorrect =
+      studentAnswer &&
+      correctAnswer &&
+      studentAnswer.toUpperCase() === correctAnswer.toUpperCase()
+        ? 1
+        : 0;
+
+    return {
+      ...subItem,
+      studentAnswer: studentAnswer || '未作答',
+      correctAnswer,
       isCorrect,
-      apiScore,
-    })
-  }
-
-  return rows
+      score: resolveSlotScore(group, subItem, correctOptions, isCorrect, idx),
+      subKey: `${subItem.questionId}-${subItem.prefix || idx}`,
+    };
+  });
 }
 
-export function computeModuleStats(rows: ReportRow[]): {
-  listen: { total: number; correct: number }
-  read: { total: number; correct: number }
-} {
-  const listenRows = rows.filter((r) => r.module === '听力')
-  const readRows = rows.filter((r) => r.module === '阅读')
+function comparePrefix(a: any, b: any) {
+  const pa = a.prefix !== undefined && a.prefix !== null && a.prefix !== '' ? Number(a.prefix) : 0;
+  const pb = b.prefix !== undefined && b.prefix !== null && b.prefix !== '' ? Number(b.prefix) : 0;
+  return pa - pb;
+}
+
+/** 填空/拖拽：按 prefix 每空一行；兼容旧数据把多空答案合并到第一行的情况 */
+function expandMultiSlotGroup(group: any[]) {
+  const sorted = [...group].sort(comparePrefix);
+  const firstStudent = normalizeAnswer(sorted[0]?.studentAnswer);
+  const restEmpty = sorted.slice(1).every((row) => !normalizeAnswer(row.studentAnswer));
+  const commaParts = firstStudent.includes(',') ? splitOptions(firstStudent) : [];
+
+  if (restEmpty && commaParts.length > 1) {
+    return sorted.map((row, idx) => {
+      const studentAnswer = commaParts[idx] || '未作答';
+      const correctAnswer = normalizeAnswer(row.correctAnswer);
+      const isCorrect =
+        row.isCorrect !== undefined && row.isCorrect !== null
+          ? Number(row.isCorrect)
+          : studentAnswer !== '未作答' &&
+              correctAnswer &&
+              studentAnswer.toUpperCase() === correctAnswer.toUpperCase()
+            ? 1
+            : 0;
+
+      return {
+        ...row,
+        studentAnswer,
+        correctAnswer,
+        isCorrect,
+        score: isCorrect === 1 ? apiScore(row.score) : 0,
+        subKey: `${row.questionId}-${row.prefix ?? idx}`,
+      };
+    });
+  }
+
+  return sorted.map((row, idx) => {
+    const studentAnswer = normalizeAnswer(row.studentAnswer);
+    const correctAnswer = normalizeAnswer(row.correctAnswer);
+    const isCorrect =
+      row.isCorrect !== undefined && row.isCorrect !== null
+        ? Number(row.isCorrect)
+        : studentAnswer &&
+            correctAnswer &&
+            studentAnswer.toUpperCase() === correctAnswer.toUpperCase()
+          ? 1
+          : 0;
+
+    return {
+      ...row,
+      studentAnswer: studentAnswer || '未作答',
+      correctAnswer,
+      isCorrect,
+      score: isCorrect === 1 ? apiScore(row.score) : 0,
+      subKey: `${row.questionId}-${row.prefix ?? idx}`,
+    };
+  });
+}
+
+/** 仅一条记录但 studentAnswer 含多个逗号分隔值（旧版错误合并提交） */
+function expandSingleMergedGapRow(item: any) {
+  const studentParts = splitOptions(item.studentAnswer);
+  const correctParts = splitOptions(item.correctAnswer);
+  if (studentParts.length <= 1 && correctParts.length <= 1) {
+    return [
+      {
+        ...item,
+        studentAnswer: studentParts[0] || '未作答',
+        correctAnswer: correctParts[0] || normalizeAnswer(item.correctAnswer),
+        isCorrect: Number(item.isCorrect) || 0,
+        score: apiScore(item.score),
+        subKey: `${item.questionId}-${item.prefix || ''}`,
+      },
+    ];
+  }
+  const slotCount = Math.max(studentParts.length, correctParts.length, 1);
+  return Array.from({ length: slotCount }, (_, idx) => {
+    const studentAnswer = studentParts[idx] || '未作答';
+    const correctAnswer = correctParts[idx] || '';
+    const isCorrect =
+      studentAnswer !== '未作答' &&
+      correctAnswer &&
+      studentAnswer.toUpperCase() === correctAnswer.toUpperCase()
+        ? 1
+        : 0;
+    return {
+      ...item,
+      studentAnswer,
+      correctAnswer,
+      isCorrect,
+      score: isCorrect === 1 ? apiScore(item.score) / slotCount : 0,
+      subKey: `${item.questionId}-${item.prefix || ''}-${idx}`,
+    };
+  });
+}
+
+function shouldUsePrefixGroupExpand(group: any[], correctOptions: string[]) {
+  if (group.length < 2 || group.length < correctOptions.length) return false;
+  const hasPrefix = group.every(
+    (row) => row.prefix !== undefined && row.prefix !== null && String(row.prefix).trim() !== ''
+  );
+  if (!hasPrefix) return false;
+  const perRowStudent = group.map((row) => normalizeAnswer(row.studentAnswer)).filter(Boolean);
+  const perRowCorrect = group.map((row) => normalizeAnswer(row.correctAnswer)).filter(Boolean);
+  return perRowStudent.length === group.length && perRowCorrect.length >= correctOptions.length;
+}
+
+function moduleFromItem(item: any, fallback: '听力' | '阅读'): '听力' | '阅读' {
+  const mt = Number(item.moduleType);
+  if (mt === 1) return '听力';
+  if (mt === 2) return '阅读';
+  return fallback;
+}
+
+export function processAnswerItems(items: any[]): ReportRow[] {
+  if (!items.length) return [];
+
+  const groupedByQuestion: Record<number, any[]> = {};
+  for (const item of items) {
+    if (!groupedByQuestion[item.questionId]) groupedByQuestion[item.questionId] = [];
+    groupedByQuestion[item.questionId].push(item);
+  }
+  for (const qid in groupedByQuestion) {
+    groupedByQuestion[qid].sort((a, b) => {
+      const pa = a.prefix !== undefined && a.prefix !== null && a.prefix !== '' ? Number(a.prefix) : 0;
+      const pb = b.prefix !== undefined && b.prefix !== null && b.prefix !== '' ? Number(b.prefix) : 0;
+      return pa - pb;
+    });
+  }
+
+  const seenQids = new Set<number>();
+  const sortedItems: any[] = [];
+  for (const item of items) {
+    if (!seenQids.has(item.questionId)) {
+      seenQids.add(item.questionId);
+      sortedItems.push(...(groupedByQuestion[item.questionId] || []));
+    }
+  }
+
+  const allSubItems: any[] = [];
+  const processedQuestionIds = new Set<number>();
+
+  for (const item of sortedItems) {
+    const group = groupedByQuestion[item.questionId] || [item];
+
+    if (processedQuestionIds.has(item.questionId)) continue;
+    processedQuestionIds.add(item.questionId);
+
+    const qType = Number(item.questionType);
+
+    if (MULTI_SLOT_TYPES.has(qType)) {
+      if (group.length > 1) {
+        allSubItems.push(...expandMultiSlotGroup(group));
+      } else {
+        allSubItems.push(...expandSingleMergedGapRow(item));
+      }
+      continue;
+    }
+
+    if (isDualSelectQuestion(item, group)) {
+      const correctOptions = collectCorrectOptions(group, item);
+
+      if (shouldUsePrefixGroupExpand(group, correctOptions)) {
+        allSubItems.push(...expandDualSelectPrefixGroup(group, correctOptions));
+      } else {
+        allSubItems.push(...expandDualSelect(item, group));
+      }
+      continue;
+    }
+
+    for (const row of group) {
+      pushSubItem(allSubItems, row, {
+        subKey: `${row.questionId}-${row.prefix || ''}`,
+        isCorrect:
+          normalizeAnswer(row.studentAnswer) &&
+          normalizeAnswer(row.correctAnswer) &&
+          normalizeAnswer(row.studentAnswer).toUpperCase() ===
+            normalizeAnswer(row.correctAnswer).toUpperCase()
+            ? 1
+            : Number(row.isCorrect) || 0,
+      });
+    }
+  }
+
+  const hasModuleType = allSubItems.some((item) => Number(item.moduleType) === 1 || Number(item.moduleType) === 2);
+
+  const finalData: ReportRow[] = [];
+  const moduleCounter = { 听力: 0, 阅读: 0 };
+
+  if (hasModuleType) {
+    const listenItems = allSubItems.filter((item) => Number(item.moduleType) === 1);
+    const readItems = allSubItems.filter((item) => Number(item.moduleType) === 2);
+
+    for (const item of listenItems) {
+      moduleCounter['听力']++;
+      finalData.push({
+        key: `${item.subKey}-${moduleCounter['听力']}`,
+        moduleNumber: moduleCounter['听力'],
+        module: '听力',
+        answer: item.correctAnswer,
+        isCorrect: item.isCorrect,
+        studentAnswer: item.studentAnswer,
+        score: item.score,
+      });
+    }
+    for (const item of readItems) {
+      moduleCounter['阅读']++;
+      finalData.push({
+        key: `${item.subKey}-${moduleCounter['阅读']}`,
+        moduleNumber: moduleCounter['阅读'],
+        module: '阅读',
+        answer: item.correctAnswer,
+        isCorrect: item.isCorrect,
+        studentAnswer: item.studentAnswer,
+        score: item.score,
+      });
+    }
+    return finalData;
+  }
+
+  const listenReadItems = allSubItems.slice(0, LISTEN_QUESTION_COUNT + READ_QUESTION_COUNT);
+
+  listenReadItems.forEach((item, idx) => {
+    const fallback: '听力' | '阅读' = idx < LISTEN_QUESTION_COUNT ? '听力' : '阅读';
+    const module = moduleFromItem(item, fallback);
+    moduleCounter[module]++;
+    finalData.push({
+      key: `${item.subKey}-${moduleCounter[module]}`,
+      moduleNumber: moduleCounter[module],
+      module,
+      answer: item.correctAnswer,
+      isCorrect: item.isCorrect,
+      studentAnswer: item.studentAnswer,
+      score: item.score,
+    });
+  });
+
+  return finalData;
+}
+
+export function computeModuleStats(rows: ReportRow[], module: '听力' | '阅读') {
+  const filtered = rows.filter((row) => row.module === module);
+  let correctCount = 0;
+  let wrongCount = 0;
+  let noAnswer = 0;
+  let totalScore = 0;
+
+  filtered.forEach((item) => {
+    if (item.studentAnswer === '未作答') {
+      noAnswer++;
+    } else if (item.isCorrect === 1) {
+      correctCount++;
+      totalScore += Number(item.score) || 0;
+    } else {
+      wrongCount++;
+    }
+  });
+
   return {
-    listen: {
-      total: listenRows.length,
-      correct: listenRows.filter((r) => r.isCorrect).length,
-    },
-    read: {
-      total: readRows.length,
-      correct: readRows.filter((r) => r.isCorrect).length,
-    },
-  }
-}
-
-export function getDragOptionsForModule(module: string): Array<[string, string]> {
-  return module === 'listen' ? LISTENING_DRAG_OPTIONS : READING_DRAG_OPTIONS
+    total: filtered.length,
+    correctCount,
+    wrongCount,
+    noAnswer,
+    totalScore,
+    hasData: filtered.some(
+      (item) => item.studentAnswer && item.studentAnswer !== '未作答',
+    ),
+    hasScore: filtered.some((item) => Number(item.score) > 0),
+  };
 }

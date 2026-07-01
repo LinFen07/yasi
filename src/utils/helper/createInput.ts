@@ -85,6 +85,9 @@ export function MyInput(index: number, span: any, prevCount: number, questionArr
       if (persistedValue) {
         input.value = persistedValue;
         placeholder.style.display = 'none';
+        const correctIndex = questionArr.correctArray.length - (len - i);
+        const prefix = `${correctIndex + 1}`;
+        submitStudentBlankAnswer(questionArr, i, prevCount, persistedValue, correctIndex, prefix);
       }
     }
 

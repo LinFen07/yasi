@@ -9,7 +9,7 @@ import stores from '@/stores';
 import { requestConcurrency } from '@/utils/requestConcurrency';
 import { submitStudentWritteAnswer, buildWritingSubmitPayload } from '@/utils/browser/submitAnswer';
 import { clearModuleData, safeSubmitAndClear, setModuleStatus } from '@/utils/helper/examDataManager';
-import { mergeSubmitAnswerItems } from '@/utils/helper/mergeSubmitAnswers';
+import { collectListenReadSubmitItems } from '@/utils/helper/mergeSubmitAnswers';
 import { persistReportPaperId } from '@/utils/helper/reportPaperId';
 import { judgingProblem, submitAnswerBatch } from '@/api/studentAnswer';
 import questions from '@/components/basic/writteQuestions';
@@ -143,23 +143,9 @@ const HeadTip = forwardRef((props: propType) => {
 
     if (type === 'listen') {
       // 使用安全提交和清理流程 
-      const listenData = mergeSubmitAnswerItems(
-        stores.AnswerStore.completedAnswers
-          .map((item) => {
-            if (item.questionId !== undefined) {
-              return {
-                prefix: item.prefix,
-                questionId: item.questionId,
-                content: item.content,
-              };
-            }
-            return undefined;
-          })
-          .filter((item) => item != null) as Array<{
-          questionId: number;
-          content?: string;
-          prefix?: string;
-        }>
+      const listenData = collectListenReadSubmitItems(
+        stores.AnswerStore.completedAnswers,
+        stores.ExamStore.paperId,
       );
       const date = new Date();
 
@@ -195,23 +181,9 @@ const HeadTip = forwardRef((props: propType) => {
       // );
     } else if (type === 'read') {
       // 使用安全提交和清理流程
-      const ReadData = mergeSubmitAnswerItems(
-        stores.AnswerStore.completedAnswers
-          .map((item) => {
-            if (item.questionId !== undefined) {
-              return {
-                prefix: item.prefix,
-                questionId: item.questionId,
-                content: item.content,
-              };
-            }
-            return undefined;
-          })
-          .filter((item) => item != null) as Array<{
-          questionId: number;
-          content?: string;
-          prefix?: string;
-        }>
+      const ReadData = collectListenReadSubmitItems(
+        stores.AnswerStore.completedAnswers,
+        stores.ExamStore.paperId,
       );
       const date = new Date();
 

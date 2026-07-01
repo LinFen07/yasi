@@ -10,6 +10,7 @@ import { AddCorrect } from "@/utils/browser/getCorrect";
 import { checkOngoingExamState, clearAllExamData, OngoingExamState, getExamProgress, setModuleStatus, clearModuleData } from '@/utils/helper/examDataManager';
 import { judgingProblem, submitAnswerBatch } from '@/api/studentAnswer';
 import { submitStudentWritteAnswer, buildWritingSubmitPayload } from '@/utils/browser/submitAnswer';
+import { collectListenReadSubmitItems } from '@/utils/helper/mergeSubmitAnswers';
 
 const IeltsFamiliarisationTest: React.FC = () => {
   const navigate = useNavigate();
@@ -138,13 +139,10 @@ const IeltsFamiliarisationTest: React.FC = () => {
       }
     } else {
       // 听力和阅读提交
-      const submitData = stores.AnswerStore.completedAnswers
-        .filter((item: any) => item.questionId !== undefined)
-        .map((item: any) => ({
-          prefix: item.prefix,
-          questionId: item.questionId,
-          content: item.content,
-        }));
+      const submitData = collectListenReadSubmitItems(
+        stores.AnswerStore.completedAnswers,
+        paperId,
+      );
 
       const submitPayload = {
         answerItems: submitData,
