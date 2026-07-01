@@ -1,16 +1,22 @@
 /**
- * 提交答案列表：保持每条 prefix 独立（填空/拖拽每空一条）。
- * 双选题由后端 MultipleChoiceStrategy 合并同题多条提交。
+ * 提交前合并答题项：同一 questionId 多 prefix 不合并为一条逗号串（避免后端只存第一格）
  */
-export function mergeSubmitAnswerItems(
-  items: Array<{ questionId?: number; content?: string; prefix?: string }>
-) {
+
+export type SubmitAnswerItem = {
+  questionId: number
+  content?: string
+  prefix?: string
+}
+
+export function mergeSubmitAnswerItems(items: SubmitAnswerItem[]): SubmitAnswerItem[] {
+  if (!items?.length) return []
+
   return items
-    .filter((item) => item.questionId !== undefined)
+    .filter((item) => item?.questionId != null)
     .map((item) => ({
-      questionId: item.questionId!,
-      content: (item.content || '').trim(),
-      prefix: item.prefix,
+      questionId: item.questionId,
+      content: item.content ?? '',
+      prefix: item.prefix ?? '1',
     }))
-    .filter((item) => item.content);
+    .filter((item) => String(item.content).trim() !== '')
 }

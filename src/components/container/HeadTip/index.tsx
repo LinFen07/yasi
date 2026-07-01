@@ -7,7 +7,7 @@ import './index.scss'
 import IntegerStep from '@/components/basic/fontSizeSetting';
 import stores from '@/stores';
 import { requestConcurrency } from '@/utils/requestConcurrency';
-import { submitStudentWritteAnswer } from '@/utils/browser/submitAnswer';
+import { submitStudentWritteAnswer, buildWritingSubmitPayload } from '@/utils/browser/submitAnswer';
 import { clearModuleData, safeSubmitAndClear, setModuleStatus } from '@/utils/helper/examDataManager';
 import { mergeSubmitAnswerItems } from '@/utils/helper/mergeSubmitAnswers';
 import { persistReportPaperId } from '@/utils/helper/reportPaperId';
@@ -247,13 +247,22 @@ const HeadTip = forwardRef((props: propType) => {
       // );
     } else if (type === 'writte') {
       try {
-        // 确保写作答案已添加到store中
+        const studentId = stores.UserStore.userId;
+        const paperId = examstore.paperId;
+        // 确保写作答案已添加到 store，并组装带 studentId 的提交 payload
         submitStudentWritteAnswer(examstore.wirrteExam[0].questionItems[0], 0, examstore.correctWritte[0]);
         submitStudentWritteAnswer(examstore.wirrteExam[1].questionItems[0], 1, examstore.correctWritte[1]);
 
-        // console.log('准备提交写作答案:', JSON.stringify(stores.AnswerStore.writingAnswers, null, 2));
+        const writingPayload = buildWritingSubmitPayload(
+          examstore.wirrteExam,
+          examstore.correctWritte,
+          paperId,
+          studentId,
+        );
 
-        await submitAnswerBatch(stores.AnswerStore.writingAnswers);
+        if (writingPayload.length > 0) {
+          await submitAnswerBatch(writingPayload);
+        }
         persistReportPaperId(examstore.paperId);
         setModuleStatus(examstore.paperId, 'writte', 'completed');
         navigate(`/testOver?id=${examstore.paperId}`, { replace: true });

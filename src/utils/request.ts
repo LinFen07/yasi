@@ -1,9 +1,10 @@
 import axios from 'axios';
 import UserStore from '@/stores/user';
 
+// 开发环境走 webpack 代理（/api -> localhost:8068），避免跨域
+// 生产环境直连远程后端
 const request = axios.create({
-  baseURL: 'http://111.230.5.159:8668',
-  // baseURL: 'http://10.182.92.162:8668',
+  baseURL: process.env.NODE_ENV === 'production' ? 'http://111.230.5.159:8668' : '',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

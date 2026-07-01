@@ -1,48 +1,35 @@
+import { ExamType, StudentAnswer, StudentWritingAnswer } from '@/typings/exam'
+import stores from '@/stores'
+import { buildWritingSubmitPayload } from '@/utils/helper/buildWritingSubmitPayload'
 
-import { ExamType, StudentAnswer, StudentWritingAnswer } from '@/typings/exam';
-import stores from '@/stores';
+export { buildWritingSubmitPayload }
 
-// 将输入转为纯文本：去除所有 HTML 标签，并规范空白
 function stripTagsNormalize(input: string): string {
-  if (!input) return '';
-  const div = document.createElement('div');
-  div.innerHTML = input;
-  const text = div.textContent || '';
-  return text.replace(/\s+/g, ' ').trim();
+  if (!input) return ''
+  const div = document.createElement('div')
+  div.innerHTML = input
+  const text = div.textContent || ''
+  return text.replace(/\s+/g, ' ').trim()
 }
 
-// 去除 HTML 标签并处理常见实体
 export function stripHtmlTags(html: string): string {
-  if (!html) return '';
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  const textContent = tempDiv.textContent || tempDiv.innerText || '';
+  if (!html) return ''
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = html
+  const textContent = tempDiv.textContent || tempDiv.innerText || ''
   return textContent
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, "'")
 }
 
 const studentAnswer: StudentAnswer = {
-  // isCorrect: 0,
-  // paperId: stores.ExamStore.paperId,
   questionId: 0,
   content: '1',
-  prefix: "1"
-  // studentId: stores.UserStore.userId,
-  // score: '0',
-  // questionType: '1',
-  // questionOrder: 0,
-}
-
-const studentWritingAnswer: StudentWritingAnswer = {
-  paperId: stores.ExamStore.paperId,
-  questionId: 0,
-  composition: '1',
-  studentId: stores.UserStore.userId,
+  prefix: '1',
 }
 
 export function submitStudentSelectAnswer(
@@ -52,40 +39,28 @@ export function submitStudentSelectAnswer(
   questionIndex: number,
 ): void {
   Object.assign(studentAnswer, {
-    // isCorrect: stripTagsNormalize(value) == stripTagsNormalize(questionsArr[index].correct) ? 1 : 0,
-    // paperId: stores.ExamStore.paperId,
     questionId: questionsArr[index].id,
     content: value,
-    prefix: "1"
-    // studentId: stores.UserStore.userId,
-    // score: questionsArr[index].score,
-    // questionType: questionsArr[index].topicType,
-    // questionOrder: questionIndex + 1,
-  });
+    prefix: '1',
+  })
 
-  stores.AnswerStore.changeAnswer(questionIndex, studentAnswer);
+  stores.AnswerStore.changeAnswer(questionIndex, { ...studentAnswer })
 }
+
 export function submitStudentBlankAnswer(
   questionArr: ExamType,
   i: number,
   prevCount: number,
   value: string,
-  correctIndex: number,
-  prefix: string
+  _correctIndex: number,
+  prefix: string,
 ): void {
   Object.assign(studentAnswer, {
-    // isCorrect: stripTagsNormalize(value) == stripTagsNormalize(questionArr.correctArray[correctIndex]) ? 1 : 0,
-    // paperId: stores.ExamStore.paperId,
     questionId: questionArr.id,
     content: value,
-    prefix: prefix
-    // studentId: stores.UserStore.userId,
-    // score: stripTagsNormalize(value) == stripTagsNormalize(questionArr.correctArray[correctIndex]) ? questionArr.items[correctIndex].score : '0',
-    // questionType: questionArr.topicType,
-    // questionOrder: prevCount + i + 1,
-  });
-  stores.AnswerStore.changeAnswer(prevCount + i, studentAnswer);
-
+    prefix,
+  })
+  stores.AnswerStore.changeAnswer(prevCount + i, { ...studentAnswer })
 }
 
 export function submitStudentWritteAnswer(
@@ -93,14 +68,14 @@ export function submitStudentWritteAnswer(
   index: number,
   value: string,
 ): void {
-  Object.assign(studentWritingAnswer, {
-    // isCorrect: 0,
+  const answer: StudentWritingAnswer = {
     paperId: stores.ExamStore.paperId,
     questionId: questionArr.id,
     composition: value,
     studentId: stores.UserStore.userId,
-    // questionType: questionArr.topicType,
-    // questionOrder: index + 1,
-  });
-  stores.AnswerStore.changeStudentWritteAnswer(index, studentWritingAnswer);
+  }
+  stores.AnswerStore.changeStudentWritteAnswer(index, answer)
 }
+
+// re-export for tests that reference stripTagsNormalize behavior via stripHtmlTags
+export { stripTagsNormalize }

@@ -21,7 +21,7 @@ const AnswerLeft = observer(() => {
   useEffect(() => {
     if (!stores.ExamStore.paperId) return;
 
-    getComposition(stores.ExamStore.paperId)
+    getComposition(stores.ExamStore.paperId, stores.UserStore.userId)
       .then((res: any) => {
         const data = res?.response;
         setArtical(Array.isArray(data) ? data : []);

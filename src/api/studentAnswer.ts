@@ -35,9 +35,9 @@ export const judgingProblem = async (data: StudentSubmitAnswer) => {
   })
 }//阅读和听力
 
-export const getComposition = (paperId: number) => {
+export const getComposition = (paperId: number, studentId: number) => {
   return request({
-    url: `/api/student/studentAnswer/getStudentWritingScores?paperId=${paperId}`,
+    url: `/api/student/studentAnswer/getStudentWritingScores?paperId=${paperId}&studentId=${studentId}`,
     method: 'GET'
   })
 }

@@ -9,7 +9,7 @@ import stores from "@/stores";
 import { AddCorrect } from "@/utils/browser/getCorrect";
 import { checkOngoingExamState, clearAllExamData, OngoingExamState, getExamProgress, setModuleStatus, clearModuleData } from '@/utils/helper/examDataManager';
 import { judgingProblem, submitAnswerBatch } from '@/api/studentAnswer';
-import { submitStudentWritteAnswer } from '@/utils/browser/submitAnswer';
+import { submitStudentWritteAnswer, buildWritingSubmitPayload } from '@/utils/browser/submitAnswer';
 
 const IeltsFamiliarisationTest: React.FC = () => {
   const navigate = useNavigate();
@@ -127,7 +127,15 @@ const IeltsFamiliarisationTest: React.FC = () => {
       // 写作超时提交
       submitStudentWritteAnswer(stores.ExamStore.wirrteExam[0].questionItems[0], 0, stores.ExamStore.correctWritte[0]);
       submitStudentWritteAnswer(stores.ExamStore.wirrteExam[1].questionItems[0], 1, stores.ExamStore.correctWritte[1]);
-      submitAnswerBatch(stores.AnswerStore.writingAnswers);
+      const writingPayload = buildWritingSubmitPayload(
+        stores.ExamStore.wirrteExam,
+        stores.ExamStore.correctWritte,
+        paperId,
+        stores.UserStore.userId,
+      );
+      if (writingPayload.length > 0) {
+        submitAnswerBatch(writingPayload);
+      }
     } else {
       // 听力和阅读提交
       const submitData = stores.AnswerStore.completedAnswers
