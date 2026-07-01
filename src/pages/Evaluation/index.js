@@ -36,6 +36,18 @@ const Evaluation = () => {
   const { userInfo } = useSelector(state => state.user);
   const userId = userInfo?.id || userInfo?.userId || localStorage.getItem('userId');
 
+  useEffect(() => {
+    if (viewMode !== 'grade' || !currentPaper) {
+      return;
+    }
+    form.setFieldsValue({
+      score1: currentPaper.score ?? undefined,
+      score2: currentPaper.score ?? undefined,
+      comment: currentPaper.review || ''
+    });
+    setEditorContent(currentPaper.review || '');
+  }, [viewMode, currentPaper, form]);
+
   const handleChange = useCallback((page) => {
     setPageState(page);
   }, []);
@@ -121,7 +133,7 @@ const Evaluation = () => {
     const score = values.score1 ?? values.score2 ?? values.score;
     const review = values.comment ?? values.review ?? editorContent ?? '';
     const editing = isEditingMode;
-    if (!editing && (score === undefined || score === null || score === '')) {
+    if (score === undefined || score === null || score === '') {
       message.warning('分数不能为空');
       return;
     }
@@ -144,15 +156,14 @@ const Evaluation = () => {
       setPapers(updatedPapers);
       setCurrentPaper({ ...targetPaper });
 
-      if (!editing) {
-        const submitAction = submitEssayGrade(currentPaper.id, score, review || '');
-        await dispatch(submitAction);
-      }
+      const submitAction = submitEssayGrade(currentPaper.id, score, review || '');
+      await dispatch(submitAction);
 
       setViewMode('list');
       message.success(editing ? '评价修改成功' : '评价提交成功');
-      form.resetFields(['score', 'review']);
+      form.resetFields(['score1', 'score2', 'comment']);
       setEditorContent('');
+      setIsEditingMode(false);
       setRefreshFlag(prev => !prev);
     } catch (error) {
       if (isAuthError(error)) {

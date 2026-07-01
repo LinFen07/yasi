@@ -11,16 +11,21 @@ const EvaluationPanel = ({
     isEditingMode,
     paperData,
 }) => {
+    const form = Form.useFormInstance();
+
     useEffect(() => {
         if (isEditingMode && paperData?.review) {
             setEditorContent(paperData.review);
+            form.setFieldsValue({ comment: paperData.review });
         } else if (!isEditingMode) {
             setEditorContent('');
+            form.setFieldsValue({ comment: '' });
         }
-    }, [isEditingMode, paperData?.review, setEditorContent]);
+    }, [isEditingMode, paperData?.review, setEditorContent, form]);
 
     const handleEditorChange = (content) => {
         setEditorContent(content);
+        form.setFieldsValue({ comment: content });
     };
 
     return (
