@@ -1,16 +1,21 @@
-import { Exam } from '@/typings/exam';
+import { Exam, ExamType } from '@/typings/exam';
+
+/** 与底部导航栏一致的题号占用数 */
+export function getQuestionSlotCount(questionItem: ExamType): number {
+  if (Array.isArray(questionItem.correctArray) && questionItem.correctArray.length > 0) {
+    return questionItem.correctArray.length;
+  }
+  return 1;
+}
 
 export function computedPrevCount(title: string, exam: Array<Exam>): number {
   const index = +title[4] - 1;
   let prevCount = 0;
   for (let i = 0; i < index; i++) {
     for (let j = 0; j < exam[i].questionItems.length; j++) {
-      if (exam[i].questionItems[j].questionType == '4') prevCount += exam[i].questionItems[j].correctArray.length;
-      else if (exam[i].questionItems[j].questionType == '2') prevCount += exam[i].questionItems[j].correctArray.length;
-      else prevCount++;
+      prevCount += getQuestionSlotCount(exam[i].questionItems[j]);
     }
   }
-  // console.log(prevCount)
   return prevCount;
 }
 
@@ -18,39 +23,27 @@ export function computedBlanksPrevCount(pre: number, title: string, exam: Array<
   const index = +title[4] - 1;
   for (let j = 0; j < exam[index].questionItems.length; j++) {
     if (exam[index].questionItems[j].topicType == '4') return pre;
-    else if (exam[index].questionItems[j].topicType == '2') pre += exam[index].questionItems[j].correctArray.length;
-    else pre++;
+    pre += getQuestionSlotCount(exam[index].questionItems[j]);
   }
   return pre;
 }
 
 export function computedTickPrevCount(title: string, exam: Array<Exam>) {
-  console.log(3)
   let prevCount = computedPrevCount(title, exam);
   const index = +title[4] - 1;
   for (let j = 0; j < exam[index].questionItems.length; j++) {
     if (exam[index].questionItems[j].topicType == '5') return prevCount;
-    else if (
-      exam[index].questionItems[j].questionType == '2'
-      || exam[index].questionItems[j].questionType == '4'
-    )
-      prevCount += exam[index].questionItems[j].correctArray.length;
-    else prevCount++;
+    prevCount += getQuestionSlotCount(exam[index].questionItems[j]);
   }
   return prevCount;
 }
+
 export function computedDragPrevCount(title: string, exam: Array<Exam>) {
-  console.log(2)
   let prevCount = computedPrevCount(title, exam);
   const index = +title[4] - 1;
   for (let j = 0; j < exam[index].questionItems.length; j++) {
     if (exam[index].questionItems[j].topicType == '6') return prevCount;
-    else if (
-      exam[index].questionItems[j].questionType == '2'
-      || exam[index].questionItems[j].questionType == '4'
-    )
-      prevCount += exam[index].questionItems[j].correctArray.length;
-    else prevCount++;
+    prevCount += getQuestionSlotCount(exam[index].questionItems[j]);
   }
   return prevCount;
 }
@@ -60,9 +53,7 @@ export function computedCheckSelectPrevCount(title: string, exam: Array<Exam>) {
   const index = +title[4] - 1;
   for (let j = 0; j < exam[index].questionItems.length; j++) {
     if (exam[index].questionItems[j].topicType == '2') return prevCount;
-    else if (exam[index].questionItems[j].questionType == '4')
-      prevCount += exam[index].questionItems[j].correctArray.length;
-    else prevCount++;
+    prevCount += getQuestionSlotCount(exam[index].questionItems[j]);
   }
   return prevCount;
 }

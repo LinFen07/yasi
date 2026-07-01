@@ -3,6 +3,7 @@ export type Items = {
   itemUuid: string;
   prefix: string;
   score: string;
+  describe?: string;
 }
 
 export interface Exam {

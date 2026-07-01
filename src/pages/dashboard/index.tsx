@@ -19,6 +19,7 @@ import {
   clearAllExamData,
   clearExamProgress,
 } from "@/utils/helper/examDataManager";
+import { persistReportPaperId } from "@/utils/helper/reportPaperId";
 
 type ExamStatus = "upcoming" | "active" | "ended";
 
@@ -141,9 +142,9 @@ const Dashboard = () => {
     isAppraise: number,
     appraise: string
   ) => {
-    stores.ExamStore.changePaperId(id);
+    persistReportPaperId(id);
     if (isAppraise) stores.AnswerStore.appraise = appraise;
-    navigate(`/testOver`);
+    navigate(`/testOver?id=${id}`);
   };
 
   const displayName =

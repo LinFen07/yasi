@@ -8,6 +8,7 @@ import {
   computedBlanksPrevCount,
   computedCheckSelectPrevCount,
   computedPrevCount,
+  getQuestionSlotCount,
 } from "@/utils/helper/computed";
 import { submitStudentSelectAnswer } from "@/utils/browser/submitAnswer";
 import TickQuestion from "../tickQuestion/index";
@@ -15,8 +16,10 @@ import DragQuestion from "../dragQuestion";
 import SelectQuestion from "../selectQuestion";
 import { Exam, StudentAnswer } from "@/typings/exam";
 import { judgingProblem } from '@/api/studentAnswer'
+import { shouldStartFreshExam } from '@/utils/helper/examDataManager';
 
-function questions({ exam, shouldReset = true }: { exam: Exam[]; shouldReset?: boolean }) {
+function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean }) {
+  const resetAnswers = shouldReset ?? shouldStartFreshExam();
   const [listensArr, setListensArr] = useState(exam[0]);
   const [questionsArr, setQuestionArr] = useState(listensArr.questionItems);
   const titleRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -29,8 +32,6 @@ function questions({ exam, shouldReset = true }: { exam: Exam[]; shouldReset?: b
   }, [stores.ExamStore.currentExamTitle]);
 
   useEffect(() => {
-    if (shouldReset === false) return;
-
     const initAnswers: any = exam.flatMap((item, index) => {
       return item.questionItems.flatMap((questionItem, index2) => {
         // console.log(JSON.stringify(questionItem, null, 2))
@@ -42,34 +43,34 @@ function questions({ exam, shouldReset = true }: { exam: Exam[]; shouldReset?: b
 
         // 判断是否为多空题（只有correctArray）
         const isMultiSub = hasCorrectArray && !hasCorrect;
+
+        // 双选题 / 多选题：每个题号各占一个答案槽位
+        const isDualOrMultiSelect =
+          questionItem.topicType === '7' ||
+          (hasCorrect && hasCorrectArray && questionItem.correctArray.length > 1);
+
         if (isMultiSub) {
           return questionItem.correctArray.map((correct, index3) => {
             return (
               {
-                // isCorrect: 0,
-                // paperId: stores.ExamStore.paperId,
                 questionId: questionItem.id,
                 content: "",
                 prefix: `${index3 + 1}`
-                // studentId: stores.UserStore.userId,
-                // score: `${questionItem.items[0].score}`,
-                // questionType: "",
-                // questionOrder: 0,
               }
             )
           })
+        } else if (isDualOrMultiSelect) {
+          return questionItem.correctArray.map((_, index3) => ({
+            questionId: questionItem.id,
+            content: "",
+            prefix: `${index3 + 1}`,
+          }));
         } else if (isMultiChoice) {
           return ([{
-            // isCorrect: 0,
-            // paperId: stores.ExamStore.paperId,
             questionId: questionItem.id,
             content: "",
             prefix: "1"
-            // studentId: stores.UserStore.userId,
-            // score: `${questionItem.score}`,
-            // questionType: "",
-            // questionOrder: 0,
-          }, ""])
+          }])
         } else {
           return ({
             // isCorrect: 0,
@@ -87,7 +88,22 @@ function questions({ exam, shouldReset = true }: { exam: Exam[]; shouldReset?: b
     })
 
     const savedAnswers = stores.AnswerStore.completedAnswers;
-    if (Array.isArray(savedAnswers) && savedAnswers.length > 0) {
+    const isFreshStart = stores.ExamStore.freshModuleSession;
+    if (isFreshStart) {
+      runInAction(() => {
+        stores.ExamStore.setFreshModuleSession(false);
+      });
+    }
+
+    const hasSavedContent =
+      !isFreshStart &&
+      resetAnswers === false &&
+      Array.isArray(savedAnswers) &&
+      savedAnswers.some(
+        (item) => item && typeof item === 'object' && String(item.content || '').trim()
+      );
+
+    if (hasSavedContent) {
       const restoredAnswers = initAnswers.map((answer: any, idx: number) => {
         const savedAnswer = savedAnswers[idx];
         if (!savedAnswer) return answer;
@@ -97,20 +113,20 @@ function questions({ exam, shouldReset = true }: { exam: Exam[]; shouldReset?: b
           prefix: savedAnswer.prefix ?? answer.prefix,
         };
       });
-      stores.AnswerStore.initAnswer(restoredAnswers)
+      stores.AnswerStore.initAnswer(restoredAnswers);
     } else {
-      stores.AnswerStore.initAnswer(initAnswers)
+      stores.AnswerStore.initAnswer(initAnswers);
+      runInAction(() => {
+        stores.ExamStore.resetcorrectListenAnswer();
+      });
     }
-  }, [exam, shouldReset])
+  }, [exam, resetAnswers])
 
   const onChange = (index: number) => (e: any) => {
     const pre = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
     const beforeCount = questionsArr
       .slice(0, index)
-      .reduce(
-        (acc, q) => acc + (Array.isArray(q.correctArray) ? q.correctArray.length : 1),
-        0
-      );
+      .reduce((acc, q) => acc + getQuestionSlotCount(q), 0);
     const start = pre + beforeCount + 1;
 
     stores.ExamStore.changeStudentListenAnswer(start, e.target.value);
@@ -146,10 +162,7 @@ function questions({ exam, shouldReset = true }: { exam: Exam[]; shouldReset?: b
     const pre = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
     const beforeCount = questionsArr
       .slice(0, index)
-      .reduce(
-        (acc, q) => acc + (Array.isArray(q.correctArray) ? q.correctArray.length : 1),
-        0
-      );
+      .reduce((acc, q) => acc + getQuestionSlotCount(q), 0);
     const start = pre + beforeCount + 1;
 
     stores.ExamStore.changeStudentListenAnswer(
@@ -162,9 +175,36 @@ function questions({ exam, shouldReset = true }: { exam: Exam[]; shouldReset?: b
     submitStudentSelectAnswer(
       questionsArr,
       index,
-      finalValues.toString(),
+      finalValues.join(","),
       start - 1
     );
+
+    const requiredCount =
+      currentQuestion && Array.isArray(currentQuestion.correctArray)
+        ? currentQuestion.correctArray.length
+        : 1;
+
+    runInAction(() => {
+      if (requiredCount > 1) {
+        if (finalValues.length >= requiredCount) {
+          finalValues.slice(0, requiredCount).forEach((val, k) => {
+            stores.AnswerStore.changeAnswer(start - 1 + k, {
+              questionId: currentQuestion.id,
+              content: val,
+              prefix: `${k + 1}`,
+            });
+          });
+        } else {
+          for (let k = 0; k < requiredCount; k++) {
+            stores.AnswerStore.changeAnswer(start - 1 + k, {
+              questionId: currentQuestion.id,
+              content: '',
+              prefix: `${k + 1}`,
+            });
+          }
+        }
+      }
+    });
 
     const updatedQuestions = { ...questionsArr[index] };
     updatedQuestions.selectionsAnswer = finalValues;
@@ -173,13 +213,14 @@ function questions({ exam, shouldReset = true }: { exam: Exam[]; shouldReset?: b
       idx === index ? updatedQuestions : question
     );
     setQuestionArr(newQuestionsArr);
-    stores.ExamStore.changeCurrent(start);
+    // 双选题不切换当前题号，避免页面滚动跳到其他 Part 的题目
+    if (requiredCount <= 1) {
+      stores.ExamStore.changeCurrent(start);
+    }
     stores.ExamStore.updateListenExam(examIndex, index, updatedQuestions);
     runInAction(() => {
-      const requiredCount =
-        currentQuestion && Array.isArray(currentQuestion.correctArray)
-          ? currentQuestion.correctArray.length
-          : 1;
+      if (requiredCount > 1) return;
+
       if (finalValues.length >= requiredCount) {
         for (let k = 0; k < requiredCount; k++) {
           const num = start + k;
@@ -198,7 +239,7 @@ function questions({ exam, shouldReset = true }: { exam: Exam[]; shouldReset?: b
     let foundIndex = -1;
 
     for (let i = 0; i < questionsArr.length; i++) {
-      const count = Array.isArray(questionsArr[i].correctArray) ? questionsArr[i].correctArray.length : 1;
+      const count = getQuestionSlotCount(questionsArr[i]);
       if (currentIndexInPart >= accumulated && currentIndexInPart < accumulated + count) {
         foundIndex = i;
         break;

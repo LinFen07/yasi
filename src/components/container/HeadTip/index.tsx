@@ -9,6 +9,8 @@ import stores from '@/stores';
 import { requestConcurrency } from '@/utils/requestConcurrency';
 import { submitStudentWritteAnswer } from '@/utils/browser/submitAnswer';
 import { clearModuleData, safeSubmitAndClear, setModuleStatus } from '@/utils/helper/examDataManager';
+import { mergeSubmitAnswerItems } from '@/utils/helper/mergeSubmitAnswers';
+import { persistReportPaperId } from '@/utils/helper/reportPaperId';
 import { judgingProblem, submitAnswerBatch } from '@/api/studentAnswer';
 import questions from '@/components/basic/writteQuestions';
 
@@ -126,7 +128,7 @@ const HeadTip = forwardRef((props: propType) => {
 
 
 
-  const finish = (type: string) => {
+  const finish = async (type: string) => {
     // 当前模块结束，清除该模块的计时持久化，下一模块将重新开始计时
     try { localStorage.removeItem(storageKey); } catch { }
     // 释放计时器与状态，避免听力结束后资源残留
@@ -141,20 +143,24 @@ const HeadTip = forwardRef((props: propType) => {
 
     if (type === 'listen') {
       // 使用安全提交和清理流程 
-      const listenData = stores.AnswerStore.completedAnswers
-        .map((item) => {
-          if (item.questionId !== undefined) {
-            return {
-              prefix: item.prefix,
-              questionId: item.questionId,
-              content: item.content
-            };
-          }
-          // 显式返回 undefined（可选，map 不返回时默认也是 undefined）
-          return undefined;
-        })
-        // 关键：链式过滤，item != null 同时排除 null 和 undefined
-        .filter((item) => item != null);
+      const listenData = mergeSubmitAnswerItems(
+        stores.AnswerStore.completedAnswers
+          .map((item) => {
+            if (item.questionId !== undefined) {
+              return {
+                prefix: item.prefix,
+                questionId: item.questionId,
+                content: item.content,
+              };
+            }
+            return undefined;
+          })
+          .filter((item) => item != null) as Array<{
+          questionId: number;
+          content?: string;
+          prefix?: string;
+        }>
+      );
       const date = new Date();
 
       const listenData_ = {
@@ -165,7 +171,12 @@ const HeadTip = forwardRef((props: propType) => {
         userId: stores.UserStore.userId,
       }
       console.log(JSON.stringify(listenData_, null, 2))
-      judgingProblem(listenData_);
+      try {
+        await judgingProblem(listenData_);
+        persistReportPaperId(stores.ExamStore.paperId);
+      } catch (error) {
+        console.error('听力答案提交失败:', error);
+      }
       clearModuleData(type);
       setModuleStatus(examstore.paperId, 'listen', 'completed');
       navigate(`/video?id=${examstore.paperId}&type=read`, { replace: true });
@@ -184,20 +195,24 @@ const HeadTip = forwardRef((props: propType) => {
       // );
     } else if (type === 'read') {
       // 使用安全提交和清理流程
-      const ReadData = stores.AnswerStore.completedAnswers
-        .map((item) => {
-          if (item.questionId !== undefined) {
-            return {
-              prefix: item.prefix,
-              questionId: item.questionId,
-              content: item.content
-            };
-          }
-          // 显式返回 undefined（可选，map 不返回时默认也是 undefined）
-          return undefined;
-        })
-        // 关键：链式过滤，item != null 同时排除 null 和 undefined
-        .filter((item) => item != null);
+      const ReadData = mergeSubmitAnswerItems(
+        stores.AnswerStore.completedAnswers
+          .map((item) => {
+            if (item.questionId !== undefined) {
+              return {
+                prefix: item.prefix,
+                questionId: item.questionId,
+                content: item.content,
+              };
+            }
+            return undefined;
+          })
+          .filter((item) => item != null) as Array<{
+          questionId: number;
+          content?: string;
+          prefix?: string;
+        }>
+      );
       const date = new Date();
 
       const ReadData_ = {
@@ -208,7 +223,12 @@ const HeadTip = forwardRef((props: propType) => {
         userId: stores.UserStore.userId
       }
       // console.log(JSON.stringify(ReadData_, null, 2))
-      judgingProblem(ReadData_)
+      try {
+        await judgingProblem(ReadData_);
+        persistReportPaperId(stores.ExamStore.paperId);
+      } catch (error) {
+        console.error('阅读答案提交失败:', error);
+      }
       clearModuleData(type);
       setModuleStatus(examstore.paperId, 'read', 'completed');
       navigate(`/video?id=${examstore.paperId}&type=writte`, { replace: true });
@@ -233,9 +253,10 @@ const HeadTip = forwardRef((props: propType) => {
 
         // console.log('准备提交写作答案:', JSON.stringify(stores.AnswerStore.writingAnswers, null, 2));
 
-        submitAnswerBatch(stores.AnswerStore.writingAnswers)
+        await submitAnswerBatch(stores.AnswerStore.writingAnswers);
+        persistReportPaperId(examstore.paperId);
         setModuleStatus(examstore.paperId, 'writte', 'completed');
-        navigate('/testOver', { replace: true });
+        navigate(`/testOver?id=${examstore.paperId}`, { replace: true });
         // 使用安全提交和清理流程 - 考试完成时清除所有数据
         // safeSubmitAndClear(
         //   () => requestConcurrency(stores.AnswerStore.writingAnswers),
@@ -252,7 +273,7 @@ const HeadTip = forwardRef((props: propType) => {
       } catch (error) {
         // console.error('准备写作答案时出错:', error);
         setModuleStatus(examstore.paperId, 'writte', 'completed');
-        navigate('/testOver', { replace: true });
+        navigate(`/testOver?id=${examstore.paperId}`, { replace: true });
       }
     }
     examstore.changeCurrent(1);

@@ -31,6 +31,22 @@
   width: 240px;
   border: 1.5px dashed #6d90d1;
   margin-left: 8px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.drag-question-dragItem-filled {
+  width: 100%;
+  padding: 4px 8px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.drag-question-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #5f7d92;
 }
 
 .drag-question-title{
@@ -38,4 +54,14 @@
   font-weight: 700;
   margin-left: 48px;
   margin-bottom: 18px;
+}
+
+.drag-question-empty {
+  margin: 24px 0;
+  padding: 24px;
+  text-align: center;
+  color: #5f7d92;
+  background: #f7fbfe;
+  border: 1px dashed #c8dce8;
+  border-radius: 12px;
 }

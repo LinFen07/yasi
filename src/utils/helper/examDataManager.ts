@@ -4,6 +4,42 @@
  */
 
 import stores from '@/stores';
+import { runInAction } from 'mobx';
+
+/** URL 参数 shouldReset=false 时表示继续上次作答，否则视为新开一场 */
+export const shouldStartFreshExam = (): boolean => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('shouldReset') !== 'false';
+};
+
+/** 新开模块考试时清理草稿与导航状态，避免底部题号误显示为已答 */
+export const prepareExamModuleStart = (
+  paperId: number,
+  moduleType: 'listen' | 'read' | 'writte'
+) => {
+  if (!shouldStartFreshExam()) return;
+
+  runInAction(() => {
+    stores.ExamStore.resetcorrectListenAnswer();
+    stores.ExamStore.changeCurrent(1);
+    stores.ExamStore.changeCurrentTitle('Part1');
+    stores.ExamStore.setFreshModuleSession(true);
+  });
+
+  localStorage.removeItem('examPageState');
+
+  if (moduleType === 'listen') {
+    localStorage.removeItem('listen_state');
+    stores.AnswerStore.dragAnswers = Array(40).fill('');
+    stores.AnswerStore.tickAnswers = [];
+  }
+
+  if (paperId) {
+    localStorage.removeItem(`testTimer:${paperId}:${moduleType}`);
+  }
+
+  stores.AnswerStore.clearPersistedDrafts();
+};
 
 export interface ExamDataClearOptions {
   clearExamStore?: boolean;

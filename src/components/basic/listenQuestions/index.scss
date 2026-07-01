@@ -5,7 +5,23 @@
 .listencontent{
   width: 100%;
   height: 100%;
-  // overflow: auto;
+
+  table {
+    width: 100%;
+    min-width: 820px;
+    max-width: none;
+    border-collapse: collapse;
+  }
+
+  table td,
+  table th {
+    min-width: 160px;
+    padding: 10px 14px;
+    vertical-align: middle;
+    line-height: 1.65;
+    word-break: normal;
+    white-space: normal;
+  }
 }
 
 .input-wrapper {

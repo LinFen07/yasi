@@ -42,6 +42,32 @@
   text-align: left;
   padding: 2%;
   font-size: 18px;
+
+  table {
+    width: 100%;
+    min-width: 820px;
+    max-width: none;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+
+  table td,
+  table th {
+    min-width: 160px;
+    padding: 10px 14px;
+    vertical-align: middle;
+    line-height: 1.65;
+    word-break: normal;
+    overflow-wrap: break-word;
+    white-space: normal;
+  }
+
+  table p {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    line-height: inherit;
+  }
 }
 
 .exam-content-read-scroll {
@@ -61,7 +87,7 @@
 
 .gapfilling-span {
   height: 20px;
-  width: 180px;
+  width: 200px;
   border: 0px;
   font-size: 16px;
   margin: 0 10px;
@@ -69,7 +95,8 @@
 
 .textInput {
   height: 20px;
-  width: 130px;
+  width: 150px;
+  min-width: 130px;
   border: 0px;
   border-bottom: 1.5px solid rgba(35, 158, 235, 0.931);
   font-size: 16px;

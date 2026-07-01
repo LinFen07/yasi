@@ -8,6 +8,7 @@ import { createInput } from '@/utils/helper/createInput';
 
 import Questions from '@/components/basic/questions'
 import { useEventListener } from '@/hooks/core/useEventListener';
+import { shouldStartFreshExam } from '@/utils/helper/examDataManager';
 
 const listenQuestions = () => {
   const exam = stores.ExamStore.getListenExam();
@@ -37,8 +38,10 @@ const listenQuestions = () => {
     }
   };
 
-  // 刷新恢复听力进度
+  // 仅继续作答时恢复听力进度
   useEffect(() => {
+    if (shouldStartFreshExam()) return;
+
     try {
       const saved = localStorage.getItem('listen_state');
       if (saved) {

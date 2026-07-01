@@ -24,6 +24,9 @@ class ExamStore {
 
   correctListenAnswer: Array<number> = [];
 
+  /** 从说明页新开模块时置 true，用于初始化空白答卷 */
+  freshModuleSession = false;
+
   studentListenAnswers: Array<string> = Array(50).fill("");
   studentReadAnswers: Array<string> = Array(50).fill("");
 
@@ -185,6 +188,10 @@ class ExamStore {
 
   resetcorrectListenAnswer() {
     this.correctListenAnswer = [];
+  }
+
+  setFreshModuleSession(value: boolean) {
+    this.freshModuleSession = value;
   }
 
   addListenAudio(audio: string) {

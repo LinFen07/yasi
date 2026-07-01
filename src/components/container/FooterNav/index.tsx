@@ -177,7 +177,13 @@ function footerNav(props: propType) {
         .map((answer, index) => (String(answer || '').trim() ? index + 1 : null))
         .filter((n): n is number => n !== null);
     }
-    return store.ExamStore.correctListenAnswer.slice();
+
+    return store.AnswerStore.completedAnswers.reduce<number[]>((result, item, idx) => {
+      if (item && typeof item === 'object' && String(item.content || '').trim()) {
+        result.push(idx + 1);
+      }
+      return result;
+    }, []);
   };
 
   const [correctAnswers, setCorrectAnswers] = useState<number[]>(() =>
@@ -196,7 +202,7 @@ function footerNav(props: propType) {
       () =>
         type === 'writte'
           ? store.ExamStore.correctWritte.slice()
-          : store.ExamStore.correctListenAnswer.slice(),
+          : store.AnswerStore.completedAnswers.map((item) => item?.content ?? ''),
       () => {
         setCorrectAnswers(getAnsweredQuestions(type));
       }
