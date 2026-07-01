@@ -231,9 +231,9 @@ class AnswerStore {
   }
 
   //提交完将答案清空
-  clearAnswers(type: string) {
-    // this.getCorrectRate(type);
+  clearAnswers(_type: string) {
     this.completedAnswers = Array(40).fill("");
+    this.dragAnswers = Array(40).fill("");
   }
 
   // 计算正确率
