@@ -148,11 +148,8 @@
                 :section="section"
                 :section-index="index"
                 :active-part-tab="activeSubsectionTab"
-                :toolbar-config="toolbarConfig"
-                :editor-config="editorConfig"
                 @update:activePartTab="activeSubsectionTab = $event"
                 @add-question="addQuestion"
-                @editor-created="handleEditorCreated"
               />
 
               <WritingSection
@@ -161,11 +158,8 @@
                 :section="section"
                 :section-index="index"
                 :active-part-tab="activeSubsectionTab"
-                :toolbar-config="toolbarConfig"
-                :editor-config="editorConfig"
                 @update:activePartTab="activeSubsectionTab = $event"
                 @add-question="addQuestion"
-                @editor-created="handleEditorCreated"
               />
               </template>
             </el-tab-pane>
@@ -590,7 +584,7 @@ export default {
       this.applyDefaultGradeSubject()
     },
     handleEditorCreated (editor, subsection) {
-      subsection.editor = editor
+      this.$set(subsection, 'editor', editor)
     },
     ...mapActions('exam', { initSubject: 'initSubject' }),
     ...mapActions('tagsView', { delCurrentView: 'delCurrentView' })

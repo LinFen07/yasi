@@ -12,13 +12,17 @@ p.ueditor-p {
   line-height: 1.6;
 }
 
-table,
-table.gap-question-table {
+table {
   border-collapse: collapse;
   width: 100%;
   margin: 12px 0;
   border: 1px solid #c0c4cc;
   table-layout: fixed;
+}
+
+table.gap-question-table {
+  width: 100%;
+  max-width: 720px;
 }
 
 table td,

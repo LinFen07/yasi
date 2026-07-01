@@ -27,7 +27,7 @@ export const IELTS_SECTIONS = [
     icon: 'documentation',
     theme: 'reading',
     desc: '共 3 个 Passage，每 Part 题目数量不限',
-    defaultName: '<p><strong>Passage 1 · Reading 阅读</strong></p><p>请填写本 Passage 说明（文章概述、答题要求等）</p>',
+    defaultName: '<p><strong>Part 1</strong></p><p>You should spend about 20 minutes on <strong>Questions 1-13</strong>, which are based on Reading Passage 1 below.</p>',
     suggestQuestionType: null,
     tip: '阅读共 3 个 Passage，各 Part 题目数量根据题型灵活配置'
   },
@@ -38,7 +38,7 @@ export const IELTS_SECTIONS = [
     icon: 'edit',
     theme: 'writing',
     desc: '共 2 个 Task，每 Task 固定 1 道作文题',
-    defaultName: '<p><strong>Task 1 · Writing 写作</strong></p><p>请填写 Task 1 要求（如图表描述、字数限制等）</p>',
+    defaultName: '<p><strong>Part 1</strong></p><p>You should spend about 20 minutes on this task.</p>',
     suggestQuestionType: 7,
     tip: '写作共 Task 1、Task 2，各添加 1 道作文题，提交后由评阅老师批改'
   }
@@ -50,11 +50,14 @@ export function stripHtml (html) {
 
 export function detectModuleKey (nameHtml) {
   const text = stripHtml(nameHtml).toUpperCase()
-  if (text.includes('WRITING TASK') || text.includes('写作')) {
+  if (text.includes('WRITING TASK') || text.includes('写作') || text.includes('ON THIS TASK')) {
     return 3
   }
   if (text.includes('READING PASSAGE') || text.includes('阅读')) {
     return 2
+  }
+  if (text.includes('LISTEN AND ANSWER')) {
+    return 1
   }
   return 1
 }
@@ -70,13 +73,27 @@ export function getListeningPartRange (partIndex) {
   return { start, end: start + LISTENING_PART_SIZE - 1 }
 }
 
+const READING_PART_QUESTION_RANGES = [
+  { start: 1, end: 13 },
+  { start: 14, end: 26 },
+  { start: 27, end: 40 }
+]
+
 export function readingPartDefaultName (partIndex) {
-  return `<p><strong>Passage ${partIndex + 1} · Reading 阅读</strong></p><p>请填写本 Passage 说明（文章概述、答题要求等）</p>`
+  const partNum = partIndex + 1
+  const range = READING_PART_QUESTION_RANGES[partIndex] || { start: 1, end: 13 }
+  return `<p><strong>Part ${partNum}</strong></p><p>You should spend about 20 minutes on <strong>Questions ${range.start}-${range.end}</strong>, which are based on Reading Passage ${partNum} below.</p>`
 }
 
+const WRITING_PART_INSTRUCTIONS = [
+  'You should spend about 20 minutes on this task.',
+  'You should spend about 40 minutes on this task.'
+]
+
 export function writingPartDefaultName (partIndex) {
-  const taskNum = partIndex + 1
-  return `<p><strong>Task ${taskNum} · Writing 写作</strong></p><p>请填写 Task ${taskNum} 要求（字数限制、评分要点等）</p>`
+  const partNum = partIndex + 1
+  const instruction = WRITING_PART_INSTRUCTIONS[partIndex] || WRITING_PART_INSTRUCTIONS[0]
+  return `<p><strong>Part ${partNum}</strong></p><p>${instruction}</p>`
 }
 
 export function createListeningModule () {

@@ -1,3 +1,5 @@
+import { GAP_TABLE_INLINE_STYLE } from './gapTableTemplate'
+
 const EDGE = 6
 const MIN_WIDTH = 48
 
@@ -27,12 +29,7 @@ function getColCount (table) {
 }
 
 export function ensureTableLayout (table) {
-  if (!table.getAttribute('style')) {
-    table.setAttribute('style', 'table-layout:fixed;width:100%;')
-  } else {
-    table.style.tableLayout = 'fixed'
-    if (!table.style.width) table.style.width = '100%'
-  }
+  table.setAttribute('style', GAP_TABLE_INLINE_STYLE)
   if (!table.classList.contains('gap-question-table')) {
     table.classList.add('gap-question-table')
   }

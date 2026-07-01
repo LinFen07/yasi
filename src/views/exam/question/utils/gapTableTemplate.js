@@ -1,3 +1,5 @@
+export const GAP_TABLE_INLINE_STYLE = 'table-layout:fixed;width:100%;max-width:720px;'
+
 function buildColgroup (cols, widths) {
   if (!widths || !widths.length) return ''
   let html = '<colgroup>'
@@ -15,7 +17,7 @@ export function buildGapTableHtml (cols, rows, options = {}) {
   const safeRows = Math.max(withHeader ? 2 : 1, Math.min(rows, 20))
   const headerLabels = headers || Array.from({ length: safeCols }, (_, i) => `列${i + 1}`)
 
-  let html = '<table class="gap-question-table" style="table-layout:fixed;width:100%;" border="1" cellpadding="0" cellspacing="0">'
+  let html = `<table class="gap-question-table" style="${GAP_TABLE_INLINE_STYLE}" border="1" cellpadding="0" cellspacing="0">`
   html += buildColgroup(safeCols, columnWidths)
   for (let r = 0; r < safeRows; r++) {
     html += '<tr>'

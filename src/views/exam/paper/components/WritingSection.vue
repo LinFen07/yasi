@@ -69,20 +69,11 @@
       </div>
 
       <el-form-item label="Task 说明" required class="title-block__editor-item">
-        <div class="editor-wrap">
-          <Toolbar
-            v-if="subsection.editor"
-            class="editor-wrap__toolbar"
-            :editor="subsection.editor"
-            :defaultConfig="toolbarConfig"
-          />
-          <Editor
-            v-model="subsection.name"
-            class="editor-wrap__body"
-            :defaultConfig="writingEditorConfig"
-            @onCreated="(editor) => $emit('editor-created', editor, subsection)"
-          />
-        </div>
+        <WritingTaskEditor
+          :key="'writing-task-editor-' + partIndex"
+          v-model="subsection.name"
+        />
+        <p class="writing-editor-tip">支持加粗、斜体、居中对齐；按 Enter 可手动换行。</p>
       </el-form-item>
 
       <div v-if="subsection.questionItems && subsection.questionItems.length !== 0" class="question-list">
@@ -121,7 +112,7 @@
 </template>
 
 <script>
-import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+import WritingTaskEditor from './WritingTaskEditor'
 import QuestionShow from '../../question/components/Show'
 import {
   WRITING_PART_SIZE,
@@ -133,7 +124,7 @@ import {
 
 export default {
   name: 'WritingSection',
-  components: { Editor, Toolbar, QuestionShow },
+  components: { WritingTaskEditor, QuestionShow },
   props: {
     module: {
       type: Object,
@@ -150,14 +141,6 @@ export default {
     activePartTab: {
       type: String,
       default: '0'
-    },
-    toolbarConfig: {
-      type: Object,
-      default: () => ({})
-    },
-    editorConfig: {
-      type: Object,
-      default: () => ({})
     }
   },
   data () {
@@ -178,12 +161,6 @@ export default {
         return 0
       }
       return getModuleQuestionCount(this.module)
-    },
-    writingEditorConfig () {
-      return {
-        ...this.editorConfig,
-        placeholder: '请输入本 Task 要求（字数限制、评分要点等），支持图文混排...'
-      }
     }
   },
   methods: {
@@ -451,19 +428,11 @@ $writingEnd: #f5576c;
   }
 }
 
-.editor-wrap {
-  border: 1px solid rgba(245, 87, 108, 0.15);
-  border-radius: 10px;
-  overflow: hidden;
-
-  &__toolbar {
-    border-bottom: 1px solid #f0f2f5 !important;
-  }
-
-  &__body {
-    height: 240px !important;
-    overflow-y: hidden !important;
-  }
+.writing-editor-tip {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #909399;
 }
 
 .question-list {

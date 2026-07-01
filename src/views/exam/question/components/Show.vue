@@ -216,8 +216,7 @@ export default {
 }
 
 /* 表格样式 */
-.q-title table,
-.q-title table.gap-question-table {
+.q-title table {
   border-collapse: collapse !important;
   margin: 15px 0 !important;
   width: 100% !important;
@@ -227,8 +226,18 @@ export default {
   box-sizing: border-box !important;
 }
 
+.q-title table.gap-question-table {
+  width: 100% !important;
+  max-width: 720px !important;
+}
+
 .q-rich-content table {
   min-width: 560px;
+}
+
+.q-rich-content table.gap-question-table {
+  min-width: 0 !important;
+  max-width: 720px !important;
 }
 
 .q-title table td,
