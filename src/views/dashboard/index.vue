@@ -125,35 +125,46 @@ export default {
     }
   },
   mounted () {
-    // eslint-disable-next-line no-undef
-    this.echartsUserAction = echarts.init(document.getElementById('echarts-moth-user'))
-    // eslint-disable-next-line no-undef
-    this.echartsQuestion = echarts.init(document.getElementById('echarts-moth-question'))
-    this.loading = true
-    dashboardApi.index().then(re => {
-      const response = re.response
-      this.examPaperCount = response.examPaperCount
-      this.questionCount = response.questionCount
-      this.doExamPaperCount = response.doExamPaperCount
-      this.doQuestionCount = response.doQuestionCount
-      this.echartsUserAction.setOption(this.buildChartOption(
-        '{b}日 {c} 度',
-        response.mothDayText,
-        response.mothDayUserActionValue,
-        ['#667eea', '#764ba2']
-      ))
-      this.echartsQuestion.setOption(this.buildChartOption(
-        '{b}日 {c} 题',
-        response.mothDayText,
-        response.mothDayDoExamQuestionValue,
-        ['#11998e', '#38ef7d']
-      ))
-      this.loading = false
+    import('echarts').then(echarts => {
+      this.echartsUserAction = echarts.init(document.getElementById('echarts-moth-user'))
+      this.echartsQuestion = echarts.init(document.getElementById('echarts-moth-question'))
+      this.loading = true
+      dashboardApi.index().then(re => {
+        const response = re.response
+        this.examPaperCount = response.examPaperCount
+        this.questionCount = response.questionCount
+        this.doExamPaperCount = response.doExamPaperCount
+        this.doQuestionCount = response.doQuestionCount
+        this.echartsUserAction.setOption(this.buildChartOption(
+          echarts,
+          '{b}日 {c} 度',
+          response.mothDayText,
+          response.mothDayUserActionValue,
+          ['#667eea', '#764ba2']
+        ))
+        this.echartsQuestion.setOption(this.buildChartOption(
+          echarts,
+          '{b}日 {c} 题',
+          response.mothDayText,
+          response.mothDayDoExamQuestionValue,
+          ['#11998e', '#38ef7d']
+        ))
+        this.loading = false
+      })
     })
   },
+  beforeDestroy () {
+    if (this.echartsUserAction) {
+      this.echartsUserAction.dispose()
+      this.echartsUserAction = null
+    }
+    if (this.echartsQuestion) {
+      this.echartsQuestion.dispose()
+      this.echartsQuestion = null
+    }
+  },
   methods: {
-    buildChartOption (formatter, labels, values, colors) {
-      // eslint-disable-next-line no-undef
+    buildChartOption (echarts, formatter, labels, values, colors) {
       const areaColor = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
         { offset: 0, color: colors[0] + '55' },
         { offset: 1, color: colors[1] + '08' }

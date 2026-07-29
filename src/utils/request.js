@@ -1,5 +1,12 @@
 import axios from 'axios'
 import vue from 'vue'
+
+const baseConfig = {
+  baseURL: process.env.VUE_APP_URL,
+  withCredentials: true,
+  timeout: 30000
+}
+
 const request = function (loadtip, query) {
   let loading
   if (loadtip) {
@@ -15,15 +22,11 @@ const request = function (loadtip, query) {
       if (loadtip) {
         loading.close()
       }
-      if (res.data.code === 401) {
+      const { code } = res.data
+      if (code === 401 || code === 502) {
         vue.prototype.$$router.push({ path: '/login' })
         return Promise.reject(res.data)
-      } else if (res.data.code === 500) {
-        return Promise.reject(res.data)
-      } else if (res.data.code === 501) {
-        return Promise.reject(res.data)
-      } else if (res.data.code === 502) {
-        vue.prototype.$$router.push({ path: '/login' })
+      } else if (code === 500 || code === 501) {
         return Promise.reject(res.data)
       } else {
         return Promise.resolve(res.data)
@@ -38,95 +41,62 @@ const request = function (loadtip, query) {
     })
 }
 
-const post = function (url, params) {
-  const query = {
-    baseURL: process.env.VUE_APP_URL,
-    url: url,
+const post = function (url, params, loadtip = false) {
+  return request(loadtip, {
+    ...baseConfig,
+    url,
     method: 'post',
-    withCredentials: true,
-    timeout: 30000,
     data: params,
     headers: { 'Content-Type': 'application/json', 'request-ajax': true }
-  }
-  return request(false, query)
+  })
 }
 
 const postWithLoadTip = function (url, params) {
-  const query = {
-    baseURL: process.env.VUE_APP_URL,
-    url: url,
-    method: 'post',
-    withCredentials: true,
-    timeout: 30000,
-    data: params,
-    headers: { 'Content-Type': 'application/json', 'request-ajax': true }
-  }
-  return request(true, query)
+  return post(url, params, true)
 }
 
 const postWithOutLoadTip = function (url, params) {
-  const query = {
-    baseURL: process.env.VUE_APP_URL,
-    url: url,
-    method: 'post',
-    withCredentials: true,
-    timeout: 30000,
-    data: params,
-    headers: { 'Content-Type': 'application/json', 'request-ajax': true }
-  }
-  return request(false, query)
+  return post(url, params, false)
 }
 
 const get = function (url, params) {
-  const query = {
-    baseURL: process.env.VUE_APP_URL,
-    url: url,
+  return request(false, {
+    ...baseConfig,
+    url,
     method: 'get',
-    withCredentials: true,
-    timeout: 30000,
-    params: params,
+    params,
     headers: { 'request-ajax': true }
-  }
-  return request(false, query)
+  })
 }
 
 const form = function (url, params) {
-  const query = {
-    baseURL: process.env.VUE_APP_URL,
-    url: url,
+  return request(false, {
+    ...baseConfig,
+    url,
     method: 'post',
-    withCredentials: true,
-    timeout: 30000,
     data: params,
     headers: { 'Content-Type': 'multipart/form-data', 'request-ajax': true }
-  }
-  return request(false, query)
+  })
 }
 
 const put = function (url, params) {
-  const query = {
-    baseURL: process.env.VUE_APP_URL,
-    url: url,
+  return request(false, {
+    ...baseConfig,
+    url,
     method: 'put',
-    withCredentials: true,
-    timeout: 30000,
     data: params,
     headers: { 'Content-Type': 'application/json', 'request-ajax': true }
-  }
-  return request(false, query)
+  })
 }
 
 const deleteRequest = function (url, params) {
-  const query = {
-    baseURL: process.env.VUE_APP_URL,
-    url: url,
+  return request(false, {
+    ...baseConfig,
+    url,
     method: 'delete',
-    withCredentials: true,
-    timeout: 30000,
-    params: params,
+    params,
     headers: { 'request-ajax': true }
-  }
-  return request(false, query)
+  })
 }
 
 export {

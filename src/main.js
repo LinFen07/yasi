@@ -12,10 +12,6 @@ import '@wangeditor/editor/dist/css/style.css'
 import ListeningSection from '@/views/exam/paper/components/ListeningSection.vue'
 import ReadingSection from '@/views/exam/paper/components/ReadingSection.vue'
 import WritingSection from '@/views/exam/paper/components/WritingSection.vue'
-
-Vue.component('ListeningSection', ListeningSection)
-Vue.component('ReadingSection', ReadingSection)
-Vue.component('WritingSection', WritingSection)
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
 // 在main.js或插件文件中
@@ -30,8 +26,13 @@ Vue.use(Element, {
 
 Vue.config.productionTip = false
 
+Vue.component('ListeningSection', ListeningSection)
+Vue.component('ReadingSection', ReadingSection)
+Vue.component('WritingSection', WritingSection)
+
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
+let routerInitialized = false
 router.beforeEach(async (to, from, next) => {
   // start progress bar
   NProgress.start()
@@ -40,8 +41,10 @@ router.beforeEach(async (to, from, next) => {
   } else {
     document.title = '\u200E'
   }
-  store.commit('router/initRoutes')
-
+  if (!routerInitialized) {
+    store.commit('router/initRoutes')
+    routerInitialized = true
+  }
   if (to.path) {
     // eslint-disable-next-line no-undef
     _hmt.push(['_trackPageview', '/#' + to.fullPath])
