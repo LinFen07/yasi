@@ -26,11 +26,11 @@
         :key="partIndex"
         type="button"
         class="reading-part-tab"
-        :class="partTabClass(partIndex, subsection)"
+        :class="partTabClass(partIndex)"
         @click="$emit('update:activePartTab', String(partIndex))"
       >
         <span class="reading-part-tab__label">Passage {{ partIndex + 1 }}</span>
-        <span class="reading-part-tab__stat">{{ partCount(subsection) }} 题</span>
+        <span class="reading-part-tab__stat">{{ subsectionCounts[partIndex] }} 题</span>
       </button>
     </div>
 
@@ -44,9 +44,9 @@
         <div>
           <h4 class="reading-part-panel__title">Passage {{ partIndex + 1 }}</h4>
           <p class="reading-part-panel__subtitle">
-            已添加 {{ partCount(subsection) }} 道题
-            <template v-if="partCount(subsection) > 0">
-              · Q{{ questionRange(partIndex).start }}<template v-if="questionRange(partIndex).end > questionRange(partIndex).start">–{{ questionRange(partIndex).end }}</template>
+            已添加 {{ subsectionCounts[partIndex] }} 道题
+            <template v-if="subsectionCounts[partIndex] > 0">
+              · Q{{ questionRanges[partIndex].start }}<template v-if="questionRanges[partIndex].end > questionRanges[partIndex].start">–{{ questionRanges[partIndex].end }}</template>
             </template>
           </p>
         </div>
@@ -63,7 +63,7 @@
       <div v-if="subsection.questionItems && subsection.questionItems.length !== 0" class="question-list">
         <div class="question-list__head">
           <span>本 Passage 题目</span>
-          <em>{{ partCount(subsection) }} 道</em>
+          <em>{{ subsectionCounts[partIndex] }} 道</em>
           <el-button
             type="primary"
             plain
@@ -79,7 +79,7 @@
           :key="questionIndex"
           class="question-item"
         >
-          <div class="question-item__index">{{ questionNumberLabel(partIndex, subsection, questionIndex) }}</div>
+          <div class="question-item__index">{{ getQuestionNumberLabel(partIndex, subsection, questionIndex) }}</div>
           <div class="question-item__body">
             <QuestionShow :qType="questionItem.questionType" :question="questionItem" />
           </div>
@@ -147,31 +147,34 @@ export default {
         return 0
       }
       return getModuleQuestionCount(this.module)
+    },
+    // 缓存每个 subsection 的 question count
+    subsectionCounts () {
+      return this.subsectionsList.map(s => getSubsectionQuestionCount(s))
+    },
+    // 缓存每个 part 的 question range
+    questionRanges () {
+      return this.subsectionsList.map((subsection, partIndex) => {
+        const count = this.subsectionCounts[partIndex]
+        if (count === 0) {
+          return { start: 0, end: 0 }
+        }
+        const start = getReadingQuestionStartInModule(this.module, partIndex)
+        return { start, end: start + count - 1 }
+      })
     }
   },
   methods: {
-    partCount (subsection) {
-      return getSubsectionQuestionCount(subsection)
-    },
-    questionRange (partIndex) {
-      const subsection = this.subsectionsList[partIndex]
-      const count = this.partCount(subsection)
-      if (count === 0) {
-        return { start: 0, end: 0 }
-      }
-      const start = getReadingQuestionStartInModule(this.module, partIndex)
-      return { start, end: start + count - 1 }
-    },
-    questionNumberLabel (partIndex, subsection, questionIndex) {
-      return getReadingQuestionNumberLabel(this.module, partIndex, subsection, questionIndex)
-    },
-    partTabClass (partIndex, subsection) {
-      const count = this.partCount(subsection)
+    partTabClass (partIndex) {
+      const count = this.subsectionCounts[partIndex]
       return {
         'reading-part-tab--active': this.activePartTab === String(partIndex),
         'reading-part-tab--done': count > 0,
         'reading-part-tab--empty': count === 0
       }
+    },
+    getQuestionNumberLabel (partIndex, subsection, questionIndex) {
+      return getReadingQuestionNumberLabel(this.module, partIndex, subsection, questionIndex)
     }
   }
 }

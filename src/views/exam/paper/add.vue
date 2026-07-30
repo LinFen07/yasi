@@ -86,7 +86,7 @@
           <span class="form-card__count">听力 · 阅读 · 写作</span>
         </div>
         <div class="form-card__body">
-          <div class="module-overview">
+          <!-- <div class="module-overview">
             <div
               v-for="(section, index) in ieltsSections"
               :key="section.key"
@@ -112,7 +112,7 @@
                 <span>题</span>
               </div>
             </div>
-          </div>
+          </div> -->
 
           <el-tabs v-model="activeSectionTab" class="module-tabs">
             <el-tab-pane
@@ -123,9 +123,9 @@
               <span slot="label" class="module-tab-label">
                 <svg-icon :icon-class="section.icon" />
                 {{ section.label }}
-                <em v-if="(section.theme === 'listening' || section.theme === 'reading') && getSectionQuestionCount(index)">{{ getSectionQuestionCount(index) }}/40</em>
-                <em v-else-if="section.theme === 'writing' && getSectionQuestionCount(index)">{{ getSectionQuestionCount(index) }}/2</em>
-                <em v-else-if="getSectionQuestionCount(index)">{{ getSectionQuestionCount(index) }}</em>
+                <em v-if="(section.theme === 'listening' || section.theme === 'reading') && sectionQuestionCounts[index]">{{ sectionQuestionCounts[index] }}/40</em>
+                <em v-else-if="section.theme === 'writing' && sectionQuestionCounts[index]">{{ sectionQuestionCounts[index] }}/2</em>
+                <em v-else-if="sectionQuestionCounts[index]">{{ sectionQuestionCounts[index] }}</em>
               </span>
 
               <template v-if="form.titleItems[index]">
@@ -363,6 +363,12 @@ export default {
         return `选择写作 Task ${partNum} 作文题`
       }
       return `选择${section.label}题目`
+    },
+    // 缓存每个模块的题目数量，避免模板中重复调用 getModuleQuestionCount
+    sectionQuestionCounts () {
+      return this.ieltsSections.map((_, i) =>
+        getModuleQuestionCount(this.form.titleItems[i])
+      )
     }
   },
   watch: {

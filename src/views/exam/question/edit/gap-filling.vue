@@ -58,9 +58,9 @@
       <el-form-item v-if="form.items.length" label="填空答案：" required>
         <el-table :data="form.items" border size="small" class="gap-answer-table">
           <el-table-column prop="prefix" label="题号" width="72" align="center" />
-          <el-table-column label="标准答案" min-width="200">
+          <el-table-column label="标准答案（多答案用逗号分隔）" min-width="240">
             <template slot-scope="{ row }">
-              <el-input v-model="row.content" placeholder="请输入答案（纯文本）" />
+              <el-input v-model="row.contentsText" placeholder="请输入答案，多个答案用逗号分隔" @input="syncContentsFromText(row)" />
             </template>
           </el-table-column>
           <el-table-column label="分值" width="168" align="center" class-name="gap-score-col">
@@ -204,7 +204,10 @@ export default {
         ...data,
         items: (data.items || []).map(item => ({
           ...item,
-          score: item.score != null ? Number(item.score) : 0
+          score: item.score != null ? Number(item.score) : 0,
+          // 兼容旧数据 content 和新数据 contents
+          contents: item.contents || (item.content ? [item.content] : []),
+          contentsText: (item.contents || (item.content ? [item.content] : [])).join(',')
         }))
       }
       this.$nextTick(() => {
@@ -299,7 +302,8 @@ export default {
           id: old ? old.id : null,
           itemUuid,
           prefix,
-          content: old ? old.content : '',
+          contents: old ? (old.contents || (old.content ? [old.content] : [])) : [],
+          contentsText: old ? (old.contentsText || (old.content || '')) : '',
           score: old ? old.score : 1
         })
       })
@@ -312,13 +316,19 @@ export default {
       const sum = this.form.items.reduce((total, item) => total + Number(item.score || 0), 0)
       this.form.score = Math.round(sum * 10) / 10
     },
+    syncContentsFromText (row) {
+      // 将逗号分隔的文本转为数组
+      row.contents = row.contentsText
+        ? row.contentsText.split(',').map(s => s.trim()).filter(s => s)
+        : []
+    },
     validateGapForm () {
       const content = this.editorInstance ? this.editorInstance.getContent() : this.form.title
       if (!this.syncItemsFromContent(content)) {
         this.$message.error('请先在题干中插入填空')
         return false
       }
-      if (this.form.items.some(item => !item.content || String(item.content).trim() === '')) {
+      if (this.form.items.some(item => !item.contents || !item.contents.length || item.contents.every(c => !c || !c.trim()))) {
         this.$message.error('请填写所有填空的标准答案')
         return false
       }

@@ -30,8 +30,8 @@
         @click="$emit('update:activePartTab', String(partIndex))"
       >
         <span class="listening-part-tab__label">Part {{ partIndex + 1 }}</span>
-        <span class="listening-part-tab__range">Q{{ partRange(partIndex).start }}–{{ partRange(partIndex).end }}</span>
-        <span class="listening-part-tab__stat">{{ partCount(subsection) }}/{{ partSize }}</span>
+        <span class="listening-part-tab__range">Q{{ partRanges[partIndex].start }}–{{ partRanges[partIndex].end }}</span>
+        <span class="listening-part-tab__stat">{{ subsectionCounts[partIndex] }}/{{ partSize }}</span>
       </button>
     </div>
 
@@ -45,7 +45,7 @@
         <div>
           <h4 class="listening-part-panel__title">Part {{ partIndex + 1 }}</h4>
           <p class="listening-part-panel__subtitle">
-            Questions {{ partRange(partIndex).start }}–{{ partRange(partIndex).end }}
+            Questions {{ partRanges[partIndex].start }}–{{ partRanges[partIndex].end }}
           </p>
         </div>
       </div>
@@ -54,20 +54,20 @@
         <div class="listening-part-progress__bar">
           <div
             class="listening-part-progress__fill"
-            :style="{ width: partProgressPercent(subsection) + '%' }"
+            :style="{ width: Math.min(100, Math.round((subsectionCounts[partIndex] / partSize) * 100)) + '%' }"
           />
         </div>
-        <span class="listening-part-progress__text">{{ partCount(subsection) }} / {{ partSize }} 题</span>
+        <span class="listening-part-progress__text">{{ subsectionCounts[partIndex] }} / {{ partSize }} 题</span>
       </div>
 
       <div class="listening-slot-grid">
         <div
-          v-for="(filled, slotIndex) in partSlotStatuses(subsection)"
+          v-for="(filled, slotIndex) in slotStatusesList[partIndex]"
           :key="slotIndex"
           class="listening-slot"
-          :class="{ 'listening-slot--filled': filled, 'listening-slot--active': filled && slotIndex === partCount(subsection) - 1 }"
+          :class="{ 'listening-slot--filled': filled, 'listening-slot--active': filled && slotIndex === subsectionCounts[partIndex] - 1 }"
         >
-          {{ partRange(partIndex).start + slotIndex }}
+          {{ partRanges[partIndex].start + slotIndex }}
         </div>
       </div>
 
@@ -91,9 +91,9 @@
       <div v-if="subsection.questionItems && subsection.questionItems.length !== 0" class="question-list">
         <div class="question-list__head">
           <span>本 Part 题目</span>
-          <em>{{ partCount(subsection) }} / {{ partSize }} 题</em>
+          <em>{{ subsectionCounts[partIndex] }} / {{ partSize }} 题</em>
           <el-button
-            v-if="partCount(subsection) < partSize"
+            v-if="subsectionCounts[partIndex] < partSize"
             type="primary"
             plain
             size="mini"
@@ -199,6 +199,18 @@ export default {
         ...this.editorConfig,
         placeholder: '请输入本 Part 说明（题型要求、注意事项等），支持图文混排...'
       }
+    },
+    // 缓存每个 part 的 range，避免模板中重复调用
+    partRanges () {
+      return [0, 1, 2, 3].map(i => getListeningPartRange(i))
+    },
+    // 缓存每个 subsection 的 question count，避免重复计算
+    subsectionCounts () {
+      return this.subsectionsList.map(s => getSubsectionQuestionCount(s))
+    },
+    // 缓存每个 subsection 的 slot statuses
+    slotStatusesList () {
+      return this.subsectionsList.map(s => getPartSlotStatuses(s))
     }
   },
   methods: {
@@ -218,7 +230,7 @@ export default {
       return getQuestionNumberLabel(partIndex, subsection, questionIndex)
     },
     partTabClass (partIndex, subsection) {
-      const count = this.partCount(subsection)
+      const count = this.subsectionCounts[partIndex]
       return {
         'listening-part-tab--active': this.activePartTab === String(partIndex),
         'listening-part-tab--done': count === this.partSize,

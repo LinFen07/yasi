@@ -119,7 +119,7 @@ export default {
     }
   },
   created () {
-    // window.addEventListener('storage', this.afterQRScan)
+    this.loadSavedCredentials()
   },
   mounted () {
     this.syncAutofill()
@@ -134,6 +134,30 @@ export default {
     // window.removeEventListener('storage', this.afterQRScan)
   },
   methods: {
+    loadSavedCredentials () {
+      const saved = localStorage.getItem('remember_credentials')
+      if (saved) {
+        try {
+          const { userName, password } = JSON.parse(saved)
+          this.loginForm.userName = userName || ''
+          this.loginForm.password = password || ''
+          this.loginForm.remember = !!(userName || password)
+        } catch (e) {
+          localStorage.removeItem('remember_credentials')
+        }
+      }
+    },
+    saveCredentials () {
+      if (this.loginForm.remember) {
+        const data = {
+          userName: this.loginForm.userName,
+          password: this.loginForm.password
+        }
+        localStorage.setItem('remember_credentials', JSON.stringify(data))
+      } else {
+        localStorage.removeItem('remember_credentials')
+      }
+    },
     getNativeInput (refName) {
       const ref = this.$refs[refName]
       if (!ref || !ref.$el) return null

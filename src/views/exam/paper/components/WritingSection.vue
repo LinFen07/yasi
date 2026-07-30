@@ -26,11 +26,11 @@
         :key="partIndex"
         type="button"
         class="writing-part-tab"
-        :class="partTabClass(partIndex, subsection)"
+        :class="partTabClass(partIndex)"
         @click="$emit('update:activePartTab', String(partIndex))"
       >
         <span class="writing-part-tab__label">Task {{ partIndex + 1 }}</span>
-        <span class="writing-part-tab__stat">{{ partCount(subsection) }}/{{ partSize }}</span>
+        <span class="writing-part-tab__stat">{{ subsectionCounts[partIndex] }}/{{ partSize }}</span>
       </button>
     </div>
 
@@ -51,15 +51,15 @@
         <div class="writing-part-progress__bar">
           <div
             class="writing-part-progress__fill"
-            :style="{ width: partProgressPercent(subsection) + '%' }"
+            :style="{ width: Math.min(100, Math.round((subsectionCounts[partIndex] / partSize) * 100)) + '%' }"
           />
         </div>
-        <span class="writing-part-progress__text">{{ partCount(subsection) }} / {{ partSize }} 题</span>
+        <span class="writing-part-progress__text">{{ subsectionCounts[partIndex] }} / {{ partSize }} 题</span>
       </div>
 
       <div class="writing-slot-grid">
         <div
-          v-for="(filled, slotIndex) in partSlotStatuses(subsection)"
+          v-for="(filled, slotIndex) in slotStatusesList[partIndex]"
           :key="slotIndex"
           class="writing-slot"
           :class="{ 'writing-slot--filled': filled }"
@@ -79,7 +79,7 @@
       <div v-if="subsection.questionItems && subsection.questionItems.length !== 0" class="question-list">
         <div class="question-list__head">
           <span>本 Task 题目</span>
-          <em>{{ partCount(subsection) }} / {{ partSize }} 题</em>
+          <em>{{ subsectionCounts[partIndex] }} / {{ partSize }} 题</em>
         </div>
         <div
           v-for="(questionItem, questionIndex) in subsection.questionItems"
@@ -161,20 +161,19 @@ export default {
         return 0
       }
       return getModuleQuestionCount(this.module)
+    },
+    // 缓存每个 subsection 的 question count
+    subsectionCounts () {
+      return this.subsectionsList.map(s => getSubsectionQuestionCount(s))
+    },
+    // 缓存每个 subsection 的 slot statuses
+    slotStatusesList () {
+      return this.subsectionsList.map(s => getWritingPartSlotStatuses(s))
     }
   },
   methods: {
-    partCount (subsection) {
-      return getSubsectionQuestionCount(subsection)
-    },
-    partSlotStatuses (subsection) {
-      return getWritingPartSlotStatuses(subsection)
-    },
-    partProgressPercent (subsection) {
-      return Math.min(100, Math.round((this.partCount(subsection) / this.partSize) * 100))
-    },
-    partTabClass (partIndex, subsection) {
-      const count = this.partCount(subsection)
+    partTabClass (partIndex) {
+      const count = this.subsectionCounts[partIndex]
       return {
         'writing-part-tab--active': this.activePartTab === String(partIndex),
         'writing-part-tab--done': count === this.partSize,

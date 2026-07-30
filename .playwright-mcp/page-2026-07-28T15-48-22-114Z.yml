@@ -1,0 +1,86 @@
+- generic [active] [ref=e1]:
+  - img:
+    - generic:
+      - generic "background"
+      - generic "Layer 1"
+    - generic:
+      - generic "background"
+      - generic "Layer 1"
+    - generic:
+      - generic "background"
+      - generic "Layer 1"
+    - generic:
+      - generic "background"
+      - generic "Layer 1"
+    - generic:
+      - generic "background"
+      - generic "Layer 1"
+    - generic:
+      - generic "background"
+      - generic "Layer 1"
+    - generic:
+      - generic "background"
+      - generic "Layer 1"
+  - generic [ref=e3]:
+    - generic:
+      - generic:
+        - generic:
+          - img "logo"
+      - generic:
+        - generic:
+          - generic:
+            - menubar:
+              - generic:
+                - link:
+                  - /url: "#/dashboard"
+                  - menuitem:
+                    - generic:
+                      - img
+              - generic:
+                - menuitem:
+                  - generic:
+                    - img
+                    - text: 
+              - generic:
+                - menuitem:
+                  - generic:
+                    - img
+                    - text: 
+              - generic:
+                - menuitem:
+                  - generic:
+                    - img
+                    - text: 
+              - generic:
+                - menuitem:
+                  - generic:
+                    - img
+                    - text: 
+              - generic:
+                - menuitem:
+                  - generic:
+                    - img
+                    - text: 
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6] [cursor=pointer]:
+          - generic [ref=e7]: 
+          - generic [ref=e8]: 返回
+        - generic [ref=e9]:
+          - img [ref=e11] [cursor=pointer]
+          - navigation "Breadcrumb" [ref=e13]:
+            - generic [ref=e14]:
+              - link "主页" [ref=e15]:
+                - generic [ref=e16]:
+                  - img [ref=e17]
+                  - generic [ref=e19]: 主页
+              - text: 
+          - generic [ref=e21] [cursor=pointer]:
+            - button "U " [ref=e22]:
+              - generic [ref=e23]: U
+              - generic [ref=e24]: 
+            - text: 
+        - generic [ref=e29] [cursor=pointer]:
+          - img [ref=e30]
+          - generic [ref=e32]: 主页
+      - generic [ref=e36]: Copyright ©2019-2024 仲恺农业技术工程学院 版权所有
