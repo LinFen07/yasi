@@ -444,12 +444,20 @@ function inferMultipleChoiceSlotsFromTitle (question) {
 
 function countMultipleChoiceSlots (question) {
   const correct = parseCorrectPrefixes(question)
+  const correctCount = correct.length
+
+  // 优先使用正确答案数量（最可靠）
+  if (correctCount > 0) {
+    return correctCount
+  }
+
+  // 如果没有正确答案，使用其他启发式方法作为后备
   const scoredItems = (question.items || []).filter(item => item.score != null && Number(item.score) > 0)
   const fromTitle = inferMultipleChoiceSlotsFromTitle(question)
   const score = Number(question.score)
   const scoreSlots = !Number.isNaN(score) && score > 1 ? Math.round(score) : 0
 
-  const candidates = [correct.length, scoredItems.length, fromTitle, scoreSlots].filter(n => n > 0)
+  const candidates = [scoredItems.length, fromTitle, scoreSlots].filter(n => n > 0)
   if (candidates.length > 0) {
     return Math.max(...candidates)
   }
@@ -470,22 +478,49 @@ export function normalizePaperQuestionItem (question) {
 export function countQuestionSlots (question) {
   if (!question) return 0
   const type = Number(question.questionType)
-  if (type === MULTIPLE_CHOICE_TYPE || type === PICK_TICK_TYPE) {
+
+  // 多选题：使用正确答案数量
+  if (type === MULTIPLE_CHOICE_TYPE) {
     return countMultipleChoiceSlots(question)
   }
-  if (Number(question.questionType) === GAP_FILLING_TYPE) {
+
+  // 打钩题：统计 items 中被选中的项数量
+  if (type === PICK_TICK_TYPE) {
+    const correct = parseCorrectPrefixes(question)
+    if (correct.length > 0) {
+      return correct.length
+    }
+    // 如果没有正确答案，统计 items 中有分数的项
+    const scoredItems = (question.items || []).filter(item => item.score != null && Number(item.score) > 0)
+    if (scoredItems.length > 0) {
+      return scoredItems.length
+    }
+    // 默认1
+    return 1
+  }
+
+  // 填空题：统计填空项数量
+  if (type === GAP_FILLING_TYPE) {
     const items = question.items || question.questionItemObjects
     if (items && items.length > 0) {
       return items.length
     }
   }
-  if (Number(question.questionType) === DRAG_MATCHING_TYPE) {
+
+  // 拖拽题：统计 prompt 项数量
+  if (type === DRAG_MATCHING_TYPE) {
     const items = question.items || question.questionItemObjects || []
     const prompts = items.filter(item => item.itemUuid === 'prompt')
     if (prompts.length > 0) {
       return prompts.length
     }
+    // 如果没有 itemUuid，尝试用 itemType 字段
+    const promptsByType = items.filter(item => item.itemType === 'prompt')
+    if (promptsByType.length > 0) {
+      return promptsByType.length
+    }
   }
+
   return 1
 }
 
