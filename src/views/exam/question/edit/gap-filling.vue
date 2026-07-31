@@ -58,9 +58,25 @@
       <el-form-item v-if="form.items.length" label="填空答案：" required>
         <el-table :data="form.items" border size="small" class="gap-answer-table">
           <el-table-column prop="prefix" label="题号" width="72" align="center" />
-          <el-table-column label="标准答案" min-width="200">
+          <el-table-column label="标准答案（支持多答案）" min-width="320">
             <template slot-scope="{ row }">
-              <el-input v-model="row.content" placeholder="请输入答案（纯文本）" />
+              <el-select
+                v-model="row.contents"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                placeholder="输入答案后按回车添加"
+                style="width: 100%"
+                @change="val => { row.content = val[0] || '' }"
+              >
+                <el-option
+                  v-for="(answer, idx) in row.contents"
+                  :key="idx"
+                  :label="answer"
+                  :value="answer"
+                />
+              </el-select>
             </template>
           </el-table-column>
           <el-table-column label="分值" width="168" align="center" class-name="gap-score-col">
@@ -78,7 +94,7 @@
             </template>
           </el-table-column>
         </el-table>
-        <div class="form-tip">题目总分将根据各空分值自动合计</div>
+        <div class="form-tip">题目总分将根据各空分值自动合计；支持多答案时全部答案均正确</div>
       </el-form-item>
       <el-alert v-else title="请先在题干中插入至少一个填空" type="info" :closable="false" show-icon class="gap-empty-tip" />
 
@@ -326,7 +342,7 @@ export default {
         this.$message.error('请先在题干中插入填空')
         return false
       }
-      if (this.form.items.some(item => !item.content || String(item.content).trim() === '')) {
+      if (this.form.items.some(item => !item.contents || !item.contents.length || !item.contents[0])) {
         this.$message.error('请填写所有填空的标准答案')
         return false
       }

@@ -211,7 +211,7 @@ export default {
         _this.form = {
           ..._this.form,
           ...data,
-          items: _this.parseItemsForPick(data.items || [], data.correct || '')
+          items: _this.parseItemsForPick(data.items || [])
         }
         _this.updateSubjectFilter()
         _this.$nextTick(() => {
@@ -285,29 +285,30 @@ export default {
       titleToolbar.addHandler('image', () => handleImageUpload(this.titleQuill))
     },
     // 解析已有的 items 数据（从旧格式转换）
-    parseItemsForPick (items, correct) {
+    parseItemsForPick (items) {
       if (!items || items.length === 0) {
         return [{ questionNo: 1, question: '', correct: '' }]
       }
-      // items 格式可能是 [{ prefix, content }]，需要转换
-      if (items[0] && items[0].prefix && items[0].content !== undefined) {
-        // 旧格式，尝试解析
-        const result = []
-        items.forEach((item, idx) => {
-          result.push({
-            questionNo: idx + 1,
-            question: item.content || '',
-            correct: ''
-          })
-        })
-        // 尝试从 correct 解析正确答案
-        if (correct) {
-          const correctArr = String(correct).split(',').map(s => s.trim())
-          // 这里需要根据实际数据结构处理
+      const result = []
+      items.forEach((item) => {
+        // content 是正确答案，describe 是描述（如 "1. 16. Farm shop "）
+        // describe 格式可能是 "1. 16. Farm shop " 或 "16. Library"
+        let questionNo = item.prefix || ''
+        let question = item.describe || ''
+        // 如果 describe 以 "prefix. " 开头，去掉前缀部分
+        if (item.describe && item.prefix) {
+          const prefixDot = item.prefix + '. '
+          if (item.describe.startsWith(prefixDot)) {
+            question = item.describe.substring(prefixDot.length)
+          }
         }
-        return result.length > 0 ? result : [{ questionNo: 1, question: '', correct: '' }]
-      }
-      return items
+        result.push({
+          questionNo: questionNo,
+          question: question,
+          correct: item.content || ''
+        })
+      })
+      return result.length > 0 ? result : [{ questionNo: 1, question: '', correct: '' }]
     },
     // 点击单元格切换答案
     handleCellClick (rowIndex, col, checked) {
@@ -342,17 +343,18 @@ export default {
     finalizeFormData () {
       const formData = { ...this.form }
       const questionCount = formData.items.length
-      const scorePerQuestion = Number(formData.score) || 1
+      const totalScore = Number(formData.score) || 0
+      const scorePerQuestion = questionCount > 0 ? Math.round((totalScore / questionCount) * 10) / 10 : 0
       // 将 items 转换为后端需要的格式
       // 每个 item 的 prefix 为局部槽位序号 "1"-"N"，content 为正确答案选项字母
       formData.items = this.form.items.map((item, idx) => ({
         prefix: String(idx + 1),
         content: item.correct,
+        describe: item.questionNo ? `${item.questionNo}${item.question ? '. ' + item.question : ''}` : item.question || '',
         score: scorePerQuestion,
-        itemUuid: `map-${idx + 1}`
+        itemUuid: `tick-${idx + 1}`
       }))
-      // 总分 = 每题分数 × 题数
-      formData.score = scorePerQuestion * questionCount
+      // 总分保持不变
       return formData
     },
     submitForm () {
