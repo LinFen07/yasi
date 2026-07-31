@@ -58,9 +58,9 @@
       <el-form-item v-if="form.items.length" label="填空答案：" required>
         <el-table :data="form.items" border size="small" class="gap-answer-table">
           <el-table-column prop="prefix" label="题号" width="72" align="center" />
-          <el-table-column label="标准答案（多答案用逗号分隔）" min-width="240">
+          <el-table-column label="标准答案" min-width="200">
             <template slot-scope="{ row }">
-              <el-input v-model="row.contentsText" placeholder="请输入答案，多个答案用逗号分隔" @input="syncContentsFromText(row)" />
+              <el-input v-model="row.content" placeholder="请输入答案（纯文本）" />
             </template>
           </el-table-column>
           <el-table-column label="分值" width="168" align="center" class-name="gap-score-col">
@@ -157,6 +157,7 @@ export default {
       destroyTableResize: null,
       destroyAlignmentInherit: null,
       destroyTableAlign: null,
+      isLoadingContent: false,
       rules: {
         gradeLevel: [{ required: true, message: '请选择年级', trigger: 'change' }],
         subjectId: [{ required: true, message: '请选择学科', trigger: 'change' }],
@@ -204,10 +205,9 @@ export default {
         ...data,
         items: (data.items || []).map(item => ({
           ...item,
-          score: item.score != null ? Number(item.score) : 0,
-          // 兼容旧数据 content 和新数据 contents
-          contents: item.contents || (item.content ? [item.content] : []),
-          contentsText: (item.contents || (item.content ? [item.content] : [])).join(',')
+          content: item.contents && item.contents.length ? item.contents[0] : (item.content || ''),
+          contents: item.contents || (item.content ? [item.content] : ['']),
+          score: item.score != null ? Number(item.score) : 0
         }))
       }
       this.$nextTick(() => {
@@ -233,10 +233,14 @@ export default {
       this.destroyTableResize = setupGapTableColumnResize(instance)
       this.destroyAlignmentInherit = setupGapEditorAlignmentInherit(instance)
       this.destroyTableAlign = setupGapEditorTableAlign(instance)
+      this.isLoadingContent = true
       instance.setContent(this.form.title || '')
       normalizeGapTables(instance.document)
+      this.isLoadingContent = false
       instance.addListener('contentChange', () => {
-        this.syncItemsFromContent(instance.getContent())
+        if (!this.isLoadingContent) {
+          this.syncItemsFromContent(instance.getContent())
+        }
       })
     },
     genUuid () {
@@ -302,9 +306,9 @@ export default {
           id: old ? old.id : null,
           itemUuid,
           prefix,
-          contents: old ? (old.contents || (old.content ? [old.content] : [])) : [],
-          contentsText: old ? (old.contentsText || (old.content || '')) : '',
-          score: old ? old.score : 1
+          contents: old && old.contents && old.contents.length ? old.contents : (old && old.content ? [old.content] : ['']),
+          content: (old && old.content) || '',
+          score: old && old.score != null ? old.score : 1
         })
       })
       this.form.items = newItems
@@ -316,19 +320,13 @@ export default {
       const sum = this.form.items.reduce((total, item) => total + Number(item.score || 0), 0)
       this.form.score = Math.round(sum * 10) / 10
     },
-    syncContentsFromText (row) {
-      // 将逗号分隔的文本转为数组
-      row.contents = row.contentsText
-        ? row.contentsText.split(',').map(s => s.trim()).filter(s => s)
-        : []
-    },
     validateGapForm () {
       const content = this.editorInstance ? this.editorInstance.getContent() : this.form.title
       if (!this.syncItemsFromContent(content)) {
         this.$message.error('请先在题干中插入填空')
         return false
       }
-      if (this.form.items.some(item => !item.contents || !item.contents.length || item.contents.every(c => !c || !c.trim()))) {
+      if (this.form.items.some(item => !item.content || String(item.content).trim() === '')) {
         this.$message.error('请填写所有填空的标准答案')
         return false
       }
@@ -342,6 +340,12 @@ export default {
       this.syncTotalScore()
       this.$refs.form.validate((valid) => {
         if (!valid || !this.validateGapForm()) return
+        // 确保 contents 数组格式正确
+        this.form.items = this.form.items.map(item => ({
+          ...item,
+          contents: item.contents && item.contents.length ? item.contents : (item.content ? [item.content] : ['']),
+          content: item.content || (item.contents && item.contents[0]) || ''
+        }))
         this.form.topicType = this.form.questionType
         this.formLoading = true
         questionApi.edit(this.form).then(re => {

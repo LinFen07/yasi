@@ -145,10 +145,10 @@ const defaultOptionItems = () => ([
 ])
 
 const defaultPromptItems = () => ([
-  { prefix: '17', describe: '', content: '', score: 1, itemUuid: 'prompt' },
-  { prefix: '18', describe: '', content: '', score: 1, itemUuid: 'prompt' },
-  { prefix: '19', describe: '', content: '', score: 1, itemUuid: 'prompt' },
-  { prefix: '20', describe: '', content: '', score: 1, itemUuid: 'prompt' }
+  { prefix: '1', describe: '', content: '', score: 1, itemUuid: 'prompt' },
+  { prefix: '2', describe: '', content: '', score: 1, itemUuid: 'prompt' },
+  { prefix: '3', describe: '', content: '', score: 1, itemUuid: 'prompt' },
+  { prefix: '4', describe: '', content: '', score: 1, itemUuid: 'prompt' }
 ])
 
 export default {
@@ -298,8 +298,7 @@ export default {
     },
     addPrompt () {
       const items = this.form.promptItems
-      const last = items.length > 0 ? parseInt(items[items.length - 1].prefix, 10) : 0
-      const nextNo = Number.isNaN(last) ? items.length + 1 : last + 1
+      const nextNo = items.length + 1
       items.push({ prefix: String(nextNo), describe: '', content: '', score: 1, itemUuid: 'prompt' })
       this.syncTotalScore()
     },

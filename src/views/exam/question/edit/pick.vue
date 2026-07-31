@@ -341,21 +341,16 @@ export default {
     // 提交前格式化数据
     finalizeFormData () {
       const formData = { ...this.form }
-      // 计算总题数
       const questionCount = formData.items.length
-      // 每道题分数
       const scorePerQuestion = Number(formData.score) || 1
       // 将 items 转换为后端需要的格式
-      // 假设后端期望 items 为选项列表，correct 为逗号分隔的答案
+      // 每个 item 的 prefix 为局部槽位序号 "1"-"N"，content 为正确答案选项字母
       formData.items = this.form.items.map((item, idx) => ({
-        prefix: String.fromCharCode(65 + idx), // A, B, C...
-        content: item.question
+        prefix: String(idx + 1),
+        content: item.correct,
+        score: scorePerQuestion,
+        itemUuid: `map-${idx + 1}`
       }))
-      // 收集所有正确答案
-      formData.correct = this.form.items
-        .filter(item => item.correct)
-        .map(item => item.correct)
-        .join(',')
       // 总分 = 每题分数 × 题数
       formData.score = scorePerQuestion * questionCount
       return formData
