@@ -6,9 +6,40 @@ on:
   pull_request:
     branches: [master, student]
 
+env:
+  NODE_VERSION: '22'
+
 jobs:
-  build:
-    name: Build
+  # 1. commit 描述规范卡点
+  commit-check:
+    name: Commit Message Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        run: |
+          COMMIT_MSG_REGEX='^(feat|fix|refactor|style|docs|test|chore):\s*\[\d+\]\s+.+$'
+          invalid=0
+          while IFS= read -r commit; do
+            if ! echo "$commit" | grep -qE "$COMMIT_MSG_REGEX"; then
+              echo "❌ Invalid: $commit"
+              echo "   Format: <type>:[<issue-id>] <description>"
+              invalid=1
+            fi
+          done < <(git log --format=%s origin/master..HEAD)
+
+          if [ $invalid -eq 1 ]; then
+            echo "🌟 Fix: commit message should match pattern"
+            exit 1
+          fi
+          echo "✅ All commits valid"
+
+  # 2. lint、ts 类型检查卡点
+  lint-and-typescript:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,9 +50,70 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - run: pnpm install --no-frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm type-check
+
+  # 3. commit 行数限制卡点
+  diff-line-check:
+    name: Diff Line Count Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check diff lines
+        run: |
+          MAX_LINES=500
+          IGNORE_FILES="pnpm-lock.yaml"
+
+          diff_output=$(git diff origin/master --stat --stat-width=1)
+          insertions=$(echo "$diff_output" | tail -1 | awk '{print $4}')
+          deletions=$(echo "$diff_output" | tail -1 | awk '{print $6}')
+
+          echo "----- Diff Summary -----"
+          echo "Insertions: $insertions"
+          echo "Deletions: $deletions"
+          echo "Max: $MAX_LINES"
+          echo "------------------------"
+
+          if [ "$insertions" -ge "$MAX_LINES" ] || [ "$deletions" -ge "$MAX_LINES" ]; then
+            echo "❌ Exceeds $MAX_LINES lines"
+            echo "🌟 Split MR or request escape"
+            exit 1
+          fi
+          echo "✅ Within limits"
+
+  # 4. 构建测试
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint-and-typescript]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - run: pnpm install --no-frozen-lockfile
 
       - run: pnpm build
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: build
+          path: build/
+          retention-days: 1
