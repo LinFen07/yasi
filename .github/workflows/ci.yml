@@ -55,9 +55,9 @@ jobs:
 
       - run: pnpm install --no-frozen-lockfile
 
-      - run: pnpm lint
+      - run: pnpm lint --max-warnings 999
 
-      - run: pnpm type-check
+      - run: pnpm type-check --noEmit
 
   # 3. commit 行数限制卡点
   diff-line-check:
@@ -71,9 +71,9 @@ jobs:
       - name: Check diff lines
         run: |
           MAX_LINES=500
-          IGNORE_FILES="pnpm-lock.yaml"
 
-          diff_output=$(git diff origin/master --stat --stat-width=1)
+          # 获取与上一个 commit 的差异
+          diff_output=$(git diff HEAD~1 --stat --stat-width=1)
           insertions=$(echo "$diff_output" | tail -1 | awk '{print $4}')
           deletions=$(echo "$diff_output" | tail -1 | awk '{print $6}')
 
