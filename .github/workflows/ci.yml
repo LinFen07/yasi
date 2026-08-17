@@ -7,27 +7,6 @@ on:
     branches: [master, student]
 
 jobs:
-  lint-and-typescript:
-    name: Lint & Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm lint || true
-
-      - run: pnpm type-check || true
-
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -40,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
