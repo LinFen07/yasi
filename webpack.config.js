@@ -77,7 +77,12 @@ module.exports = (env) => {
           use: [
             // 生产环境提取 CSS 到单独文件，开发环境用 style-loader 注入
             isProduction ? MiniCssExtractPlugin.loader : 'style-loader',
-            'css-loader', // 解析 CSS
+            {
+              loader: 'css-loader',
+              options: {
+                esModule: false,
+              },
+            }, // 解析 CSS
             {
               loader: 'postcss-loader', // 自动添加浏览器前缀
               options: {
@@ -94,7 +99,12 @@ module.exports = (env) => {
           test: /\.(scss|sass)$/,
           use: [
             isProduction ? MiniCssExtractPlugin.loader : 'style-loader',
-            'css-loader',
+            {
+              loader: 'css-loader',
+              options: {
+                esModule: false,
+              },
+            },
             {
               loader: 'postcss-loader',
               options: {
