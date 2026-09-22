@@ -1,4 +1,4 @@
-import {  Radio, Checkbox } from 'antd';
+import { Radio, Checkbox } from 'antd';
 import parse from 'html-react-parser';
 
 export default function selectQuestion({ question, onChange }: any) {
