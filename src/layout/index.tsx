@@ -1,7 +1,8 @@
 import * as React from "react";
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import type { MenuProps} from 'antd';
-import { Layout, Menu, Dropdown, Space, Avatar } from 'antd';
+import { Layout, Dropdown, Avatar } from 'antd';
+import { FileTextOutlined } from '@ant-design/icons';
 import { fetchLogout } from "@/api/login";
 import { observer } from "mobx-react";
 import store from '@/stores/user'
@@ -11,15 +12,7 @@ const { Header, Content, Footer } = Layout;
 
 type MenuItem = Required<MenuProps>['items'][number];
 
-const navItems: MenuItem[] = [
-  {
-    label: '试卷中心',
-    key: '/layout/dashboard',
-  }
-];
-
-
-const items: MenuItem[] = [
+const dropdownItems: MenuItem[] = [
   {
     label: '退出登录',
     key: 'logout',
@@ -32,37 +25,31 @@ const items: MenuItem[] = [
 ]
 
 const Index: React.FC = observer(() => {
-  const navigate = useNavigate();
-  const onMenuClick = (route: any) => {
-    const path = route.key;
-    navigate(path);
-  }
+  const displayName = store.name || store.userName || '考生';
+  const avatarText = displayName.trim().charAt(0).toUpperCase();
 
-  //实现反向高亮
-  const location = useLocation();
-  const selectedkey = location.pathname;
-
-    return (
+  return (
     <Layout>
       <Header className='headNav' >
-        <div>
-          <img src='http://111.230.5.159:9000/yasi/image/logo/logo-04.webp' className='navImg'/>
+        <div className="headNav-logo">
+          <img src='http://111.230.5.159:9000/yasi/image/logo/logo-04.webp' className='navImg' alt="logo" />
         </div>
-        <Menu
-          theme="dark"
-          mode="horizontal"
-          selectedKeys={[selectedkey]}
-          items={navItems}
-          onClick={onMenuClick}
-          className='menuNav'
-        />
-        <Dropdown menu={{ items }} trigger={['click']}>
-          <a onClick={(e) => e.preventDefault()}>
-            <Space>
-              <Avatar size={37} className='avatar'/>
-            </Space>
-          </a>
-        </Dropdown>
+
+        <div className="headNav-right">
+          <div className="headNav-page-title">
+            <FileTextOutlined />
+            <span>试卷中心</span>
+          </div>
+
+          <Dropdown menu={{ items: dropdownItems }} trigger={['click']} placement="bottomRight">
+            <button type="button" className="headNav-user" onClick={(e) => e.preventDefault()}>
+              <Avatar size={38} className="headNav-avatar">
+                {avatarText}
+              </Avatar>
+              <span className="headNav-user-name">{displayName}</span>
+            </button>
+          </Dropdown>
+        </div>
       </Header>
       <Content>
         <Outlet/>
