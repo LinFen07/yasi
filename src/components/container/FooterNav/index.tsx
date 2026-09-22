@@ -5,7 +5,8 @@ import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import store from "@/stores";
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
-import { reaction } from "mobx";
+import { reaction, runInAction } from "mobx";
+import { getQuestionSlotCount } from "@/utils/helper/computed"; // 导入统一计算函数
 
 type pageType = {
   title: string;
@@ -25,8 +26,8 @@ function footerNav(props: propType) {
     type === "listen"
       ? store.ExamStore.getListenExam()
       : type === "read"
-      ? store.ExamStore.getReadExam()
-      : store.ExamStore.getWritteExam();
+        ? store.ExamStore.getReadExam()
+        : store.ExamStore.getWritteExam();
   let currentPage = store.ExamStore.currentExamIndex;
 
   const [curren, setCurren] = useState(currentPage);
@@ -43,36 +44,35 @@ function footerNav(props: propType) {
     };
   };
 
+  // 移除了内部定义的 getItemLength，直接使用统一导入的 getQuestionSlotCount
+
   let prevLen = 0;
   const initialPageArr = exam.map((part, index) => {
     let allLen = 0;
     for (let i = 0; i < part.questionItems.length; i++) {
-      const len = part.questionItems[i].correctArray
-        ? part.questionItems[i].correctArray.length
-        : 1;
+      const item = part.questionItems[i];
+      const len = getQuestionSlotCount(item); // 使用统一函数
       allLen += len;
     }
-    //@ts-ignore
+
+    // 写作题(questionType=7)占位数为0，需要为每个Part至少保留1个导航按钮
+    if (type === 'writte' && allLen === 0) {
+      allLen = 1;
+    }
+
     const { questionArr, currLen } = getQuestionArr(prevLen, allLen);
     prevLen = currLen;
 
     let writteTitle = "";
-    // if(type === 'writte') {
-    //   if(index == 0)
-    //     writteTitle = 'You should spend about 20 minutes on this task. Write at least 150 words.'
-    //   else
-    //     writteTitle = 'You should spend about 40 minutes on this task. Write at least 250 words.'
-    // }
     let headTitleExpain =
       type === "listen"
         ? ` Questions ${prevLen - allLen + 1} - ${prevLen}`
         : type === "read"
-        ? ` Read the passage below and answer questions ${
-            prevLen - allLen + 1
-          } - ${prevLen}`
-        : type === "writte"
-        ? `${writteTitle}`
-        : "";
+          ? ` Read the passage below and answer questions ${prevLen - allLen + 1} - ${prevLen}`
+          : type === "writte"
+            ? `${writteTitle}`
+            : "";
+
     return {
       title: `Part${index + 1}`,
       headTitleExpain,
@@ -83,81 +83,185 @@ function footerNav(props: propType) {
 
   const [PageArr, setPageArr] = useState<Array<pageType>>([]);
 
-  const handleChangeTitle = (curren: number) => {
-    for (let page of PageArr) {
-      if (page.maxNum >= curren) {
+  const syncTitleByQuestionIndex = (pageArr: pageType[], questionIndex: number) => {
+    for (const page of pageArr) {
+      if (page.maxNum >= questionIndex) {
         store.ExamStore.changeCurrentTitle(page.title);
         store.ExamStore.changeTitleExpain(page.headTitleExpain);
-        break;
+        return;
       }
     }
   };
 
+  const handleChangeTitle = (curren: number) => {
+    syncTitleByQuestionIndex(PageArr.length > 0 ? PageArr : initialPageArr, curren);
+  };
+
   useEffect(() => {
+    if (initialPageArr.length === 0) return;
+
     setPageArr(initialPageArr);
-    setCurren(store.ExamStore.currentExamIndex);
-    store.ExamStore.changeCurrentTitle(initialPageArr[0].title);
-    store.ExamStore.changeTitleExpain(initialPageArr[0].headTitleExpain);
-  }, []);
+
+    const savedIndex = store.ExamStore.currentExamIndex;
+    const savedTitle = store.ExamStore.currentExamTitle;
+    setCurren(savedIndex);
+
+    const titleExists = initialPageArr.some(page => page.title === savedTitle);
+    const savedIndexValid = initialPageArr.some(page => page.maxNum >= savedIndex);
+
+    runInAction(() => {
+      if (savedTitle && titleExists && savedIndexValid) {
+        syncTitleByQuestionIndex(initialPageArr, savedIndex);
+      } else {
+        syncTitleByQuestionIndex(initialPageArr, 1);
+        store.ExamStore.changeCurrent(1);
+        setCurren(1);
+      }
+    });
+  }, [type, exam.length]);
 
   const activeAction = (num: number) => {
-    store.ExamStore.changeCurrent(num);
-    setCurren(store.ExamStore.currentExamIndex);
-    handleChangeTitle(num);
+    runInAction(() => {
+      store.ExamStore.changeCurrent(num);
+      setCurren(store.ExamStore.currentExamIndex);
+      handleChangeTitle(num);
+    });
+
+    try {
+      const state = {
+        currentExamIndex: num,
+        currentExamTitle: store.ExamStore.currentExamTitle,
+        currentPageType: type,
+        paperId: store.ExamStore.paperId,
+      };
+      localStorage.setItem('examPageState', JSON.stringify(state));
+    } catch (error) {
+      console.warn('保存页面状态失败:', error);
+    }
+  };
+
+  const getMaxTotal = () => {
+    if (initialPageArr.length === 0) return 0;
+    return initialPageArr[initialPageArr.length - 1].maxNum;
   };
 
   const handleArrowAction = (arrow: string) => {
-    if (arrow == "left") {
-      setCurren(curren - 1);
-      store.ExamStore.changeCurrent(curren - 1);
-      handleChangeTitle(curren - 1);
-    } else if (arrow == "right") {
-      setCurren(curren + 1);
-      store.ExamStore.changeCurrent(curren + 1);
-      handleChangeTitle(curren + 1);
+    const maxTotal = getMaxTotal();
+    let newIndex = curren;
+    runInAction(() => {
+      if (arrow == "left") {
+        newIndex = Math.max(1, curren - 1);
+      } else if (arrow == "right") {
+        newIndex = Math.min(maxTotal, curren + 1);
+      }
+      setCurren(newIndex);
+      store.ExamStore.changeCurrent(newIndex);
+      handleChangeTitle(newIndex);
+    });
+
+    try {
+      const state = {
+        currentExamIndex: newIndex,
+        currentExamTitle: store.ExamStore.currentExamTitle,
+        currentPageType: type,
+        paperId: store.ExamStore.paperId,
+      };
+      localStorage.setItem('examPageState', JSON.stringify(state));
+    } catch (error) {
+      console.warn('保存页面状态失败:', error);
     }
   };
 
-  const [correctAnswers, setCorrectAnswers] = useState(
-    store.ExamStore.correctListenAnswer
+  const getAnsweredQuestions = (examType: string): number[] => {
+    if (examType === 'writte') {
+      const result: number[] = [];
+      const writteAnswers = store.ExamStore.correctWritte;
+      writteAnswers.forEach((answer, index) => {
+        if (answer && answer.trim()) {
+          result.push(index + 1);
+        }
+      });
+      return result;
+    }
+
+    const result: number[] = [];
+    const answers = store.AnswerStore.completedAnswers;
+
+    for (let idx = 0; idx < answers.length; idx++) {
+      const item = answers[idx];
+      const nextItem = answers[idx + 1];
+
+      const currentHasContent = item && typeof item === 'object' && String(item.content || '').trim();
+      const nextIsDoubleChoicePlaceholder = nextItem === '';
+
+      if (currentHasContent && nextIsDoubleChoicePlaceholder) {
+        result.push(idx + 1);
+        result.push(idx + 2);
+      } else if (currentHasContent) {
+        result.push(idx + 1);
+      }
+    }
+
+    return result;
+  };
+
+  const [correctAnswers, setCorrectAnswers] = useState<number[]>(() =>
+    getAnsweredQuestions(type)
   );
 
   useEffect(() => {
-    const dispose = reaction(
-      () => store.ExamStore.correctListenAnswer.slice(),
-      (correctListenAnswer) => {
-        setCorrectAnswers(correctListenAnswer);
+    setCurren(store.ExamStore.currentExamIndex);
+
+    const disposeIndex = reaction(
+      () => store.ExamStore.currentExamIndex,
+      (index) => setCurren(index)
+    );
+    const disposeAnswers = reaction(
+      () =>
+        type === 'writte'
+          ? store.ExamStore.correctWritte.slice()
+          : JSON.stringify(store.AnswerStore.completedAnswers),
+      () => {
+        setCorrectAnswers(getAnsweredQuestions(type));
       }
     );
 
-    // 清理 reaction
-    return () => dispose();
-  }, []);
+    setTimeout(() => setCorrectAnswers(getAnsweredQuestions(type)), 0);
+
+    return () => {
+      disposeIndex();
+      disposeAnswers();
+    };
+  }, [type]);
+
+  const maxTotal = getMaxTotal();
 
   return (
     <div className="nav">
       <div className="paginaction">
         {PageArr.map((item, index) => (
-          <ul style={{ display: "flex" }} key={index}>
-            {item.title}
-            {item.questionArr.map((e, i) => (
-              <li key={e}>
-                <button
-                  style={
-                    e == curren
-                      ? { backgroundColor: "rgba(89, 174, 227, 0.931)" }
-                      : {}
-                  }
-                  className={`${
-                    correctAnswers.includes(e) ? "selectedAnswer" : ""
-                  } `}
-                  type="button"
-                  onClick={() => activeAction(e)}
-                >
-                  {e}
-                </button>
-              </li>
-            ))}
+          <ul key={index}>
+            <span className="part-label">{item.title}</span>
+            {item.questionArr.map((e, i) => {
+              const isCurrent = e === curren;
+              const isAnswered = correctAnswers.includes(e);
+              const btnClass = [
+                isAnswered ? 'selectedAnswer' : '',
+                isCurrent ? 'currentQuestion' : '',
+              ].filter(Boolean).join(' ');
+
+              return (
+                <li key={e}>
+                  <button
+                    className={btnClass}
+                    type="button"
+                    onClick={() => activeAction(e)}
+                  >
+                    {e}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ))}
       </div>
@@ -168,15 +272,13 @@ function footerNav(props: propType) {
             className="navButton"
             icon={<ArrowLeftOutlined style={{ fontSize: "32px" }} />}
             onClick={() => handleArrowAction("left")}
-            disabled={curren == 1}
+            disabled={curren <= 1 || maxTotal === 0}
           ></Button>
           <Button
             size="large"
             className="navButton"
             icon={<ArrowRightOutlined style={{ fontSize: "32px" }} />}
-            disabled={
-              curren == initialPageArr[initialPageArr.length - 1].maxNum
-            }
+            disabled={curren >= maxTotal || maxTotal === 0}
             onClick={() => handleArrowAction("right")}
           ></Button>
         </Space>
