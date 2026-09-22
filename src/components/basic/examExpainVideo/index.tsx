@@ -1,51 +1,64 @@
-import { Collapse } from "antd";
+import { Collapse, message } from "antd";
 import "./index.scss";
 import { CheckOutlined, ArrowRightOutlined } from "@ant-design/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import stores from "@/stores";
+import { observer } from "mobx-react";
+import { setModuleStatus } from "@/utils/helper/examDataManager";
+import { getExamInstructionMediaUrl } from "@/api/examPaper";
 
-export default function ExamExplainVideo({ type }: { type: string }) {
+const ExamExplainVideo = observer(({ type, isAvailable = true, shouldReset = true }: { type: string; isAvailable?: boolean; shouldReset?: boolean }) => {
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [videoUrl, setVideoUrl] = useState("");
+  const audioRef = useRef<HTMLAudioElement>(null);
   const navigate = useNavigate();
   const title =
     type == "listen" ? "Listening" : type == "read" ? "Reading" : "Writting";
 
+  const audioUrl = useMemo(() => getExamInstructionMediaUrl(type), [type]);
+
   useEffect(() => {
-    switch (type) {
-      case "listen":
-        setVideoUrl("http://111.230.5.159:9000/yasi/audio/listen.mp3");
-        break;
-      case "read":
-        setVideoUrl("http://111.230.5.159:9000/yasi/audio/read.mp3");
-        break;
-      case "writte":
-        setVideoUrl("http://111.230.5.159:9000/yasi/audio/writing.mp3");
-        break;
-    }
-  }, [type]);
+    if (!audioUrl || !audioRef.current) return;
+    const el = audioRef.current;
+    el.preload = "auto";
+    el.src = audioUrl;
+    el.load();
+  }, [audioUrl]);
 
   const handlerStart = () => {
+    if (!isAvailable) {
+      message.warning("该模块已完成或不可访问");
+      return;
+    }
+
+    setModuleStatus(stores.ExamStore.paperId, type as 'listen' | 'read' | 'writte', 'in_progress');
+
+    // 从 URL 获取 shouldReset 参数，继续考试时应该保持 false
+    const params = new URLSearchParams(window.location.search);
+    const urlShouldReset = params.get('shouldReset');
+    const shouldResetFromUrl = urlShouldReset !== 'false';
+
     if (type === "listen") {
-      const au = document.querySelector("audio");
-      if (au) {
-        au.play();
-      }
-      navigate(`/listeningExam`);
+      navigate(`/listeningExam?id=${stores.ExamStore.paperId}&shouldReset=${shouldResetFromUrl}`);
     } else if (type === "read") {
-      navigate(`/readnExam`);
+      navigate(`/readnExam?id=${stores.ExamStore.paperId}&shouldReset=${shouldResetFromUrl}`);
     } else if (type === "writte") {
-      navigate(`/writteExam`);
+      if (stores.ExamStore.getWritteExam().length === 0) {
+        message.warning('该试卷暂无写作部分');
+        return;
+      }
+      navigate(`/writteExam?id=${stores.ExamStore.paperId}&shouldReset=${shouldResetFromUrl}`);
     }
   };
 
   return (
-    <div>
+    <div className="exam-expain-root">
       <Collapse
         size="large"
         items={[
           {
             key: "1",
+            forceRender: true,
             label: (
               <>
                 <span className="video-information-text">
@@ -55,15 +68,25 @@ export default function ExamExplainVideo({ type }: { type: string }) {
               </>
             ),
             children: (
-              <div>
-                <video className="exam-expain-video" controls src={videoUrl} />
+              <div className="exam-expain-content">
+                {audioUrl ? (
+                  <audio
+                    ref={audioRef}
+                    className="exam-expain-audio"
+                    controls
+                    preload="auto"
+                    src={audioUrl}
+                  />
+                ) : null}
                 {isConfirmed ? (
                   <button
                     className="video-confirm-button"
                     onClick={handlerStart}
+                    disabled={!isAvailable}
+                    style={{ marginTop: "16px", opacity: !isAvailable ? 0.5 : 1, cursor: !isAvailable ? "not-allowed" : "pointer" }}
                   >
                     <ArrowRightOutlined style={{ marginRight: "12px" }} />
-                    Start {title}
+                    {isAvailable ? `Start ${title}` : '已锁定'}
                   </button>
                 ) : (
                   <div className="video-confirm-container">
@@ -71,12 +94,14 @@ export default function ExamExplainVideo({ type }: { type: string }) {
                     <p style={{ fontSize: "18px" }}>
                       Please confirm that you have understood the instructions
                       above.
-                    </p>
+                    </p >
                     <button
                       className="video-confirm-button"
                       onClick={() => setIsConfirmed(true)}
+                      disabled={!isAvailable}
+                      style={{ opacity: !isAvailable ? 0.5 : 1, cursor: !isAvailable ? "not-allowed" : "pointer" }}
                     >
-                      <CheckOutlined style={{ marginRight: "12px" }} />I confirm
+                      <CheckOutlined style={{ marginRight: "12px" }} />I confirm {!isAvailable && '(已锁定)'}
                     </button>
                   </div>
                 )}
@@ -87,4 +112,6 @@ export default function ExamExplainVideo({ type }: { type: string }) {
       />
     </div>
   );
-}
+});
+
+export default ExamExplainVideo;
