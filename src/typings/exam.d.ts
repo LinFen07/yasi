@@ -3,6 +3,7 @@ export type Items = {
   itemUuid: string;
   prefix: string;
   score: string;
+  describe?: string;
 }
 
 export interface Exam {
@@ -25,7 +26,7 @@ export interface ExamType {
   subjectId: number;
   title: string;
   answer: string | null;
-  selectionsAnswer:Array<string>;
+  selectionsAnswer: Array<string>;
   blanksAnswer: Array<string>;
 }
 
@@ -39,14 +40,30 @@ export interface correct {
 }
 
 export type StudentAnswer = {
-  isCorrect: number,
+  // isCorrect: number,
+  prefix?: string,
+  questionId: number,
+  content?: string,
+  contentArray?: string[],
+  // score: string,
+  // questionType: string,
+  // questionOrder: number,
+}
+
+export type StudentSubmitAnswer = {
+  answerItems: StudentAnswer[],
+  doTime: number,
+  id: number,
+  type: string,
+}
+
+export type StudentWritingAnswer = {
   paperId: number,
   questionId: number,
-  studentAnswer: string,
+  composition: string,
   studentId: number,
-  score: string,
-  questionType: string,
-  questionOrder: number,
+  // createTime: number,
+  // updateTime: number
 }
 
 export type Correct = {
