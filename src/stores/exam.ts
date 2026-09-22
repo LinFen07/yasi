@@ -1,19 +1,18 @@
-import { makeAutoObservable, reaction } from "mobx";
+import { makeAutoObservable, reaction, runInAction } from "mobx";
 import { Exam, ExamType } from "@/typings/exam";
+import { getStreamAudioUrl } from "@/api/examPaper";
 
 class ExamStore {
-  //当前试卷ID
   paperId = 0;
 
-  //当前题目索引
   currentExamIndex = 1;
   currentExamTitle = "Part1";
   titleExpain = "";
 
-  //字体大小
+  currentPageType = "listen";
+
   FontSize = 18;
 
-  //听力录音
   listenAudio: string = "";
   audioVolume = 30;
 
@@ -23,21 +22,27 @@ class ExamStore {
   wirrteExam: Array<Exam> = [];
   currentExam: Array<Exam> = [];
 
-  //已完成题目数组
   correctListenAnswer: Array<number> = [];
 
-  //考生答案
+  /** 从说明页新开模块时置 true，用于初始化空白答卷 */
+  freshModuleSession = false;
+
   studentListenAnswers: Array<string> = Array(50).fill("");
   studentReadAnswers: Array<string> = Array(50).fill("");
 
-  //写作答案
   correctWritte: Array<string> = Array(2).fill("");
+
+  /** ???????? */
+  audioStreamReadyMap: Record<number, boolean> = {};
+  audioErrorMap: Record<number, string> = {};
+  audioCheckTrigger: number = 0;
+
+  private streamCheckPromises = new Map<number, Promise<boolean>>();
 
   constructor() {
     makeAutoObservable(this);
     this.loadFromLocalStorage();
 
-    // 自动保存到 localStorage
     reaction(
       () => JSON.stringify(this),
       () => {
@@ -51,6 +56,7 @@ class ExamStore {
       paperId: this.paperId,
       currentExamIndex: this.currentExamIndex,
       currentExamTitle: this.currentExamTitle,
+      currentPageType: this.currentPageType,
       FontSize: this.FontSize,
       listenAudio: this.listenAudio,
       exam: this.exam,
@@ -59,19 +65,20 @@ class ExamStore {
       wirrteExam: this.wirrteExam,
       currentExam: this.currentExam,
       correctListenAnswer: this.correctListenAnswer,
-      studentListenAnswers: this.studentListenAnswers,
-      studentReadAnswers: this.studentReadAnswers,
+      studentListenAnswers: Array(50).fill(""),
+      studentReadAnswers: Array(50).fill(""),
       correctWritte: Array(2).fill(""),
       audioVolume: this.audioVolume,
     };
     localStorage.setItem("examStore", JSON.stringify(data));
-  } //打开新试卷重置考生答案
+  }
 
   saveToLocalStorage() {
     const data = {
       paperId: this.paperId,
       currentExamIndex: this.currentExamIndex,
       currentExamTitle: this.currentExamTitle,
+      currentPageType: this.currentPageType,
       FontSize: this.FontSize,
       listenAudio: this.listenAudio,
       exam: this.exam,
@@ -95,6 +102,7 @@ class ExamStore {
       this.paperId = parsedData.paperId || 0;
       this.currentExamIndex = parsedData.currentExamIndex || 1;
       this.currentExamTitle = parsedData.currentExamTitle || "Part1";
+      this.currentPageType = parsedData.currentPageType || "listen";
       this.FontSize = parsedData.FontSize || 18;
       this.listenAudio = parsedData.listenAudio || "";
       this.exam = parsedData.exam || [];
@@ -116,12 +124,10 @@ class ExamStore {
     localStorage.removeItem("examStore");
   }
 
-  //改变当前试卷
   changeCurrentExam(exam: Array<Exam>) {
     this.currentExam = exam;
   }
 
-  //改变试卷id
   changePaperId(id: number) {
     this.paperId = id;
   }
@@ -141,17 +147,14 @@ class ExamStore {
   }
 
   getListenExam() {
-    this.changeCurrentExam(this.listenExam);
     return this.listenExam;
   }
 
   getReadExam() {
-    this.changeCurrentExam(this.readExam);
     return this.readExam;
   }
 
   getWritteExam() {
-    this.changeCurrentExam(this.wirrteExam);
     return this.wirrteExam;
   }
 
@@ -167,7 +170,10 @@ class ExamStore {
     this.titleExpain = title;
   }
 
-  //改变字体大小
+  changeCurrentPageType(pageType: string) {
+    this.currentPageType = pageType;
+  }
+
   changeFontSize(size: number) {
     this.FontSize = size;
   }
@@ -184,19 +190,22 @@ class ExamStore {
     this.correctListenAnswer = [];
   }
 
-  //添加听力录音
+  setFreshModuleSession(value: boolean) {
+    this.freshModuleSession = value;
+  }
+
   addListenAudio(audio: string) {
     this.listenAudio = audio;
   }
-  //获取听力录音
+
   getListenAudio() {
     return this.listenAudio;
   }
 
-  //考生改变听力答案
   changeStudentListenAnswer(index: number, answer: string) {
     this.studentListenAnswers[index] = answer;
   }
+
   changeStudentReadAnswer(index: number, answer: string) {
     this.studentReadAnswers[index] = answer;
   }
@@ -204,8 +213,69 @@ class ExamStore {
   changeWritteAnswer(index: number, answer: string) {
     this.correctWritte[index] = answer;
   }
+
   changeAusioVolume(volume: number) {
     this.audioVolume = volume;
+  }
+
+  /** 获取听力音频地址，优先使用直接URL */
+  getListenAudioSrc(): string {
+    // 优先使用直接的 audioFileUrl
+    if (this.listenAudio) return this.listenAudio;
+    if (this.paperId === 0) return "";
+    return getStreamAudioUrl(this.paperId);
+  }
+
+  isAudioReadyForStart(paperId?: number): boolean {
+    const id = paperId ?? this.paperId;
+    if (!id) return false;
+    return this.audioStreamReadyMap[id] === true;
+  }
+
+  getAudioError(paperId?: number): string {
+    const id = paperId ?? this.paperId;
+    if (!id) return "";
+    return this.audioErrorMap[id] || "";
+  }
+
+  /** ?????????? */
+  async checkListenStreamAvailable(paperId: number): Promise<boolean> {
+    if (!paperId) return false;
+    if (this.audioStreamReadyMap[paperId]) return true;
+
+    const existing = this.streamCheckPromises.get(paperId);
+    if (existing) return existing;
+
+    const promise = (async () => {
+      try {
+        const url = getStreamAudioUrl(paperId);
+        const res = await fetch(url, { headers: { Range: "bytes=0-0" } });
+        const ok = res.ok || res.status === 206;
+
+        runInAction(() => {
+          if (ok) {
+            this.audioStreamReadyMap[paperId] = true;
+            this.audioErrorMap[paperId] = "";
+          } else {
+            this.audioErrorMap[paperId] = `????? (${res.status})`;
+          }
+          this.audioCheckTrigger++;
+        });
+
+        return ok;
+      } catch (error: any) {
+        runInAction(() => {
+          this.audioErrorMap[paperId] = error?.message || "??????";
+          this.audioCheckTrigger++;
+        });
+        return false;
+      } finally {
+        this.streamCheckPromises.delete(paperId);
+      }
+    })();
+
+    this.streamCheckPromises.set(paperId, promise);
+    return promise;
   }
 }
 
