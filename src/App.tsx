@@ -1,7 +1,7 @@
 import '@/scss/App.scss';
 import routes from './routes/index'
 import { useLocation, useRoutes } from 'react-router-dom'
-import { Suspense, useEffect, useState } from'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Spin } from 'antd';
 import stores from './stores';
 import { observer } from 'mobx-react';
@@ -9,33 +9,43 @@ import { observer } from 'mobx-react';
 function App() {
   const routeView = useRoutes(routes)
   const [audioSrc, setAudioSrc] = useState('');
-  
-  useEffect(() => {
-    setAudioSrc(stores.ExamStore.listenAudio);
-  },[stores.ExamStore.listenAudio])
-
   const location = useLocation();
 
   useEffect(() => {
+    if (stores.UserStore.isTokenExpired()) {
+      stores.UserStore.logout();
+      window.location.href = '/login';
+    }
+  }, []);
+
+  useEffect(() => {
+    if (stores.ExamStore.paperId === 0) return;
+    if (location.pathname.startsWith('/listeningExam')) {
+      setAudioSrc(stores.ExamStore.getListenAudioSrc());
+    } else {
+      setAudioSrc('');
+    }
+  }, [stores.ExamStore.paperId, location.pathname]);
+
+  useEffect(() => {
+    const audioRef = document.getElementById('exam-listen-audio') as HTMLAudioElement | null;
+    if (!audioRef) return;
     if (!location.pathname.startsWith('/listeningExam')) {
-      const audioRef = document.querySelector('audio');
-      if (audioRef) {
-        audioRef.pause();
-        audioRef.currentTime = 0;
-      }
+      audioRef.pause();
+      audioRef.currentTime = 0;
     }
   }, [location.pathname]);
 
   useEffect(() => {
-    const audioRef = document.querySelector('audio');
-    if(audioRef)
+    const audioRef = document.getElementById('exam-listen-audio') as HTMLAudioElement | null;
+    if (audioRef)
       audioRef.volume = stores.ExamStore.audioVolume / 100;
-  },[stores.ExamStore.audioVolume])
+  }, [stores.ExamStore.audioVolume])
 
   return (
     <div className="App">
-      <audio src={audioSrc} />
-      <Suspense fallback={<Spin/>}>
+      <audio id="exam-listen-audio" src={audioSrc || undefined} preload="auto" />
+      <Suspense fallback={<Spin />}>
         {routeView}
       </Suspense>
     </div>

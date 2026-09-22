@@ -13,7 +13,14 @@ const TextOver = lazy(() => import('@/pages/testOver'));
 // 路由鉴权组件
 const Appraisal = ({ children }: any) => {
   const token = localStorage.getItem(stores.UserStore.key);
-  return token ? children : <Navigate to="/login" />;
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
+  if (stores.UserStore.isTokenExpired()) {
+    stores.UserStore.logout();
+    return <Navigate to="/login" />;
+  }
+  return children;
 };
 
 const routes: Array<Router> = [
@@ -36,6 +43,10 @@ const routes: Array<Router> = [
     children:[
       {
         path: 'dashboard',
+        element: <Dashboard/>
+      },
+      {
+        path: '',
         element: <Dashboard/>
       }
     ]
