@@ -1,5 +1,10 @@
 import axios from 'axios';
 import UserStore from '@/stores/user';
+import {
+  handleSessionExpired,
+  isAuthExemptUrl,
+  isSessionExpiredPayload,
+} from '@/utils/auth';
 
 // 开发环境走 webpack 代理（/api -> localhost:8068），避免跨域
 // 生产环境直连远程后端
@@ -82,12 +87,17 @@ request.interceptors.response.use((response) => {
     // 将 Cookie 存储在 localStorage 或 sessionStorage 中
     localStorage.setItem('cookie', setCookieHeader.join('; '));
   }
+  if (isSessionExpiredPayload(response.data) && !isAuthExemptUrl(response.config.url)) {
+    handleSessionExpired();
+    return Promise.reject(new Error('登录已过期'));
+  }
   return response.data
 }, (error) => {
   // 超出 2xx 范围内的状态码触发该函数。
-  if (error.response?.status === 401) {
-    UserStore.logout();
-    window.location.href = '/login';
+  const status = error.response?.status;
+  const body = error.response?.data;
+  if ((status === 401 || isSessionExpiredPayload(body)) && !isAuthExemptUrl(error.config?.url)) {
+    handleSessionExpired();
   }
   return Promise.reject(error)
 })

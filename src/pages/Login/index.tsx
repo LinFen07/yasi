@@ -4,6 +4,7 @@ import { Button, Checkbox, Form, Input, message, Select, Cascader } from 'antd';
 import { fetchRegister, getExamMeal } from "@/api/register";
 import { fetchLogin } from '@/api/login'
 import stores from "@/stores";
+import { consumeSessionExpiredFlag } from "@/utils/auth";
 import './index.scss'
 
 import { citys } from '@/utils/contants/ChinaCitys2025'
@@ -71,6 +72,12 @@ function LoginRoute(props: Props) {
       fetchGetExamMeal(10, 1);
     }
   }, [isRegister])
+
+  useEffect(() => {
+    if (!isRegister && consumeSessionExpiredFlag()) {
+      message.warning('登录已过期，请重新登录');
+    }
+  }, [isRegister]);
 
   useEffect(() => {
     if (!isRegister) return;

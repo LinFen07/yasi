@@ -91,7 +91,9 @@ class UserStore {
   }
 
   logout() {
-    localStorage.setItem(this.key, '');
+    if (this.key) {
+      localStorage.removeItem(this.key);
+    }
     this.token = '';
     this.tokenType = '';
     this.expiresIn = 0;

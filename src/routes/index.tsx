@@ -7,6 +7,7 @@ import Dashboard from "@/pages/dashboard";
 import stores from "@/stores";
 import type { Router } from "@/typings/router";
 import Video from "@/pages/video";
+import { invalidateSession } from "@/utils/auth";
 const ExamPage = lazy(() => import('@/pages/examPage'));
 const TextOver = lazy(() => import('@/pages/testOver'));
 
@@ -17,7 +18,7 @@ const Appraisal = ({ children }: any) => {
     return <Navigate to="/login" />;
   }
   if (stores.UserStore.isTokenExpired()) {
-    stores.UserStore.logout();
+    invalidateSession();
     return <Navigate to="/login" />;
   }
   return children;
@@ -53,23 +54,23 @@ const routes: Array<Router> = [
   },
   {
     path: '/listeningExam',
-    element: <ExamPage type="listen" />
+    element: <Appraisal><ExamPage type="listen" /></Appraisal>
   },
   {
     path: '/readnExam',
-    element: <ExamPage type="read" />
+    element: <Appraisal><ExamPage type="read" /></Appraisal>
   },
   {
     path: '/writteExam',
-    element: <ExamPage type="writte" />
+    element: <Appraisal><ExamPage type="writte" /></Appraisal>
   },
   {
     path: '/testOver',
-    element: <TextOver/>
+    element: <Appraisal><TextOver/></Appraisal>
   },
   {
     path: '/video',
-    element: <Video />
+    element: <Appraisal><Video /></Appraisal>
   }
 ]
 

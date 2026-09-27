@@ -5,6 +5,9 @@ import { Suspense, useEffect, useState } from 'react'
 import { Spin } from 'antd';
 import stores from './stores';
 import { observer } from 'mobx-react';
+import { handleSessionExpired } from '@/utils/auth';
+
+const TOKEN_CHECK_INTERVAL = 30 * 1000;
 
 function App() {
   const routeView = useRoutes(routes)
@@ -12,10 +15,25 @@ function App() {
   const location = useLocation();
 
   useEffect(() => {
-    if (stores.UserStore.isTokenExpired()) {
-      stores.UserStore.logout();
-      window.location.href = '/login';
-    }
+    const checkToken = () => {
+      if (stores.UserStore.token && stores.UserStore.isTokenExpired()) {
+        handleSessionExpired();
+      }
+    };
+
+    checkToken();
+    const timer = window.setInterval(checkToken, TOKEN_CHECK_INTERVAL);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') checkToken();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', checkToken);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', checkToken);
+    };
   }, []);
 
   useEffect(() => {
