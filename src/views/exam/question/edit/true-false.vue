@@ -256,6 +256,40 @@ export default {
       // 重写图片处理
       const titleToolbar = this.titleQuill.getModule('toolbar')
       titleToolbar.addHandler('image', () => handleImageUpload(this.titleQuill))
+
+      // 拦截粘贴事件，图片不走 base64
+      this.titleQuill.root.addEventListener('paste', async (e) => {
+        const clipboardData = e.clipboardData
+        if (!clipboardData || !clipboardData.items) return
+
+        const items = clipboardData.items
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            e.preventDefault()
+            const file = items[i].getAsFile()
+            if (!file) continue
+
+            if (file.size > 3 * 1024 * 1024) {
+              this.$message.error('图片大小不能超过3M')
+              return
+            }
+
+            try {
+              const loading = this.$loading({ lock: true, text: '图片上传中...', spinner: 'el-icon-loading' })
+              const res = await uploadApi.upload(file)
+              loading.close()
+              const imageUrl = uploadApi.getImageUrl(res)
+              if (imageUrl) {
+                const range = this.titleQuill.getSelection()
+                this.titleQuill.insertEmbed(range.index, 'image', imageUrl)
+              }
+            } catch (err) {
+              this.$message.error('图片上传失败')
+            }
+            return
+          }
+        }
+      }, false)
     },
 
     submitForm () {

@@ -506,12 +506,14 @@ export default {
     },
     confirmQuestionSelect () {
       let _this = this
-      this.questionPage.multipleSelection.forEach(q => {
+      const section = _this.ieltsSections[_this.currentSectionIndex]
+      const moduleType = section ? section.key : null
+      _this.questionPage.multipleSelection.forEach(q => {
         questionApi.select(q.id).then(re => {
-          _this.currentTitleItem.questionItems.push(normalizePaperQuestionItem(re.response))
+          _this.currentTitleItem.questionItems.push(normalizePaperQuestionItem(re.response, moduleType))
         })
       })
-      this.questionPage.showDialog = false
+      _this.questionPage.showDialog = false
     },
     levelChange () {
       this.form.subjectId = null

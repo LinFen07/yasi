@@ -26,6 +26,7 @@ const constantRoutes = [
   {
     path: '/',
     component: Layout,
+    redirect: '/dashboard',
     children: [
       {
         path: 'dashboard',
@@ -35,7 +36,6 @@ const constantRoutes = [
       }
     ]
   },
-  // {
   //   path: '/signup',
   //   component: Layout,
   //   name: 'SignupPage',
@@ -201,6 +201,12 @@ const constantRoutes = [
         meta: { title: '作文题编辑', noCache: true, activeMenu: '/exam/question/list' },
         hidden: true
       }
+      // {
+      //   path: 'cache/clear',
+      //   component: () => import('@/views/cache/clear'),
+      //   name: 'CacheClear',
+      //   meta: { title: '清理缓存', icon: 'refresh', noCache: true }
+      // }
     ]
   },
   // {

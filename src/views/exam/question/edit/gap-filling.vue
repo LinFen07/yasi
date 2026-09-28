@@ -122,6 +122,7 @@ import QuestionEditHeader from '../components/QuestionEditHeader'
 import Ueditor from '@/components/Ueditor'
 import { mapState, mapActions } from 'vuex'
 import questionApi from '@/api/question'
+import uploadApi from '@/api/upload'
 import questionEditPage from '../mixins/questionEditPage'
 import { buildGapTableHtml } from '../utils/gapTableTemplate'
 import { setupGapTableColumnResize, normalizeGapTables } from '../utils/gapTableColumnResize'
@@ -173,6 +174,7 @@ export default {
       destroyTableResize: null,
       destroyAlignmentInherit: null,
       destroyTableAlign: null,
+      destroyContentObserver: null,
       isLoadingContent: false,
       rules: {
         gradeLevel: [{ required: true, message: '请选择年级', trigger: 'change' }],
@@ -201,6 +203,10 @@ export default {
     if (this.destroyTableAlign) {
       this.destroyTableAlign()
       this.destroyTableAlign = null
+    }
+    if (this.destroyContentObserver) {
+      this.destroyContentObserver.disconnect()
+      this.destroyContentObserver = null
     }
   },
   created () {
@@ -258,6 +264,62 @@ export default {
           this.syncItemsFromContent(instance.getContent())
         }
       })
+
+      // MutationObserver 监听编辑器 DOM 变化，确保删除填空后表格行同步移除
+      const editorBody = instance.document.body
+      if (editorBody) {
+        let syncTimer = null
+        this.destroyContentObserver = new MutationObserver(() => {
+          if (this.isLoadingContent) return
+          clearTimeout(syncTimer)
+          syncTimer = setTimeout(() => {
+            if (this.editorInstance) {
+              this.syncItemsFromContent(this.editorInstance.getContent())
+            }
+          }, 100)
+        })
+        this.destroyContentObserver.observe(editorBody, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        })
+      }
+
+      // 拦截粘贴事件，图片不走 base64
+      const iframeWindow = instance.container.contentWindow
+      if (iframeWindow) {
+        iframeWindow.addEventListener('paste', async (e) => {
+          const clipboardData = e.clipboardData || window.clipboardData
+          if (!clipboardData || !clipboardData.items) return
+
+          const items = clipboardData.items
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+              e.preventDefault()
+              const file = items[i].getAsFile()
+              if (!file) continue
+
+              if (file.size > 3 * 1024 * 1024) {
+                this.$message.error('图片大小不能超过3M')
+                return
+              }
+
+              try {
+                const loading = this.$loading({ lock: true, text: '图片上传中...', spinner: 'el-icon-loading' })
+                const res = await uploadApi.upload(file)
+                loading.close()
+                const imageUrl = uploadApi.getImageUrl(res)
+                if (imageUrl) {
+                  instance.execCommand('insertimage', { src: imageUrl, alt: '' })
+                }
+              } catch (err) {
+                this.$message.error('图片上传失败')
+              }
+              return
+            }
+          }
+        }, true)
+      }
     },
     genUuid () {
       return 'g' + Date.now() + Math.random().toString(36).slice(2, 8)

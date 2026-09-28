@@ -71,10 +71,10 @@
         <el-table-column label="文件" min-width="360">
           <template slot-scope="{row}">
             <audio
-              v-if="row.id"
+              v-if="row.fileUrl"
               :key="'audio-' + row.id"
               class="audio-list-player"
-              :src="getAudioStreamUrl(row)"
+              :src="row.fileUrl"
               controls
               controlsList="nodownload"
               preload="metadata"
@@ -82,6 +82,7 @@
               @error="handleAudioError(row)"
             ></audio>
             <span v-else>-</span>
+
           </template>
         </el-table-column>
         <el-table-column label="操作" width="120">
@@ -377,11 +378,6 @@ export default {
           player.pause()
         }
       })
-    },
-
-    getAudioStreamUrl (row) {
-      if (!row || !row.id) return ''
-      return examPaperApi.getAudioStreamUrl(row.id)
     },
 
     handleAudioError (row) {

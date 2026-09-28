@@ -464,13 +464,16 @@ function countMultipleChoiceSlots (question) {
   return 1
 }
 
-export function normalizePaperQuestionItem (question) {
+export function normalizePaperQuestionItem (question, moduleType) {
   if (!question) return question
   if ((!question.correctArray || !question.correctArray.length) && question.correct) {
     question.correctArray = String(question.correct)
       .split(',')
       .map(item => item.trim())
       .filter(Boolean)
+  }
+  if (moduleType != null) {
+    question.moduleType = moduleType
   }
   return question
 }

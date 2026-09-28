@@ -20,6 +20,7 @@ $subMenuBg:#1a1f30;
 $subMenuHover:#343a55;
 
 $sideBarWidth: 210px;
+$sideBarCollapsedWidth: 64px;
 
 // header & tags - aligned with sidebar purple theme
 $headerBg: #ffffff;
@@ -42,4 +43,5 @@ $primaryGradient: linear-gradient(135deg, $primaryStart 0%, $primaryEnd 100%);
   subMenuBg: $subMenuBg;
   subMenuHover: $subMenuHover;
   sideBarWidth: $sideBarWidth;
+  sideBarCollapsedWidth: $sideBarCollapsedWidth;
 }

@@ -74,22 +74,35 @@
             添加题目
           </el-button>
         </div>
-        <div
-          v-for="(questionItem, questionIndex) in subsection.questionItems"
-          :key="questionIndex"
-          class="question-item"
+        <draggable
+          :list="subsection.questionItems"
+          :group="{ name: 'reading-questions' }"
+          animation="200"
+          handle=".question-item__drag"
+          ghost-class="question-item--ghost"
+          drag-class="question-item--drag"
+          class="question-drag-list"
         >
-          <div class="question-item__index">{{ getQuestionNumberLabel(partIndex, subsection, questionIndex) }}</div>
-          <div class="question-item__body">
-            <QuestionShow :qType="questionItem.questionType" :question="questionItem" />
+          <div
+            v-for="(questionItem, questionIndex) in subsection.questionItems"
+            :key="questionIndex"
+            class="question-item"
+          >
+            <div class="question-item__drag" title="拖拽移动">
+              <i class="el-icon-rank"></i>
+            </div>
+            <div class="question-item__index">{{ getQuestionNumberLabel(partIndex, subsection, questionIndex) }}</div>
+            <div class="question-item__body">
+              <QuestionShow :qType="questionItem.questionType" :question="questionItem" />
+            </div>
+            <el-button
+              type="text"
+              class="question-item__remove"
+              icon="el-icon-delete"
+              @click="subsection.questionItems.splice(questionIndex, 1)"
+            />
           </div>
-          <el-button
-            type="text"
-            class="question-item__remove"
-            icon="el-icon-close"
-            @click="subsection.questionItems.splice(questionIndex, 1)"
-          />
-        </div>
+        </draggable>
       </div>
 
       <div v-else class="reading-part-empty">
@@ -106,7 +119,9 @@
 
 <script>
 import ReadingPassageEditor from './ReadingPassageEditor'
+import draggable from 'vuedraggable'
 import QuestionShow from '../../question/components/Show'
+import dragScrollMixin from '@/mixins/dragScroll'
 import {
   getSubsectionQuestionCount,
   getModuleQuestionCount,
@@ -116,7 +131,8 @@ import {
 
 export default {
   name: 'ReadingSection',
-  components: { ReadingPassageEditor, QuestionShow },
+  mixins: [dragScrollMixin],
+  components: { ReadingPassageEditor, QuestionShow, draggable },
   props: {
     module: {
       type: Object,
@@ -412,9 +428,49 @@ $readingEnd: #00f2fe;
   border-radius: 10px;
   background: #fff;
   border: 1px solid #eef0f4;
+  transition: box-shadow 0.2s, transform 0.2s;
 
   &:last-child {
     margin-bottom: 0;
+  }
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.12);
+  }
+
+  &--ghost {
+    opacity: 0.5;
+    border: 2px dashed rgba(79, 172, 254, 0.4);
+    background: rgba(79, 172, 254, 0.04);
+  }
+
+  &--drag {
+    box-shadow: 0 12px 32px rgba(79, 172, 254, 0.2);
+    transform: rotate(1deg);
+  }
+
+  &__drag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 28px;
+    color: #c0c4cc;
+    cursor: grab;
+    flex-shrink: 0;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $readingStart;
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    i {
+      font-size: 16px;
+    }
   }
 
   &__index {
@@ -445,6 +501,10 @@ $readingEnd: #00f2fe;
       color: #f56c6c;
     }
   }
+}
+
+.question-drag-list {
+  min-height: 20px;
 }
 
 .section-tip {

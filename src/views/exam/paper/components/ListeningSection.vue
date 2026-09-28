@@ -103,22 +103,35 @@
             添加题目
           </el-button>
         </div>
-        <div
-          v-for="(questionItem, questionIndex) in subsection.questionItems"
-          :key="questionIndex"
-          class="question-item"
+        <draggable
+          :list="subsection.questionItems"
+          :group="{ name: 'listening-questions' }"
+          animation="200"
+          handle=".question-item__drag"
+          ghost-class="question-item--ghost"
+          drag-class="question-item--drag"
+          class="question-drag-list"
         >
-          <div class="question-item__index">{{ questionNumberLabel(partIndex, subsection, questionIndex) }}</div>
-          <div class="question-item__body">
-            <QuestionShow :qType="questionItem.questionType" :question="questionItem" />
+          <div
+            v-for="(questionItem, questionIndex) in subsection.questionItems"
+            :key="questionIndex"
+            class="question-item"
+          >
+            <div class="question-item__drag" title="拖拽移动">
+              <i class="el-icon-rank"></i>
+            </div>
+            <div class="question-item__index">{{ questionNumberLabel(partIndex, subsection, questionIndex) }}</div>
+            <div class="question-item__body">
+              <QuestionShow :qType="questionItem.questionType" :question="questionItem" />
+            </div>
+            <el-button
+              type="text"
+              class="question-item__remove"
+              icon="el-icon-delete"
+              @click="subsection.questionItems.splice(questionIndex, 1)"
+            />
           </div>
-          <el-button
-            type="text"
-            class="question-item__remove"
-            icon="el-icon-close"
-            @click="subsection.questionItems.splice(questionIndex, 1)"
-          />
-        </div>
+        </draggable>
       </div>
 
       <div v-else class="listening-part-empty">
@@ -135,7 +148,9 @@
 
 <script>
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+import draggable from 'vuedraggable'
 import QuestionShow from '../../question/components/Show'
+import dragScrollMixin from '@/mixins/dragScroll'
 import {
   LISTENING_PART_SIZE,
   LISTENING_TOTAL,
@@ -148,7 +163,8 @@ import {
 
 export default {
   name: 'ListeningSection',
-  components: { Editor, Toolbar, QuestionShow },
+  mixins: [dragScrollMixin],
+  components: { Editor, Toolbar, QuestionShow, draggable },
   props: {
     module: {
       type: Object,
@@ -544,9 +560,49 @@ export default {
   border-radius: 10px;
   background: #fff;
   border: 1px solid #eef0f4;
+  transition: box-shadow 0.2s, transform 0.2s;
 
   &:last-child {
     margin-bottom: 0;
+  }
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.12);
+  }
+
+  &--ghost {
+    opacity: 0.5;
+    border: 2px dashed rgba(102, 126, 234, 0.4);
+    background: rgba(102, 126, 234, 0.04);
+  }
+
+  &--drag {
+    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+    transform: rotate(1deg);
+  }
+
+  &__drag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 28px;
+    color: #c0c4cc;
+    cursor: grab;
+    flex-shrink: 0;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $primaryStart;
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    i {
+      font-size: 16px;
+    }
   }
 
   &__index {
@@ -577,6 +633,10 @@ export default {
       color: #f56c6c;
     }
   }
+}
+
+.question-drag-list {
+  min-height: 20px;
 }
 
 .section-tip {

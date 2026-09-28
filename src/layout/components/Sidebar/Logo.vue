@@ -2,7 +2,7 @@
   <div class="sidebar-logo-container" :class="{'collapse':collapse}">
     <transition name="sidebarLogoFade">
       <div v-if="collapse" key="collapse" class="sidebar-logo-link" @click="handleLogoClick">
-        <img src="@/assets/logoimage.png" class="sidebar-logo sidebar-logo--mini" alt="logo">
+        <img src="@/assets/zklogo.png" class="sidebar-logo sidebar-logo--mini" alt="logo">
       </div>
       <div v-else key="expand" class="sidebar-logo-link" @click="handleLogoClick">
         <img src="@/assets/logoimage.png" class="sidebar-logo" alt="logo">
