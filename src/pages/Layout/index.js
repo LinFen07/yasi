@@ -1,5 +1,6 @@
 import { Layout, Menu, Button } from 'antd';
 import {
+    BarChartOutlined,
     EditOutlined,
     LogoutOutlined,
     MenuFoldOutlined,
@@ -27,6 +28,11 @@ const items = [
         label: '试卷评阅',
         key: '/app/evaluation',
         icon: <EditOutlined />,
+    },
+    {
+        label: '成绩报告',
+        key: '/app/report',
+        icon: <BarChartOutlined />,
     },
 ];
 
@@ -70,6 +76,11 @@ const GeekLayout = () => {
 
 
 
+    const matchedItem = items.find(
+        (item) => item.key !== '/app' && location.pathname.startsWith(item.key)
+    );
+    const selectedKeys = matchedItem ? [matchedItem.key] : [location.pathname];
+
     return (
         <Layout className="layout-container">
             <Sider
@@ -97,7 +108,7 @@ const GeekLayout = () => {
                     mode="inline"
                     theme="dark"
                     inlineCollapsed={collapsed}
-                    selectedKeys={[location.pathname]}
+                    selectedKeys={selectedKeys}
                     items={items}
                     onClick={onMenuClick}
                 />
