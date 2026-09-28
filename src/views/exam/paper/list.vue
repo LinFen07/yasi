@@ -43,62 +43,92 @@
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParam.pageIndex" :limit.sync="queryParam.pageSize"
       layout="total, prev, pager, next, jumper" @pagination="search" />
-    <el-dialog title="选择听力音频" :visible.sync="audioDialogVisible" width="760px" @close="pauseAllAudioPlayers">
-      <el-form :inline="true" @submit.native.prevent="searchAudio" class="audio-search-form">
-        <el-form-item label="音频名称：">
-          <el-input
-            v-model="audioQueryParam.audioName"
-            clearable
-            placeholder="请输入音频名称"
-            @keyup.enter.native="searchAudio"
-          ></el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="searchAudio">搜索</el-button>
-        </el-form-item>
-      </el-form>
-      <el-table v-loading="audioListLoading" :data="audioList" border style="width: 100%">
-        <el-table-column label="序号" width="70" align="center">
-          <template slot-scope="scope">
-            {{ (audioQueryParam.pageNo - 1) * audioQueryParam.pageSize + scope.$index + 1 }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="audioName" label="音频名称" min-width="160" show-overflow-tooltip>
-          <template slot-scope="{row}">
-            {{ row.audioName || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="文件" min-width="360">
-          <template slot-scope="{row}">
-            <audio
-              v-if="row.fileUrl"
-              :key="'audio-' + row.id"
-              class="audio-list-player"
-              :src="row.fileUrl"
-              controls
-              controlsList="nodownload"
-              preload="metadata"
-              @play="handleAudioPlay"
-              @error="handleAudioError(row)"
-            ></audio>
-            <span v-else>-</span>
+    <el-dialog :title="audioView === 'current' ? '试卷听力' : '选择听力音频'" :visible.sync="audioDialogVisible" width="760px"
+      @close="pauseAllAudioPlayers">
+      <!-- 当前听力视图：仅展示该试卷已绑定的听力，不发请求 -->
+      <div v-if="audioView === 'current'">
+        <el-empty v-if="!currentAudioUrl" description="该试卷暂未绑定听力音频"></el-empty>
+        <div v-else class="current-audio-panel">
+          <div class="current-audio-name">
+            <span class="current-audio-label">音频名称：</span>{{ currentAudioFileName }}
+          </div>
+          <audio
+            :key="'current-audio-' + currentExamId"
+            class="audio-list-player"
+            :src="currentAudioUrl"
+            controls
+            controlsList="nodownload"
+            preload="metadata"
+            @play="handleAudioPlay"
+            @error="handleCurrentAudioError"
+          ></audio>
+        </div>
+        <div class="current-audio-actions">
+          <el-button type="primary" @click="switchToSelect">{{ currentAudioUrl ? '更换听力' : '选择听力' }}</el-button>
+          <el-button v-if="currentAudioUrl" type="danger" :loading="unbindSubmitting" @click="unbindAudio">解绑听力</el-button>
+        </div>
+      </div>
+      <!-- 选择音频视图：点击更换/选择后才请求全局音频列表 -->
+      <div v-else>
+        <el-form :inline="true" @submit.native.prevent="searchAudio" class="audio-search-form">
+          <el-form-item label="音频名称：">
+            <el-input
+              v-model="audioQueryParam.audioName"
+              clearable
+              placeholder="请输入音频名称"
+              @keyup.enter.native="searchAudio"
+            ></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="searchAudio">搜索</el-button>
+            <el-button class="link-left" @click="backToCurrent">返回</el-button>
+          </el-form-item>
+        </el-form>
+        <el-table v-loading="audioListLoading" :data="audioList" border style="width: 100%">
+          <el-table-column label="序号" width="70" align="center">
+            <template slot-scope="scope">
+              {{ (audioQueryParam.pageNo - 1) * audioQueryParam.pageSize + scope.$index + 1 }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="audioName" label="音频名称" min-width="160" show-overflow-tooltip>
+            <template slot-scope="{row}">
+              {{ row.audioName || '-' }}
+              <el-tag v-if="row.fileUrl && row.fileUrl === currentAudioUrl" size="mini" type="success"
+                class="current-audio-tag">当前</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="文件" min-width="360">
+            <template slot-scope="{row}">
+              <audio
+                v-if="row.fileUrl"
+                :key="'audio-' + row.id"
+                class="audio-list-player"
+                :src="row.fileUrl"
+                controls
+                controlsList="nodownload"
+                preload="metadata"
+                @play="handleAudioPlay"
+                @error="handleAudioError(row)"
+              ></audio>
+              <span v-else>-</span>
 
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120">
-          <template slot-scope="{row}">
-            <el-button size="mini" type="primary" @click="addAudioToPaper(row)">添加</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <pagination
-        v-show="audioTotal > 0"
-        :total="audioTotal"
-        :page.sync="audioQueryParam.pageNo"
-        :limit.sync="audioQueryParam.pageSize"
-        layout="total, prev, pager, next, jumper"
-        @pagination="loadAudioList"
-      />
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="120">
+            <template slot-scope="{row}">
+              <el-button size="mini" type="primary" @click="addAudioToPaper(row)">添加</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <pagination
+          v-show="audioTotal > 0"
+          :total="audioTotal"
+          :page.sync="audioQueryParam.pageNo"
+          :limit.sync="audioQueryParam.pageSize"
+          layout="total, prev, pager, next, jumper"
+          @pagination="loadAudioList"
+        />
+      </div>
       <span slot="footer" class="dialog-footer">
         <el-button @click="audioDialogVisible = false">取消</el-button>
       </span>
@@ -166,6 +196,7 @@ export default {
       tableData: [],
       total: 0,
       audioDialogVisible: false, // 控制对话框显示
+      audioView: 'current', // 弹窗视图：current-当前听力 select-选择音频
       audioList: [], // 音频列表
       audioListLoading: false,
       audioTotal: 0,
@@ -175,6 +206,8 @@ export default {
         audioName: ''
       },
       currentExamId: null, // 当前操作的试卷ID
+      currentAudioUrl: '', // 当前试卷已绑定的听力音频地址
+      unbindSubmitting: false,
       uploadAudioDialogVisible: false,
       uploadAudioSubmitting: false,
       uploadAudioFileList: [],
@@ -327,13 +360,58 @@ export default {
         }
       })
     },
-    // 显示音频选择对话框
+    // 显示听力对话框：默认展示当前试卷已绑定的听力，不请求接口
     showAudioDialog (row) {
       this.currentExamId = row.id
+      this.currentAudioUrl = (row.audioFileUrl || '').trim()
+      this.audioView = 'current'
       this.audioQueryParam.pageNo = 1
       this.audioQueryParam.audioName = ''
       this.audioDialogVisible = true
+    },
+
+    // 进入选择音频视图，此时才请求全局音频列表
+    switchToSelect () {
+      this.pauseAllAudioPlayers()
+      this.audioView = 'select'
+      this.audioQueryParam.pageNo = 1
+      this.audioQueryParam.audioName = ''
       this.loadAudioList()
+    },
+
+    // 返回当前听力视图
+    backToCurrent () {
+      this.pauseAllAudioPlayers()
+      this.audioView = 'current'
+    },
+
+    // 解绑当前试卷的听力音频
+    unbindAudio () {
+      this.$confirm('确定解绑该试卷的听力音频吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.unbindSubmitting = true
+        examPaperApi.removeAudio(this.currentExamId).then(response => {
+          if (response.code === 1) {
+            this.$message.success('解绑听力成功')
+            this.currentAudioUrl = ''
+            this.search()
+          } else {
+            this.$message.error(response.message || '解绑听力失败')
+          }
+          this.unbindSubmitting = false
+        }).catch(error => {
+          this.unbindSubmitting = false
+          this.$message.error('解绑听力失败')
+          console.error(error)
+        })
+      }).catch(() => {})
+    },
+
+    handleCurrentAudioError () {
+      this.$message.error('当前听力音频加载失败，请确认文件是否存在')
     },
 
     searchAudio () {
@@ -397,7 +475,8 @@ export default {
       examPaperApi.addAudio(audio.fileUrl, this.currentExamId).then(response => {
         if (response.code === 1) {
           this.$message.success('添加听力成功')
-          this.audioDialogVisible = false
+          this.currentAudioUrl = audio.fileUrl
+          this.audioView = 'current'
           this.search()
         } else {
           this.$message.error(response.message)
@@ -410,7 +489,17 @@ export default {
   },
   computed: {
     ...mapGetters('exam', ['subjectEnumFormat']),
-    ...mapState('exam', { subjects: state => state.subjects })
+    ...mapState('exam', { subjects: state => state.subjects }),
+    currentAudioFileName () {
+      const url = String(this.currentAudioUrl || '')
+      if (!url) return ''
+      const raw = url.split('/').pop().split('?')[0]
+      try {
+        return decodeURIComponent(raw) || 'audio'
+      } catch (e) {
+        return raw || 'audio'
+      }
+    }
   }
 }
 </script>
@@ -429,6 +518,28 @@ export default {
   max-width: 360px;
   height: 32px;
   vertical-align: middle;
+}
+
+.current-audio-panel {
+  margin-bottom: 16px;
+}
+
+.current-audio-name {
+  margin-bottom: 8px;
+  color: #606266;
+  word-break: break-all;
+}
+
+.current-audio-label {
+  color: #909399;
+}
+
+.current-audio-actions {
+  margin-bottom: 4px;
+}
+
+.current-audio-tag {
+  margin-left: 6px;
 }
 
 .audio-name {

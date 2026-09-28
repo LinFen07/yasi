@@ -7,6 +7,8 @@ export default {
   select: id => post('/api/admin/exam/paper/select/' + id),
   deletePaper: id => post('/api/admin/exam/paper/delete/' + id),
   addAudio: (audioPath, examId) => post(`/api/admin/exam/paper/addAudio?audioPath=${audioPath}&examId=${examId}`),
+  // 解绑试卷听力（后端接口待实现，URL 以实际为准）
+  removeAudio: (examId) => post(`/api/admin/exam/paper/removeAudio?examId=${examId}`),
   allIdAndName: () => get('/api/admin/file/allIdAndName'),
   uploadAudioFile: params => post('/api/admin/file/uploadAudioFile', params),
   allPaper: () => post('/api/admin/exam/paper/allIdAndName'),
