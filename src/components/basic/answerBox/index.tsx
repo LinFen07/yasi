@@ -10,6 +10,7 @@ import {
   EditOutlined,
   MinusCircleOutlined,
   ReadOutlined,
+  ReloadOutlined,
   SoundOutlined,
 } from '@ant-design/icons';
 import stores from '@/stores';
@@ -21,6 +22,7 @@ import {
 } from '@/utils/helper/processAnswerReport';
 import {
   fetchReportWithRetry,
+  getReportFailure,
   persistReportPaperId,
   resolveReportPaperId,
 } from '@/utils/helper/reportPaperId';
@@ -37,11 +39,22 @@ interface Article {
   review: string | null;
 }
 
-const MODULE_META = [
-  { key: 'listen', label: '听力', icon: SoundOutlined, module: '听力' as const },
-  { key: 'read', label: '阅读', icon: ReadOutlined, module: '阅读' as const },
-  { key: 'writte', label: '写作', icon: EditOutlined, module: null },
-];
+function hasGradeValue(value: unknown) {
+  return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+}
+
+function hasPublishedGradeMarkers(answerRes: any, items: unknown[], articles: Article[]) {
+  const paperScore = answerRes?.response?.studentPaperScore;
+  const hasModuleScore =
+    hasGradeValue(paperScore?.listeningScore) || hasGradeValue(paperScore?.readingScore);
+  const hasAnswerGrade = items.some((item) => {
+    if (!item || typeof item !== 'object') return false;
+    const answer = item as Record<string, unknown>;
+    return hasGradeValue(answer.score) || hasGradeValue(answer.isCorrect);
+  });
+  const hasWritingGrade = articles.some((article) => hasGradeValue(article.score));
+  return hasModuleScore || hasAnswerGrade || hasWritingGrade;
+}
 
 function sanitizeHtml(input: string) {
   if (!input) return '';
@@ -297,6 +310,8 @@ export default function Answer() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [activeTab, setActiveTab] = useState('listen');
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [hasPublishedGrade, setHasPublishedGrade] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [moduleScores, setModuleScores] = useState<ModuleScores>({
     listening: null,
     reading: null,
@@ -311,16 +326,28 @@ export default function Answer() {
       setTableData([]);
       setArticles([]);
       setModuleScores({ listening: null, reading: null });
+      setHasPublishedGrade(false);
       setLoadError(!paperId ? 'no-paper' : 'no-user');
       return;
     }
 
     persistReportPaperId(paperId);
     setLoadError(null);
+    setHasPublishedGrade(false);
     setLoading(true);
 
     fetchReportWithRetry(paperId, studentId)
       .then(({ answerRes, compositionRes, items }) => {
+        const reportFailure = getReportFailure(answerRes) || getReportFailure(compositionRes);
+        if (reportFailure) {
+          setTableData([]);
+          setArticles([]);
+          setModuleScores({ listening: null, reading: null });
+          setHasPublishedGrade(false);
+          setLoadError(reportFailure.awaitingRelease ? 'awaiting-release' : 'fetch-failed');
+          return;
+        }
+
         const paperScore = answerRes?.response?.studentPaperScore;
         setModuleScores({
           listening:
@@ -336,20 +363,20 @@ export default function Answer() {
         const compositions = compositionRes?.response;
         const compositionList = Array.isArray(compositions) ? compositions : [];
         setArticles(compositionList);
-        if (!items.length && !compositionList.length) {
-          setLoadError('no-data');
-        } else {
-          setLoadError(null);
-        }
+        const published = hasPublishedGradeMarkers(answerRes, items, compositionList);
+        setHasPublishedGrade(published);
+        setLoadError(published ? null : 'awaiting-release');
       })
-      .catch(() => {
+      .catch((error) => {
         setTableData([]);
         setArticles([]);
         setModuleScores({ listening: null, reading: null });
-        setLoadError('fetch-failed');
+        setHasPublishedGrade(false);
+        const reportFailure = getReportFailure(error);
+        setLoadError(reportFailure?.awaitingRelease ? 'awaiting-release' : 'fetch-failed');
       })
       .finally(() => setLoading(false));
-  }, [paperId, stores.UserStore.userId]);
+  }, [paperId, stores.UserStore.userId, reloadKey]);
 
   const listenStats = useMemo(() => computeModuleStats(tableData, '听力'), [tableData]);
   const readStats = useMemo(() => computeModuleStats(tableData, '阅读'), [tableData]);
@@ -361,8 +388,6 @@ export default function Answer() {
     ? writingScored.reduce((s, a) => s + (Number(a.score) || 0), 0)
     : null;
   const hasWritingScore = writingScored.length > 0;
-
-  const hasAnyResult = tableData.length > 0 || articles.length > 0;
 
   const listenDisplayScore =
     moduleScores.listening !== null ? moduleScores.listening : listenStats.totalScore;
@@ -443,7 +468,25 @@ export default function Answer() {
     );
   }
 
-  if (!hasAnyResult) {
+  if (loadError === 'fetch-failed') {
+    return (
+      <div className="result-panel result-panel--empty">
+        <div className="result-panel-head">
+          <span className="result-panel-badge">SCORE REPORT</span>
+          <h1>成绩报告</h1>
+        </div>
+        <p className="result-empty-tip">成绩加载失败，请稍后重新查询。</p>
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={() => setReloadKey((current) => current + 1)}
+        >
+          重新查询
+        </Button>
+      </div>
+    );
+  }
+
+  if (!loading && !hasPublishedGrade) {
     return (
       <div className="result-panel result-panel--empty">
         <div className="result-panel-head">
@@ -451,26 +494,18 @@ export default function Answer() {
           <h1>成绩报告</h1>
           <div className="result-panel-status">
             <ClockCircleOutlined />
-            <span>{loadError === 'no-data' ? '暂无答题记录' : '成绩尚未公布'}</span>
+            <span>等待开放</span>
           </div>
         </div>
-        <div className="report-score-overview">
-          {MODULE_META.map(({ key, label, icon: Icon }) => (
-            <div className="report-score-card report-score-card--pending" key={key}>
-              <div className="report-score-card-head">
-                <span className="report-score-card-icon"><Icon /></span>
-                <span className="report-score-card-label">{label}</span>
-              </div>
-              <div className="report-score-card-value">--</div>
-              <div className="report-score-card-foot"><span>待公布</span></div>
-            </div>
-          ))}
-        </div>
         <p className="result-empty-tip">
-          {loadError === 'fetch-failed'
-            ? '成绩加载失败，请稍后从试卷中心重新打开「查看结果」'
-            : '暂无答题记录。若刚完成听力/阅读，请稍等片刻后刷新；也可从试卷中心重新进入查看结果'}
+          成绩报告尚未开放，请等待教师开放后再查看。
         </p>
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={() => setReloadKey((current) => current + 1)}
+        >
+          重新查询
+        </Button>
       </div>
     );
   }
