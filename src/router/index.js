@@ -3,6 +3,7 @@ import Login from "../pages/Login";
 import Evaluation from "../pages/Evaluation";
 import ScoreReport from "../pages/ScoreReport";
 import ScoreReportDetail from "../pages/ScoreReport/detail";
+import ResultVisibility from "../pages/ResultVisibility";
 import Home from "../pages/Home"
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
@@ -61,6 +62,11 @@ const router = createBrowserRouter([
             {
                 path: '/app/report',
                 element: <ScoreReport />,
+                errorElement: <ErrorBoundary />
+            },
+            {
+                path: '/app/result-visibility',
+                element: <ResultVisibility />,
                 errorElement: <ErrorBoundary />
             },
             {

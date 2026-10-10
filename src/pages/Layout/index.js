@@ -5,6 +5,7 @@ import {
     LogoutOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
+    UnlockOutlined,
 } from '@ant-design/icons';
 import './index.scss';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -33,6 +34,11 @@ const items = [
         label: '成绩报告',
         key: '/app/report',
         icon: <BarChartOutlined />,
+    },
+    {
+        label: '成绩开放',
+        key: '/app/result-visibility',
+        icon: <UnlockOutlined />,
     },
 ];
 
