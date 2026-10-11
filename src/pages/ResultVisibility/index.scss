@@ -61,6 +61,13 @@
     font-size: 13px;
   }
 
+  &__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
   &__error {
     display: flex;
     align-items: center;

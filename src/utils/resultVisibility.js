@@ -21,18 +21,24 @@ export const getPaperPage = async (pageIndex, pageSize) => {
     };
 };
 
-export const getHiddenPaperIds = async () => {
-    const response = await request.get('/api/teacher/exam/settings/result-visibility');
-    const settings = unwrapResponse(response, '获取成绩开放配置失败');
-    return Array.isArray(settings.hiddenPaperIds)
-        ? [...new Set(settings.hiddenPaperIds.map(Number).filter(Number.isFinite))]
-        : [];
-};
+export const setPaperScoreReportVisibility = async (paperId, scoreReportOpen) => {
+    const id = Number(paperId);
+    if (!Number.isInteger(id) || id <= 0) {
+        throw new Error('试卷 ID 无效');
+    }
+    if (typeof scoreReportOpen !== 'boolean') {
+        throw new Error('成绩报告开放状态无效');
+    }
 
-export const replaceHiddenPaperIds = async (hiddenPaperIds) => {
-    await request.put('/api/teacher/exam/settings/result-visibility', {
-        hiddenPaperIds,
-    });
+    const response = await request.put(
+        `/api/teacher/exam/paper/${id}/score-report-visibility`,
+        { scoreReportOpen },
+    );
+    const result = unwrapResponse(response, '更新成绩报告开放状态失败');
+    if (result.scoreReportOpen !== scoreReportOpen) {
+        throw new Error('后端返回的成绩报告状态与请求不一致');
+    }
+    return result.scoreReportOpen;
 };
 
 export const getRequestErrorMessage = (error, fallbackMessage) =>
