@@ -127,7 +127,7 @@ const ExamContent = observer((props: propType) => {
     if (firstMatchNode) {
       console.log('[Highlight] 找到完整匹配');
 
-      const parent = firstMatchNode.parentNode;
+      const parent = firstMatchNode.parentNode as HTMLElement | null;
       if (!parent) {
         console.log('[Highlight] 失败: parent为null');
         return;
@@ -192,7 +192,7 @@ const ExamContent = observer((props: propType) => {
 
         console.log('[Highlight] 模糊匹配成功在节点:', text.substring(0, 80));
 
-        const parent = textNode.parentNode;
+        const parent = textNode.parentNode as HTMLElement | null;
         if (!parent) continue;
 
         const before = text.substring(0, match.index);
@@ -514,7 +514,7 @@ const ExamContent = observer((props: propType) => {
             <p>选中的文本: {selectedText}</p>
             <button onClick={handleHighlight}>Highlight</button>
             <button onClick={handleNote}>NOTE</button>
-            <button onClick={handleClear} disabled={!currentHighlightId}>Clear</button>
+            <button onClick={() => handleClear()} disabled={!currentHighlightId}>Clear</button>
             <button onClick={handleClearAll} disabled={highlights.length === 0}>Clear All</button>
         </div>
       :<></>

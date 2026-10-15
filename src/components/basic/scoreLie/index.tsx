@@ -91,7 +91,7 @@ export default function ScoreLie({ tableData }: ScoreLieProps) {
   useEffect(() => {
     const fetchAndRenderChart = async () => {
       // 4. 渲染图表
-      const chartDom = document.getElementsByClassName('scorepie')[0];
+      const chartDom = document.getElementsByClassName('scorepie')[0] as HTMLElement;
       if (chartDom && echarts) {
         const myChart = echarts.init(chartDom);
 

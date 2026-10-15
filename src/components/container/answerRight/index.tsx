@@ -150,10 +150,10 @@ const AnswerRight = () => {
 
         if (qType === 2) {
           // 双选题：拆分正确答案和学生答案（按逗号）
-          const correctOptions = correctAns ? correctAns.split(',').map(s => s.trim()) : [];
-          const studentOptions = studentAns && studentAns !== '' ? studentAns.split(',').map(s => s.trim()) : [];
+          const correctOptions = correctAns ? correctAns.split(',').map((s: string) => s.trim()) : [];
+          const studentOptions = studentAns && studentAns !== '' ? studentAns.split(',').map((s: string) => s.trim()) : [];
           const perScore = originalScore / correctOptions.length; // 平均分配每题分数
-          correctOptions.forEach((correctOpt, optIdx) => {
+          correctOptions.forEach((correctOpt: string, optIdx: number) => {
             const studentOpt = studentOptions[optIdx] || '未作答';
             const isOptionCorrect = (studentOpt === correctOpt) ? 1 : 0;
             const optionScore = isOptionCorrect === 1 ? perScore : 0;
@@ -198,7 +198,7 @@ const AnswerRight = () => {
       const finalData: any[] = [];
       const moduleCounter = { 听力: 0, 阅读: 0 };
       for (const item of itemsWithModule) {
-        const mod = item.module;
+        const mod = item.module as '听力' | '阅读';
         moduleCounter[mod]++;
         finalData.push({
           key: `${item.subKey}-${Date.now()}-${Math.random()}`,

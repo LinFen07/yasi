@@ -80,16 +80,16 @@ export const addChineseRestriction = (
 
   // 添加事件监听器
   inputElement.addEventListener('input', handleInput);
-  inputElement.addEventListener('keydown', handleKeyDown);
-  inputElement.addEventListener('compositionstart', handleCompositionStart);
-  inputElement.addEventListener('compositionend', handleCompositionEnd);
+  inputElement.addEventListener('keydown', handleKeyDown as EventListener);
+  inputElement.addEventListener('compositionstart', handleCompositionStart as EventListener);
+  inputElement.addEventListener('compositionend', handleCompositionEnd as EventListener);
 
   // 返回清理函数
   return () => {
     inputElement.removeEventListener('input', handleInput);
-    inputElement.removeEventListener('keydown', handleKeyDown);
-    inputElement.removeEventListener('compositionstart', handleCompositionStart);
-    inputElement.removeEventListener('compositionend', handleCompositionEnd);
+    inputElement.removeEventListener('keydown', handleKeyDown as EventListener);
+    inputElement.removeEventListener('compositionstart', handleCompositionStart as EventListener);
+    inputElement.removeEventListener('compositionend', handleCompositionEnd as EventListener);
   };
 };
 

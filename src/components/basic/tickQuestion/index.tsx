@@ -117,9 +117,9 @@ const tickQuestion = (questionArr: ExamType & { exam?: Exam[] }) => {
           const updatedItem = { ...item };
           // 清除同一行的所有选项
           ["A", "B", "C", "D", "E", "F", "G", "H", "I"].forEach((col) => {
-            updatedItem[col] = undefined;
+            (updatedItem as Record<string, unknown>)[col] = undefined;
           });
-          updatedItem[dataIndex] = "√";
+          (updatedItem as Record<string, unknown>)[dataIndex] = "√";
           return updatedItem;
         }
         return item;

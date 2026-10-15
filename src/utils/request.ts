@@ -8,7 +8,7 @@ import {
 
 // 开发环境走 webpack 代理（/api -> localhost:8068），避免跨域
 // 生产环境直连远程后端
-const request = axios.create({
+const axiosInstance = axios.create({
   baseURL: process.env.NODE_ENV === 'production' ? 'http://111.230.5.159:8668' : 'http://111.230.5.159:8668',
   timeout: 30000,
   headers: {
@@ -68,7 +68,7 @@ export const get = function (url: string, params: any) {
 
 
 //添加请求拦截器
-request.interceptors.request.use((config) => {
+axiosInstance.interceptors.request.use((config) => {
   if (UserStore.token) {
     config.headers.set('Authorization', `Bearer ${UserStore.token}`);
   }
@@ -78,7 +78,7 @@ request.interceptors.request.use((config) => {
 })
 
 //添加响应拦截器
-request.interceptors.response.use((response) => {
+axiosInstance.interceptors.response.use((response) => {
   // 2xx 范围内的状态码触发该函数。
   const setCookieHeader = response.headers['Set-Cookie'];
   if (setCookieHeader) {
@@ -102,4 +102,8 @@ request.interceptors.response.use((response) => {
   return Promise.reject(error)
 })
 
-export { request }
+// 响应拦截器返回的是 response.data（后端业务体 {code, response, ...}），
+// 调用方拿到的并不是 AxiosResponse，因此导出宽松类型，避免每个调用点写 cast。
+export const request = axiosInstance as unknown as {
+  (config: any): Promise<any>
+} & typeof axiosInstance

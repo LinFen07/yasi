@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 export const useEventListener = (
   eventName: string, 
-  handler: (e: Event) => void, 
+  handler: (e: any) => void, 
   element: any
 ) => {
   useEffect(() => {

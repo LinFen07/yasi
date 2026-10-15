@@ -29,7 +29,8 @@ class AnswerStore {
 
   tickAnswers: Array<string> = []; // 打勾题答案数组
   dragAnswers: Array<string> = Array(10).fill(""); //拖拽题答案数组
-  completedAnswers: Array<StudentAnswer> = Array(40).fill(""); //已完成的题目
+  // 已完成的题目：运行时混合存储答案对象与空字符串占位（Array(40).fill("")），故用 any
+  completedAnswers: Array<any> = Array(40).fill("");
   writingAnswers: Array<StudentWritingAnswer> = Array(2).fill(""); //写作答案
   correct: Array<Correct> = Array(82).fill(""); //正确答案
   tableData: any[] = []; // 表格数据，独立存储

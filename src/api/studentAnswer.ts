@@ -11,7 +11,7 @@ import { StudentAnswer, StudentSubmitAnswer, StudentWritingAnswer } from '@/typi
 //   })
 // }
 
-export const submitAnswerBatch = (data: StudentWritingAnswer[]) => {
+export const submitAnswerBatch = (data: Array<Partial<StudentWritingAnswer> & StudentAnswer>) => {
   return request({
     url: '/api/student/studentAnswer/addStudentAnswerBatch',
     method: 'POST',

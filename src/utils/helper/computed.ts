@@ -37,7 +37,7 @@ export function getQuestionSlotCount(questionItem: ExamType): number {
   if (type === 7) return 0;
   if (type === 1) return 1;
   if (type === 2) return getRequiredSelectCount(questionItem);
-  if ([4, 5, 6].includes(type)) {
+  if ([4, 5, 6].includes(type as number)) {
     // 拖拽题(6)：只计算 prompt 项（题目位置），不计算 option 项（选项）
     if (type === 6 && Array.isArray(questionItem.items)) {
       const promptCount = questionItem.items.filter(item => item.itemUuid === 'prompt').length;

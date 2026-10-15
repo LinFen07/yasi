@@ -80,7 +80,7 @@ export async function fetchReportWithRetry(
   studentId: number,
   maxAttempts = 3,
   delayMs = 800,
-) {
+): Promise<{ answerRes: any; compositionRes: any; items: any[] }> {
   let lastAnswerRes: unknown = null
   let lastCompositionRes: unknown = null
   let lastItems: unknown[] = []
