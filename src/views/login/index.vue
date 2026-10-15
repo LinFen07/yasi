@@ -12,7 +12,7 @@
       <div class="login-card">
         <div class="login-card__header">
           <div class="logo-wrap">
-            <img src="@/assets/zklogo.png" alt="Logo" class="logo">
+            <img src="@/assets/logo.png" alt="Logo" class="logo">
           </div>
           <h3 class="title">仲燕英语语言能力测试平台</h3>
           <p class="subtitle">欢迎登录管理后台</p>
