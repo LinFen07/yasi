@@ -51,23 +51,6 @@
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
   }
 
-  &__toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 16px 0;
-    color: #6b7280;
-    font-size: 13px;
-  }
-
-  &__actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
   &__error {
     display: flex;
     align-items: center;
@@ -97,11 +80,6 @@
 
     &__panel {
       padding: 0 12px 8px;
-    }
-
-    &__toolbar {
-      align-items: flex-start;
-      flex-direction: column;
     }
   }
 }
