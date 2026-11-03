@@ -312,11 +312,6 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
   return (
     <div className="listencontent">
       {questionsArr.map((questionArr, index) => {
-        const requiredSelectCount =
-          questionArr.questionType === 2
-            ? getRequiredSelectCount(questionArr)
-            : 0;
-
         return (
           <div key={index}>
             {questionArr.topicType == "5" ? (
@@ -332,11 +327,6 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
             ) : (
               <div ref={(el) => (titleRefs.current[index] = el)}>
                 {parse(cleanQuestionContent(replaceFontSize(questionArr.title, fontSize)))}
-                {questionArr.questionType === 2 && requiredSelectCount > 0 && (
-                  <span style={{ color: "#666", fontSize: "14px" }}>
-                    （最多选{requiredSelectCount === 2 ? "两" : requiredSelectCount}项）
-                  </span>
-                )}
               </div>
             )}
             <div>
