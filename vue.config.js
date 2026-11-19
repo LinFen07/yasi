@@ -12,7 +12,7 @@ module.exports = {
   lintOnSave: true,
   productionSourceMap: false,
   devServer: {
-    open: true,
+    open: false,
     host: 'localhost',
     port: 8002,
     https: false,

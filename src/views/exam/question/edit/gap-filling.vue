@@ -57,7 +57,23 @@
 
       <el-form-item v-if="form.items.length" label="填空答案：" required>
         <el-table :data="form.items" border size="small" class="gap-answer-table">
-          <el-table-column prop="prefix" label="题号" width="72" align="center" />
+          <el-table-column label="题号" width="96" align="center">
+            <template slot-scope="{ row }">
+              <span v-if="!row.shareWithPrev">{{ row.prefix }}</span>
+              <el-tooltip v-else :content="`与上一空共用题号 ${row.prefix}`" placement="top">
+                <span class="gap-shared-no">〃{{ row.prefix }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column label="与上一空共用" width="116" align="center">
+            <template slot-scope="{ row, $index }">
+              <el-switch
+                v-model="row.shareWithPrev"
+                :disabled="$index === 0"
+                @change="val => onShareWithPrevChange(row, $index, val)"
+              />
+            </template>
+          </el-table-column>
           <el-table-column label="标准答案（支持多答案）" min-width="320">
             <template slot-scope="{ row }">
               <el-select
@@ -82,6 +98,7 @@
           <el-table-column label="分值" width="168" align="center" class-name="gap-score-col">
             <template slot-scope="{ row }">
               <el-input-number
+                v-if="!row.shareWithPrev"
                 v-model="row.score"
                 :precision="1"
                 :step="1"
@@ -91,6 +108,9 @@
                 class="gap-score-input"
                 @change="syncTotalScore"
               />
+              <el-tooltip v-else content="与上一空共享分值" placement="top">
+                <span class="gap-shared-score">共享</span>
+              </el-tooltip>
             </template>
           </el-table-column>
         </el-table>
@@ -176,6 +196,7 @@ export default {
       destroyTableAlign: null,
       destroyContentObserver: null,
       isLoadingContent: false,
+      syncingFromTitle: false,
       rules: {
         gradeLevel: [{ required: true, message: '请选择年级', trigger: 'change' }],
         subjectId: [{ required: true, message: '请选择学科', trigger: 'change' }],
@@ -223,14 +244,33 @@ export default {
   methods: {
     applyLoadedForm (data) {
       if (!this.ensureQuestionTypePage(data, 4)) return
+      const loadedItems = (data.items || []).map(item => ({
+        ...item,
+        content: item.contents && item.contents.length ? item.contents[0] : (item.content || ''),
+        contents: item.contents || (item.content ? [item.content] : ['']),
+        score: item.score != null ? Number(item.score) : 0,
+        shareWithPrev: item.shareWithPrev === true || item.shareWithPrev === 'true' || item.shareWithPrev === 1
+      }))
+      // 兜底：后端若未返回 shareWithPrev，则按题干 span 的题号（prefix）是否重复来推断共用关系
+      // 题号与上一空相同（prefix 重复）的空，视为与上一空共用题号
+      loadedItems.forEach((item, i) => {
+        if (i === 0) {
+          item.shareWithPrev = false
+          return
+        }
+        const prev = loadedItems[i - 1]
+        if (item.shareWithPrev) {
+          // 已明确标记共用：同步分值为上一空的分值
+          item.score = prev.score
+        } else if (item.prefix != null && prev.prefix != null && String(item.prefix) === String(prev.prefix)) {
+          // 未标记但题号与上一空重复 → 推断为共用
+          item.shareWithPrev = true
+          item.score = prev.score
+        }
+      })
       this.form = {
         ...data,
-        items: (data.items || []).map(item => ({
-          ...item,
-          content: item.contents && item.contents.length ? item.contents[0] : (item.content || ''),
-          contents: item.contents || (item.content ? [item.content] : ['']),
-          score: item.score != null ? Number(item.score) : 0
-        }))
+        items: loadedItems
       }
       this.$nextTick(() => {
         if (this.editorInstance) {
@@ -260,7 +300,7 @@ export default {
       normalizeGapTables(instance.document)
       this.isLoadingContent = false
       instance.addListener('contentChange', () => {
-        if (!this.isLoadingContent) {
+        if (!this.isLoadingContent && !this.syncingFromTitle) {
           this.syncItemsFromContent(instance.getContent())
         }
       })
@@ -270,10 +310,10 @@ export default {
       if (editorBody) {
         let syncTimer = null
         this.destroyContentObserver = new MutationObserver(() => {
-          if (this.isLoadingContent) return
+          if (this.isLoadingContent || this.syncingFromTitle) return
           clearTimeout(syncTimer)
           syncTimer = setTimeout(() => {
-            if (this.editorInstance) {
+            if (this.editorInstance && !this.syncingFromTitle) {
               this.syncItemsFromContent(this.editorInstance.getContent())
             }
           }, 100)
@@ -374,19 +414,21 @@ export default {
         return false
       }
       const newItems = []
-      gapItems.forEach(span => {
+      gapItems.forEach((span, index) => {
         const pairRegex = /<span class="gapfilling-span (.*?)">(.*?)<\/span>/
         pairRegex.test(span)
         const itemUuid = RegExp.$1
         const prefix = RegExp.$2
-        const old = this.form.items.find(i => i.itemUuid === itemUuid || i.prefix === prefix)
+        // 优先按 itemUuid 匹配旧数据（共用空 itemUuid 唯一）；找不到再按当前索引兜底
+        const old = this.form.items.find(i => i.itemUuid === itemUuid) || this.form.items[index]
         newItems.push({
           id: old ? old.id : null,
           itemUuid,
           prefix,
           contents: old && old.contents && old.contents.length ? old.contents : (old && old.content ? [old.content] : ['']),
           content: (old && old.content) || '',
-          score: old && old.score != null ? old.score : 1
+          score: old && old.score != null ? old.score : 1,
+          shareWithPrev: old ? !!old.shareWithPrev : false
         })
       })
       this.form.items = newItems
@@ -394,8 +436,83 @@ export default {
       this.syncTotalScore()
       return true
     },
+    onShareWithPrevChange (row, index, val) {
+      this.recomputeQuestionNumbers()
+      this.syncTitleFromItems()
+      this.syncTotalScore()
+    },
+    recomputeQuestionNumbers () {
+      const items = this.form.items
+      if (!items.length) return
+      let currentNo = 0
+      items.forEach((item, i) => {
+        if (i === 0) {
+          currentNo = parseInt(item.prefix, 10) || 1
+          item.prefix = String(currentNo)
+          item.shareWithPrev = false
+        } else if (item.shareWithPrev) {
+          item.prefix = items[i - 1].prefix
+          // 共用题号 → 共享分数：与上一空分值保持一致
+          item.score = items[i - 1].score
+        } else {
+          currentNo = (parseInt(items[i - 1].prefix, 10) || 0) + 1
+          item.prefix = String(currentNo)
+        }
+      })
+    },
+    syncTitleFromItems () {
+      if (!this.editorInstance) return
+      const items = this.form.items
+      const doc = this.editorInstance.document
+      this.syncingFromTitle = true
+      try {
+        items.forEach(item => {
+          const span = doc.querySelector(`.gapfilling-span.${item.itemUuid}`)
+          if (span) span.innerHTML = item.prefix
+        })
+        this.handleAndSeparators()
+        this.form.title = this.editorInstance.getContent()
+      } finally {
+        // 延迟清除标志位，避开 MutationObserver 的 100ms 防抖窗口
+        setTimeout(() => {
+          this.syncingFromTitle = false
+        }, 200)
+      }
+    },
+    handleAndSeparators () {
+      if (!this.editorInstance) return
+      const items = this.form.items
+      const doc = this.editorInstance.document
+      const spans = doc.querySelectorAll('.gapfilling-span')
+      const sepText = ' and '
+      for (let i = 0; i < spans.length - 1; i++) {
+        const cur = spans[i]
+        const next = spans[i + 1]
+        const item = items.find(it => it.itemUuid && cur.className.indexOf(it.itemUuid) !== -1)
+        if (!item) continue
+        // 下一个空是否共用当前空
+        const nextItem = items.find(it => it.itemUuid && next.className.indexOf(it.itemUuid) !== -1)
+        const shouldHaveAnd = nextItem && nextItem.shareWithPrev
+        const betweenNode = cur.nextSibling
+        const hasAnd = betweenNode && betweenNode.nodeType === 3 && betweenNode.nodeValue.trim() === 'and'
+        if (shouldHaveAnd) {
+          if (!hasAnd) {
+            const textNode = doc.createTextNode(sepText)
+            cur.parentNode.insertBefore(textNode, next)
+          }
+        } else {
+          if (hasAnd) {
+            betweenNode.nodeValue = ' '
+          }
+        }
+      }
+    },
     syncTotalScore () {
-      const sum = this.form.items.reduce((total, item) => total + Number(item.score || 0), 0)
+      // 共用题号的空（shareWithPrev）与上一空共享分值，不重复累加
+      const sum = this.form.items.reduce((total, item, index) => {
+        if (index > 0 && item.shareWithPrev) return total
+        return total + Number(item.score || 0)
+      }, 0)
       this.form.score = Math.round(sum * 10) / 10
     },
     validateGapForm () {
@@ -525,6 +642,17 @@ export default {
 .gap-empty-tip {
   max-width: 720px;
   margin-bottom: 18px;
+}
+
+.gap-shared-no {
+  color: #909399;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.gap-shared-score {
+  color: #909399;
+  font-size: 12px;
 }
 
 .question-item-rate {

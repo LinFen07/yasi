@@ -1,5 +1,6 @@
 import axios from 'axios'
 import vue from 'vue'
+import { getToken, removeToken } from '@/utils/auth'
 
 const baseConfig = {
   baseURL: process.env.VUE_APP_URL,
@@ -17,6 +18,10 @@ const request = function (loadtip, query) {
       background: 'rgba(0, 0, 0, 0.5)'
     })
   }
+  const token = getToken()
+  if (token) {
+    query.headers.Authorization = `Bearer ${token}`
+  }
   return axios.request(query)
     .then(res => {
       if (loadtip) {
@@ -24,6 +29,7 @@ const request = function (loadtip, query) {
       }
       const { code } = res.data
       if (code === 401 || code === 502) {
+        removeToken()
         vue.prototype.$$router.push({ path: '/login' })
         return Promise.reject(res.data)
       } else if (code === 500 || code === 501) {

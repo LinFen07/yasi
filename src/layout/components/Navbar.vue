@@ -31,6 +31,7 @@
 <script>
 import { mapGetters, mapMutations } from 'vuex'
 import loginApi from '@/api/login'
+import { removeToken } from '@/utils/auth'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
 
@@ -56,6 +57,7 @@ export default {
     },
     logout () {
       loginApi.logout().finally(() => {
+        removeToken()
         this.clearLogin()
         this.$router.replace({ path: '/login' })
       })
