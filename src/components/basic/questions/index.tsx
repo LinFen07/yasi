@@ -386,7 +386,7 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
                     value: opt.prefix,
                     label: (
                       <span style={{ display: "flex", alignItems: "center", fontSize: `${fontSize}px` }}>
-                        {opt.prefix}
+                        <span style={{ fontWeight: "bold" }}>{opt.prefix}</span>
                         <p style={{ width: "8px" }}></p>
                         {stripHtmlTags(opt.content)}
                       </span>
