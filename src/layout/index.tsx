@@ -32,7 +32,7 @@ const Index: React.FC = observer(() => {
     <Layout>
       <Header className='headNav' >
         <div className="headNav-logo">
-          <img src='http://111.230.5.159:9000/yasi/image/logo/logo-04.webp' className='navImg' alt="logo" />
+          <img src='https://yasi-api-exam.oss-cn-guangzhou.aliyuncs.com/image/logo/logo-04.webp' className='navImg' alt="logo" />
         </div>
 
         <div className="headNav-right">

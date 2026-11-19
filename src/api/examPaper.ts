@@ -26,8 +26,8 @@ export const getInstructionStreamUrl = (): string => {
 };
 
 const INSTRUCTION_AUDIO_DIRECT_URL: Record<string, string> = {
-  read: "http://111.230.5.159:9000/yasi/audio/read.mp3",
-  writte: "http://111.230.5.159:9000/yasi/audio/writing.mp3",
+  read: "https://yasi-api-exam.oss-cn-guangzhou.aliyuncs.com/audio/read.mp3",
+  writte: "https://yasi-api-exam.oss-cn-guangzhou.aliyuncs.com/audio/writing.mp3",
 };
 
 export const getExamInstructionMediaUrl = (type: string): string => {

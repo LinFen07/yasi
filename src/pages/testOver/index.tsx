@@ -14,7 +14,7 @@ export default function testOver() {
       <header className='testOver-head'>
         <div className="testOver-head-logo">
           <img
-            src='http://111.230.5.159:9000/yasi/image/logo/logo-04.webp'
+            src='https://yasi-api-exam.oss-cn-guangzhou.aliyuncs.com/image/logo/logo-04.webp'
             className='testOver-navImg'
             alt="logo"
           />
