@@ -9,9 +9,9 @@ describe('mergeSubmitAnswerItems', () => {
     ]
     const merged = mergeSubmitAnswerItems(items)
     expect(merged).toEqual([
-      { questionId: 1, prefix: '1', content: 'a' },
-      { questionId: 1, prefix: '2', content: 'b' },
-      { questionId: 2, prefix: '1', content: 'c' },
+      { questionId: 1, prefix: '1', content: 'a', shareWithPrev: false },
+      { questionId: 1, prefix: '2', content: 'b', shareWithPrev: false },
+      { questionId: 2, prefix: '1', content: 'c', shareWithPrev: false },
     ])
   })
 
@@ -37,7 +37,7 @@ describe('mergeSubmitAnswerItems', () => {
       [{ questionId: 10, prefix: '1', content: '' }],
       99,
     )
-    expect(items).toEqual([{ questionId: 10, prefix: '1', content: 'draft-answer' }])
+    expect(items).toEqual([{ questionId: 10, prefix: '1', content: 'draft-answer', shareWithPrev: false }])
     localStorage.removeItem(key)
   })
 })

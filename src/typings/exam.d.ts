@@ -4,6 +4,7 @@ export type Items = {
   prefix: string;
   score: string;
   describe?: string;
+  shareWithPrev?: boolean;
 }
 
 export interface Exam {
@@ -45,6 +46,7 @@ export type StudentAnswer = {
   questionId: number,
   content?: string,
   contentArray?: string[],
+  shareWithPrev?: boolean,
   // score: string,
   // questionType: string,
   // questionOrder: number,

@@ -6,7 +6,9 @@ import { observer } from "mobx-react";
 import { runInAction } from "mobx";
 import {
   computedPrevCount,
+  computedPrevQuestionCount,
   getQuestionSlotCount,
+  getQuestionNumberSpan,
   getRequiredSelectCount,
 } from "@/utils/helper/computed";
 import { submitStudentSelectAnswer } from "@/utils/browser/submitAnswer";
@@ -86,17 +88,23 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
   };
 
   const onChange = (index: number) => (e: any) => {
-    const pre = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
-    const beforeCount = questionsArr
+    const preNo = computedPrevQuestionCount(stores.ExamStore.currentExamTitle, exam);
+    const preSlot = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
+    const beforeNo = questionsArr
+      .slice(0, index)
+      .reduce((acc, q) => acc + getQuestionNumberSpan(q), 0);
+    const beforeSlot = questionsArr
       .slice(0, index)
       .reduce((acc, q) => acc + getQuestionSlotCount(q), 0);
-    const start = pre + beforeCount + 1;
 
-    stores.ExamStore.changeStudentListenAnswer(start, e.target.value);
+    const startNo = preNo + beforeNo + 1;       // 题号
+    const startSlot = preSlot + beforeSlot;     // 槽位起始（0-based）
+
+    stores.ExamStore.changeStudentListenAnswer(startNo, e.target.value);
     const examIndex = +stores.ExamStore.currentExamTitle[4] - 1;
     const value = e.target.value;
 
-    submitStudentSelectAnswer(questionsArr, index, value, start - 1);
+    submitStudentSelectAnswer(questionsArr, index, value, startSlot);
 
     const updatedQuestions = { ...questionsArr[index] };
     updatedQuestions.answer = value.toString();
@@ -104,12 +112,12 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
       idx === index ? updatedQuestions : question
     );
     setQuestionArr(newQuestionsArr);
-    stores.ExamStore.changeCurrent(start);
+    stores.ExamStore.changeCurrent(startNo);
     stores.ExamStore.updateListenExam(examIndex, index, updatedQuestions);
 
     runInAction(() => {
-      if (!stores.ExamStore.correctListenAnswer.includes(start)) {
-        stores.ExamStore.correctListenAnswer.push(start);
+      if (!stores.ExamStore.correctListenAnswer.includes(startNo)) {
+        stores.ExamStore.correctListenAnswer.push(startNo);
       }
     });
   };
@@ -124,11 +132,16 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
       finalValues = finalValues.slice(0, requiredCount);
     }
 
-    const pre = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
-    const beforeCount = questionsArr
+    const preNo = computedPrevQuestionCount(stores.ExamStore.currentExamTitle, exam);
+    const preSlot = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
+    const beforeNo = questionsArr
+      .slice(0, index)
+      .reduce((acc, q) => acc + getQuestionNumberSpan(q), 0);
+    const beforeSlot = questionsArr
       .slice(0, index)
       .reduce((acc, q) => acc + getQuestionSlotCount(q), 0);
-    const start = pre + beforeCount + 1;
+    const startNo = preNo + beforeNo + 1;       // 题号
+    const startSlot = preSlot + beforeSlot;     // 槽位起始（0-based）
     const examIndex = +stores.ExamStore.currentExamTitle[4] - 1;
     const slotCount = getQuestionSlotCount(currentQuestion);
 
@@ -142,12 +155,12 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
       questionsArr,
       index,
       finalValues.join(","),
-      start - 1
+      startSlot
     );
 
     // 2. 让 ExamStore 记录当前题号（内部也可能写 AnswerStore）
     //    这里只传第一个字母，避免它把整串写进去
-    stores.ExamStore.changeStudentListenAnswer(start, finalValues[0] || "");
+    stores.ExamStore.changeStudentListenAnswer(startNo, finalValues[0] || "");
 
     // 3. 更新题目状态（本地 state，作为受控 value 的来源）
     const updatedQuestions = { ...questionsArr[index] };
@@ -157,13 +170,13 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
       idx === index ? updatedQuestions : question
     );
     setQuestionArr(newQuestionsArr);
-    stores.ExamStore.changeCurrent(start);
+    stores.ExamStore.changeCurrent(startNo);
     stores.ExamStore.updateListenExam(examIndex, index, updatedQuestions);
 
     // 4. 最后统一写 N 个槽位（覆盖前面任何"整串写入"）
     //    每个槽位只存一个字母，绝不写 join 后的字符串
     for (let i = 0; i < slotCount; i++) {
-      stores.AnswerStore.changeAnswer(start - 1 + i, {
+      stores.AnswerStore.changeAnswer(startSlot + i, {
         questionId: currentQuestion.id,
         content: finalValues[i] || "",
         prefix: `${i + 1}`,
@@ -172,7 +185,7 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
 
     runInAction(() => {
       if (finalValues.length >= requiredCount) {
-        const num = start;
+        const num = startNo;
         if (!stores.ExamStore.correctListenAnswer.includes(num)) {
           stores.ExamStore.correctListenAnswer.push(num);
         }
@@ -181,6 +194,7 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
   };
 
   // ========== 滚动定位逻辑 ==========
+  // questionIndex 是「题号」，定位时按「题号跨度」累加
   useEffect(() => {
     let pre = 0;
     let partIndex = -1;
@@ -188,7 +202,7 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
       const part = exam[p];
       let partLen = 0;
       for (let q of part.questionItems) {
-        partLen += getQuestionSlotCount(q);
+        partLen += getQuestionNumberSpan(q);
       }
       if (questionIndex <= pre + partLen) {
         partIndex = p;
@@ -203,7 +217,7 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
     let accumulated = 0;
     let foundIndex = -1;
     for (let i = 0; i < partItems.length; i++) {
-      const count = getQuestionSlotCount(partItems[i]);
+      const count = getQuestionNumberSpan(partItems[i]);
       if (currentIndexInPart >= accumulated && currentIndexInPart < accumulated + count) {
         foundIndex = i;
         break;
@@ -223,7 +237,7 @@ function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean 
     }
 
     const target = document.querySelector<HTMLInputElement>(
-      `.textInput[data-index="${questionIndex}"]`
+      `.textInput[data-question-no="${questionIndex}"]`
     );
     if (target) {
       if (document.activeElement === target) {

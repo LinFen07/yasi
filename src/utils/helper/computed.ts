@@ -67,6 +67,40 @@ export function computedPrevCount(title: string, exam: Array<Exam>): number {
 }
 
 /**
+ * 计算一个题目的「题号跨度」（占用的题号个数）
+ * 与 getQuestionSlotCount 的差异仅在填空题（type 4）：
+ *   - 普通填空：题号数 = items.length
+ *   - 空级别混排（shareWithPrev）：题号数 = items.length - shareWithPrev 数量
+ * 其余题型题号跨度 = 槽号跨度，直接复用 getQuestionSlotCount
+ */
+export function getQuestionNumberSpan(questionItem: ExamType): number {
+  const type = questionItem.questionType;
+  if (type === 4) {
+    const items = Array.isArray(questionItem.items) ? questionItem.items : [];
+    const shareCount = items.filter((it: any) => it && it.shareWithPrev).length;
+    return items.length - shareCount;
+  }
+  return getQuestionSlotCount(questionItem);
+}
+
+/**
+ * 计算指定 part 之前的「题号总数」（与 computedPrevCount 逻辑一致，只是用题号跨度累加）
+ * 用于：题号显示、定位、correctListenAnswer、导航
+ */
+export function computedPrevQuestionCount(title: string, exam: Array<Exam>): number {
+  const match = title.match(/\d+/);
+  if (!match) return 0;
+  const index = parseInt(match[0], 10) - 1;
+  let prevCount = 0;
+  for (let i = 0; i < index; i++) {
+    for (let j = 0; j < exam[i].questionItems.length; j++) {
+      prevCount += getQuestionNumberSpan(exam[i].questionItems[j]);
+    }
+  }
+  return prevCount;
+}
+
+/**
  * 计算当前 part 中，第一个填空题（topicType === '4'）之前的题号数（相对于 part 起始）
  */
 export function computedBlanksPrevCount(pre: number, title: string, exam: Array<Exam>): number {

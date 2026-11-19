@@ -3,15 +3,19 @@ import type { Exam, ExamType } from '@/typings/exam';
 import { autorun, runInAction } from 'mobx';
 import {
   computedPrevCount,
+  computedPrevQuestionCount,
   getQuestionSlotCount,
+  getQuestionNumberSpan,
 } from '@/utils/helper/computed';
 import { submitStudentBlankAnswer } from '../browser/submitAnswer';
 import { restrictChineseInput } from './inputRestriction';
 
 // ========== createInput ==========
 export function createInput(exam: Array<Exam>, type: string, container: any) {
-  // 当前 part 的起始题号减 1
-  const startOffset = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
+  // 当前 part 的起始「题号」减 1（用于题号显示/定位）
+  const questionOffset = computedPrevQuestionCount(stores.ExamStore.currentExamTitle, exam);
+  // 当前 part 的起始「槽位」偏移（用于答案读写）
+  const slotOffset = computedPrevCount(stores.ExamStore.currentExamTitle, exam);
 
   // 更安全地获取当前 Part 索引：从标题中提取数字
   const title = stores.ExamStore.currentExamTitle || '';
@@ -26,22 +30,24 @@ export function createInput(exam: Array<Exam>, type: string, container: any) {
     const span = container.querySelectorAll('.gapfilling-span');
     if (span.length === 0) return;
 
-    let questionCounter = startOffset; // 全局题号偏移（所有题型累加）
-    let fillIndex = 0;                // 仅用于 .gapfilling-span 的索引
+    let questionCounter = questionOffset; // 全局题号偏移（按题号跨度累加）
+    let slotCounter = slotOffset;         // 全局槽位偏移（按槽号累加）
+    let fillIndex = 0;                    // 仅用于 .gapfilling-span 的索引
 
     for (let j = 0; j < exam[index].questionItems.length; j++) {
       const questionArr = exam[index].questionItems[j];
-      // 复用公共函数，多选题自动按动态数量计算
+      // 槽号跨度（复用公共函数，多选题自动按动态数量计算）
       const len = getQuestionSlotCount(questionArr);
 
       // 只对填空题 (4) 创建输入框，并传递 fillIndex
       if (questionArr.questionType === 4) {
-        MyInput(questionCounter, questionArr, span, fillIndex);
+        MyInput(questionCounter, slotCounter, questionArr, span, fillIndex);
         fillIndex += len; // 填空题索引增加
       }
 
-      // 无论是否创建输入框，题号都要累加
-      questionCounter += len;
+      // 题号按「题号跨度」累加，槽号按「槽号跨度」累加
+      questionCounter += getQuestionNumberSpan(questionArr);
+      slotCounter += len;
     }
 
     // 移除自动聚焦，聚焦行为由上层控制
@@ -59,17 +65,28 @@ export function createInput(exam: Array<Exam>, type: string, container: any) {
 
 // ========== MyInput ==========
 export function MyInput(
-  startOffset: number,
+  questionStart: number,
+  slotStart: number,
   questionArr: ExamType,
   span: any,
   fillStartIndex: number
 ) {
   const items = questionArr.items || [];
   const len = items.length;
+  // questionStart 是「题号偏移」（前面累计题号数），第一个空的题号 = questionStart + 1
+  let currentQuestionNo = questionStart + 1;
 
   for (let localIndex = 0; localIndex < len; localIndex++) {
-    const questionNo = startOffset + localIndex + 1;
-    const spanIndex = fillStartIndex + localIndex;
+    const item: any = items[localIndex];
+
+    // 关键：只有 shareWithPrev 为 true 时，题号不递增（与上一个空同号）
+    if (localIndex > 0 && !item.shareWithPrev) {
+      currentQuestionNo += 1;
+    }
+
+    const questionNo = currentQuestionNo;              // 显示/定位/correctListenAnswer 用
+    const slotIndex = slotStart + localIndex;          // 答案读写用（0-based 槽位）
+    const spanIndex = fillStartIndex + localIndex;     // 对应 span 下标
 
     if (spanIndex >= span.length || !span[spanIndex]) {
       console.error(`span[${spanIndex}] is undefined. Total spans: ${span.length}`);
@@ -83,14 +100,15 @@ export function MyInput(
     const placeholder = document.createElement('span');
 
     input.className = 'textInput';
-    input.setAttribute('data-index', questionNo.toString());
+    input.setAttribute('data-index', String(slotIndex + 1));        // 保留：槽位索引（1-based）
+    input.setAttribute('data-question-no', String(questionNo));     // 新增：题号（供定位用）
 
-    // 恢复已有答案
+    // 恢复已有答案：用槽位索引 slotIndex
     const savedAnswer =
-      stores.AnswerStore.completedAnswers[questionNo - 1]?.content || '';
+      stores.AnswerStore.completedAnswers[slotIndex]?.content || '';
     const persistedValue =
       localStorage.getItem(
-        `answer-input-${stores.ExamStore.paperId}-${questionNo}`
+        `answer-input-${stores.ExamStore.paperId}-${slotIndex + 1}`
       ) || '';
 
     if (savedAnswer || persistedValue) {
@@ -101,10 +119,11 @@ export function MyInput(
         submitStudentBlankAnswer(
           questionArr,
           localIndex,
-          startOffset,
+          slotStart,
           persistedValue,
           localIndex,
-          (localIndex + 1).toString()
+          (localIndex + 1).toString(),
+          !!item.shareWithPrev
         );
       }
     } else {
@@ -112,12 +131,13 @@ export function MyInput(
     }
 
     placeholder.className = 'placeholder';
+    // 共用组的空也显示题号（与上一个空同号，如 both 33 ___ and 33 ___）
     placeholder.innerText = questionNo.toString();
 
     // 事件绑定
     input.addEventListener('focus', () => {
       placeholder.style.display = 'none';
-      stores.ExamStore.changeCurrent(questionNo);
+      stores.ExamStore.changeCurrent(questionNo);   // 用题号
     });
 
     input.addEventListener('blur', () => {
@@ -128,7 +148,7 @@ export function MyInput(
       const original = input.value;
       const filtered = restrictChineseInput(original);
       localStorage.setItem(
-        `answer-input-${stores.ExamStore.paperId}-${questionNo}`,
+        `answer-input-${stores.ExamStore.paperId}-${slotIndex + 1}`,
         filtered
       );
 
@@ -142,10 +162,11 @@ export function MyInput(
         submitStudentBlankAnswer(
           questionArr,
           localIndex,
-          startOffset,
+          slotStart,
           input.value,
           localIndex,
-          (localIndex + 1).toString()
+          (localIndex + 1).toString(),
+          !!item.shareWithPrev
         );
         runInAction(() => {
           if (!stores.ExamStore.correctListenAnswer.includes(questionNo)) {

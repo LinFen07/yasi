@@ -54,11 +54,13 @@ export function submitStudentBlankAnswer(
   value: string,
   _correctIndex: number,
   prefix: string,
+  shareWithPrev: boolean = false,
 ): void {
   Object.assign(studentAnswer, {
     questionId: questionArr.id,
     content: value,
     prefix,
+    shareWithPrev,
   })
   stores.AnswerStore.changeAnswer(prevCount + i, { ...studentAnswer })
 }

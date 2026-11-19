@@ -5,7 +5,9 @@ import { ExamType, Exam } from "@/typings/exam";
 import "./index.scss";
 import {
   computedPrevCount,
+  computedPrevQuestionCount,
   getQuestionSlotCount,
+  getQuestionNumberSpan,
 } from "@/utils/helper/computed";
 import stores from "@/stores";
 import { runInAction } from "mobx";
@@ -13,6 +15,7 @@ import { submitStudentSelectAnswer } from "@/utils/browser/submitAnswer";
 
 interface RecordType {
   key: number; // 实际题号
+  slotIndex: number; // 槽位索引（0-based）
   describe?: string;
   question: string;
   A?: string;
@@ -33,19 +36,27 @@ const tickQuestion = (questionArr: ExamType & { exam?: Exam[] }) => {
   const part = exam[partIndex];
 
   // 计算当前 part 之前的题号总数
-  const pre = computedPrevCount(title, exam);
+  const preNo = computedPrevQuestionCount(title, exam);
+  // 计算当前 part 之前的槽位总数（答案读写用）
+  const preSlot = computedPrevCount(title, exam);
 
   // 找到当前题组在 part.questionItems 中的索引
   const currentIndex = part.questionItems.findIndex(
     (item) => item.id === questionArr.id,
   );
   // 计算当前题组之前的题组占用的总题号数（在当前 part 内）
-  const beforeCount = part.questionItems
+  const beforeNo = part.questionItems
+    .slice(0, currentIndex)
+    .reduce((acc, q) => acc + getQuestionNumberSpan(q), 0);
+  // 计算当前题组之前的题组占用的总槽位数（在当前 part 内）
+  const beforeSlot = part.questionItems
     .slice(0, currentIndex)
     .reduce((acc, q) => acc + getQuestionSlotCount(q), 0);
 
   // 当前题组起始题号（第一个小题的题号）
-  const start = pre + beforeCount + 1;
+  const start = preNo + beforeNo + 1;
+  // 当前题组起始槽位（0-based）
+  const slotStart = preSlot + beforeSlot;
 
   // 从 title 中提取图片 URL
   const imgMatch = questionArr.title.match(/<img[^>]+src=["']([^"']+)["']/);
@@ -65,19 +76,21 @@ const tickQuestion = (questionArr: ExamType & { exam?: Exam[] }) => {
   const tableData: RecordType[] = (questionArr.items || []).map(
     (item, index) => {
       const questionNo = start + index; // 实际题号（16, 17, 18, 19, 20）
+      const slotIndex = slotStart + index; // 槽位索引（0-based）
       return {
         key: questionNo,
+        slotIndex,
         describe: item.describe || "",
         question: item.content || "",
       };
     },
   );
 
-  // 初始化数据源，从 completedAnswers 恢复已有答案
+  // 初始化数据源，从 completedAnswers 恢复已有答案（用槽位索引）
   const [dataSource, setDataSource] = useState<RecordType[]>(() => {
     return tableData.map((item) => {
       const answer =
-        stores.AnswerStore.completedAnswers[item.key - 1]?.content || "";
+        stores.AnswerStore.completedAnswers[item.slotIndex]?.content || "";
       if (answer) {
         return {
           ...item,
@@ -91,20 +104,21 @@ const tickQuestion = (questionArr: ExamType & { exam?: Exam[] }) => {
 
   const handleCellClick = (record: RecordType, dataIndex: string) => {
     const questionNo = record.key;
-    const localIndex = questionNo - start; // 该行在图表题中的局部索引（0-based）
+    const slotIndex = record.slotIndex as number;
+    const localIndex = slotIndex - slotStart; // 该行在图表题中的局部索引（0-based）
     const prefix = String(localIndex + 1);
 
-    // 提交答案到后端
-    submitStudentSelectAnswer([questionArr], 0, dataIndex, questionNo - 1);
+    // 提交答案到后端（用槽位索引）
+    submitStudentSelectAnswer([questionArr], 0, dataIndex, slotIndex);
 
-    // 更新 AnswerStore
+    // 更新 AnswerStore（用槽位索引）
     runInAction(() => {
-      stores.AnswerStore.changeAnswer(questionNo - 1, {
+      stores.AnswerStore.changeAnswer(slotIndex, {
         questionId: questionArr.id,
         content: dataIndex,
         prefix: prefix,
       });
-      // 标记已答
+      // 标记已答（用题号）
       if (!stores.ExamStore.correctListenAnswer.includes(questionNo)) {
         stores.ExamStore.correctListenAnswer.push(questionNo);
       }

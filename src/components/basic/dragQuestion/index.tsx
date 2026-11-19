@@ -6,7 +6,7 @@ import TurndownService from 'turndown';
 import parse from 'html-react-parser';
 import './index.scss';
 import stores from '@/stores';
-import { computedPrevCount, getQuestionSlotCount } from '@/utils/helper/computed';
+import { computedPrevCount, computedPrevQuestionCount, getQuestionSlotCount, getQuestionNumberSpan } from '@/utils/helper/computed';
 import { runInAction } from 'mobx';
 import { stripHtmlTags, submitStudentBlankAnswer } from '@/utils/browser/submitAnswer';
 
@@ -184,13 +184,19 @@ export default function DragQuestion(questionArr: ExamType & { exam?: Exam[] }) 
   const questionItems = part?.questionItems || [];
   const currentIndex = questionItems.findIndex(item => item.id === questionArr.id);
   // 当前 part 之前的题号总数
-  const prevCount = computedPrevCount(currentTitle, exam);
+  const prevNo = computedPrevQuestionCount(currentTitle, exam);
+  // 当前 part 之前的槽位总数
+  const prevSlot = computedPrevCount(currentTitle, exam);
   // 当前题组之前的题号数（在本 part 内）
-  const beforeCount = questionItems.slice(0, currentIndex).reduce((acc, q) => acc + getQuestionSlotCount(q), 0);
+  const beforeNo = questionItems.slice(0, currentIndex).reduce((acc, q) => acc + getQuestionNumberSpan(q), 0);
+  // 当前题组之前的槽位数（在本 part 内）
+  const beforeSlot = questionItems.slice(0, currentIndex).reduce((acc, q) => acc + getQuestionSlotCount(q), 0);
   // 该题组起始题号减 1
-  const dragPrevCount = prevCount + beforeCount;
+  const dragPrevCount = prevNo + beforeNo;
+  // 该题组起始槽位（0-based）
+  const dragSlotStart = prevSlot + beforeSlot;
 
-  const getGlobalIndex = (questionIndex: number) => dragPrevCount + questionIndex;
+  const getGlobalIndex = (questionIndex: number) => dragSlotStart + questionIndex;
 
   const [availableOptions, setAvailableOptions] = useState<DragOption[]>(Options);
   const [slotAssignments, setSlotAssignments] = useState<SlotAssignment[]>([]);
@@ -256,7 +262,7 @@ export default function DragQuestion(questionArr: ExamType & { exam?: Exam[] }) 
     submitStudentBlankAnswer(
       questionArr,
       questionIndex,
-      dragPrevCount,
+      dragSlotStart,
       answerLetter,
       questionIndex,
       promptPrefix

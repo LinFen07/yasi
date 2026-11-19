@@ -6,7 +6,7 @@ import store from "@/stores";
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { reaction, runInAction } from "mobx";
-import { getQuestionSlotCount } from "@/utils/helper/computed"; // 导入统一计算函数
+import { getQuestionNumberSpan, getQuestionSlotCount } from "@/utils/helper/computed"; // 导航按题号跨度计算 + 槽位还原
 
 type pageType = {
   title: string;
@@ -51,7 +51,7 @@ function footerNav(props: propType) {
     let allLen = 0;
     for (let i = 0; i < part.questionItems.length; i++) {
       const item = part.questionItems[i];
-      const len = getQuestionSlotCount(item); // 使用统一函数
+      const len = getQuestionNumberSpan(item); // 按题号跨度累加（共用空只占一个题号位）
       allLen += len;
     }
 
@@ -187,20 +187,52 @@ function footerNav(props: propType) {
     const result: number[] = [];
     const answers = store.AnswerStore.completedAnswers;
 
-    for (let idx = 0; idx < answers.length; idx++) {
-      const item = answers[idx];
-      const nextItem = answers[idx + 1];
+    // 遍历每个 part、每个题目，还原「槽位 ↔ 题号」映射，
+    // 从而判断每个题号是否已作答（共用空的两个槽位映射到同一个题号）
+    let slotCursor = 0;
+    let questionNoCursor = 0;
+    exam.forEach((part) => {
+      part.questionItems.forEach((q) => {
+        const slotCount = getQuestionSlotCount(q);
+        const numberSpan = getQuestionNumberSpan(q);
 
-      const currentHasContent = item && typeof item === 'object' && String(item.content || '').trim();
-      const nextIsDoubleChoicePlaceholder = nextItem === '';
+        if (q.questionType === 4 && Array.isArray(q.items)) {
+          // 填空题：逐空还原题号，shareWithPrev 的空与上一空同号
+          let currentNo = questionNoCursor;
+          q.items.forEach((item: any, localIdx: number) => {
+            if (localIdx > 0 && !item.shareWithPrev) {
+              currentNo += 1;
+            }
+            const slotIdx = slotCursor + localIdx;
+            const ans = answers[slotIdx];
+            const hasContent =
+              ans && typeof ans === 'object' && String(ans.content || '').trim();
+            if (hasContent) {
+              result.push(currentNo + 1);
+            }
+          });
+        } else {
+          // 其他题型：题号与槽位一一对应（或多选题占多个槽位但同一题号）
+          for (let i = 0; i < numberSpan; i++) {
+            const questionNo = questionNoCursor + i + 1;
+            let answered = false;
+            for (let k = 0; k < slotCount && k <= i; k++) {
+              const ans = answers[slotCursor + k];
+              if (ans && typeof ans === 'object' && String(ans.content || '').trim()) {
+                answered = true;
+                break;
+              }
+            }
+            if (answered) {
+              result.push(questionNo);
+            }
+          }
+        }
 
-      if (currentHasContent && nextIsDoubleChoicePlaceholder) {
-        result.push(idx + 1);
-        result.push(idx + 2);
-      } else if (currentHasContent) {
-        result.push(idx + 1);
-      }
-    }
+        slotCursor += slotCount;
+        questionNoCursor += numberSpan;
+      });
+    });
 
     return result;
   };
