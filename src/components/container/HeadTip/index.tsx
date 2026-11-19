@@ -30,7 +30,7 @@ type propType = {
 };
 
 const HeadTip = forwardRef((props: propType) => {
-  const testTime: number = props.type == 'listen' ? 30 : props.type == 'read' ? 60 : 30;
+  const testTime: number = props.type == 'listen' ? 30 : 60;
   const examstore = stores.ExamStore;
 
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
