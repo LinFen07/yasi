@@ -67,7 +67,7 @@ async function run () {
   const login = load('src/views/login/index.vue').default
   const instance = {
     loginForm: { userName: 'admin', password: 'password' },
-    $refs: { loginForm: { validate: callback => callback(true) } },
+    $refs: { loginForm: { validate: valid => valid(true) } },
     syncAutofill () {},
     setUserName () {},
     setToken (token) { load('src/utils/auth.js').setToken(token) },
