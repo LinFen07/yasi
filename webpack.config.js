@@ -189,6 +189,15 @@ module.exports = (env) => {
     optimization: {
       // 生产环境启用代码拆分
       ...(isProduction && {
+        // 开启 tree-shaking：@ant-design/icons 等包通过 barrel 导出全部图标，
+        // 缺少这三项时 webpack 会以「side effect evaluation」保留整个 barrel（1671 个图标模块），
+        // 导致 vendors-other 膨胀到 1MB+。
+        usedExports: true,
+        sideEffects: true,
+        providedExports: true,
+        innerGraph: true,
+        // 合并模块，减少生产环境运行时开销
+        concatenateModules: true,
         splitChunks: {
           chunks: 'all', // 对所有类型的代码块进行拆分
           cacheGroups: {
@@ -207,9 +216,10 @@ module.exports = (env) => {
               enforce: true,
             },
             // 其他第三方库
+            // 不强制合并为单一 chunk：强制 name 会把整棵依赖树锁定在一个 chunk 里，
+            // 导致 tree-shaking 失效（antd 整个库都被保留）。
             vendor: {
               test: /[\\/]node_modules[\\/]/,
-              name: 'vendors-other',
               priority: 10,
               reuseExistingChunk: true,
             },

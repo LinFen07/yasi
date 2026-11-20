@@ -29,8 +29,11 @@ const STATUS_LABEL: Record<ExamStatus, string> = {
   ended: "已截止",
 };
 
-const getExamStatus = (startTime: string, endTime: string): ExamStatus => {
-  const now = Date.now();
+const getExamStatus = (
+  startTime: string,
+  endTime: string,
+  now: number = Date.now()
+): ExamStatus => {
   const start = new Date(startTime).getTime();
   const end = new Date(endTime).getTime();
   if (now < start) return "upcoming";
@@ -38,12 +41,23 @@ const getExamStatus = (startTime: string, endTime: string): ExamStatus => {
   return "active";
 };
 
+const UNRESTRICTED_EXAM_ID = 1;
+
+const isExamAccessible = (examPaperId: number, status: ExamStatus) =>
+  examPaperId === UNRESTRICTED_EXAM_ID || status === "active";
+
 const Dashboard = () => {
   const [examList, setExamList] = useState([]);
   const [listLoaded, setListLoaded] = useState(false);
+  const [now, setNow] = useState(Date.now());
   const [ongoingModalVisible, setOngoingModalVisible] = useState(false);
   const [pendingExamId, setPendingExamId] = useState<number | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const fetchGetStudentId = async () => {
     const res = await getStudentId(stores.UserStore.userName);
@@ -83,6 +97,14 @@ const Dashboard = () => {
   }, []);
 
   const handleConfirmExam = async (id: number) => {
+    const exam = (examList as any[]).find((item) => item.examPaperId === id);
+    if (
+      exam &&
+      !isExamAccessible(id, getExamStatus(exam.startTime, exam.endTime))
+    ) {
+      return;
+    }
+
     const progress = getExamProgress(id);
 
     if (progress) {
@@ -188,7 +210,7 @@ const Dashboard = () => {
               data-count={Math.min(examList.length, 4)}
             >
               {examList.map((item: any) => {
-                const status = getExamStatus(item.startTime, item.endTime);
+                const status = getExamStatus(item.startTime, item.endTime, now);
 
                 return (
                   <article className="exam-card" key={item.examPaperId}>
@@ -232,7 +254,7 @@ const Dashboard = () => {
                       <Button
                         type="primary"
                         size="large"
-                        // disabled={status === "ended"}
+                        disabled={!isExamAccessible(item.examPaperId, status)}
                         onClick={() => handleConfirmExam(item.examPaperId)}
                       >
                         前往考试

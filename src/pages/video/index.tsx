@@ -8,9 +8,10 @@ import { select, getExamInstructionMediaUrl } from "@/api/examPaper";
 import stores from "@/stores";
 import { AddCorrect } from "@/utils/browser/getCorrect";
 import { checkOngoingExamState, clearAllExamData, OngoingExamState, getExamProgress, setModuleStatus, clearModuleData } from '@/utils/helper/examDataManager';
-import { judgingProblem, submitAnswerBatch } from '@/api/studentAnswer';
+import { submitAnswerBatch, judgingProblem } from '@/api/studentAnswer';
 import { submitStudentWritteAnswer, buildWritingSubmitPayload } from '@/utils/browser/submitAnswer';
 import { collectListenReadSubmitItems } from '@/utils/helper/mergeSubmitAnswers';
+import { submitModuleGuarded, buildSubmitKey } from '@/utils/helper/moduleSubmitGuard';
 
 const IeltsFamiliarisationTest: React.FC = () => {
   const navigate = useNavigate();
@@ -151,7 +152,10 @@ const IeltsFamiliarisationTest: React.FC = () => {
         type: mod === 'listen' ? 'LISTENING' : 'READING',
       };
 
-      judgingProblem(submitPayload);
+      // 防抖 + 幂等：超时交卷与手动交卷共用同一把锁，避免重复提交
+      submitModuleGuarded(buildSubmitKey(paperId, mod), submitPayload, judgingProblem).catch((error) => {
+        console.error('超时提交答案失败:', error);
+      });
     }
 
     clearModuleData(mod);

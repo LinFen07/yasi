@@ -11,7 +11,8 @@ import { submitStudentWritteAnswer, buildWritingSubmitPayload } from '@/utils/br
 import { clearModuleData, safeSubmitAndClear, setModuleStatus } from '@/utils/helper/examDataManager';
 import { collectListenReadSubmitItems } from '@/utils/helper/mergeSubmitAnswers';
 import { persistReportPaperId } from '@/utils/helper/reportPaperId';
-import { judgingProblem, submitAnswerBatch } from '@/api/studentAnswer';
+import { submitAnswerBatch, judgingProblem } from '@/api/studentAnswer';
+import { submitModuleGuarded, buildSubmitKey } from '@/utils/helper/moduleSubmitGuard';
 import { clearExamHighlights } from '@/components/container/examContent';
 
 const items: MenuProps['items'] = [
@@ -264,7 +265,12 @@ const HeadTip = forwardRef((props: propType) => {
       };
       console.log(JSON.stringify(listenData_, null, 2));
       try {
-        await judgingProblem(listenData_);
+        // 防抖 + 幂等：同一模块只提交一次，避免交卷瞬间重复请求
+        await submitModuleGuarded(
+          buildSubmitKey(examstore.paperId, 'listen'),
+          listenData_,
+          judgingProblem,
+        );
         persistReportPaperId(stores.ExamStore.paperId);
       } catch (error) {
         console.error('听力答案提交失败:', error);
@@ -285,7 +291,12 @@ const HeadTip = forwardRef((props: propType) => {
         type: 'READING',
       };
       try {
-        await judgingProblem(readData_);
+        // 防抖 + 幂等：同一模块只提交一次，避免交卷瞬间重复请求
+        await submitModuleGuarded(
+          buildSubmitKey(examstore.paperId, 'read'),
+          readData_,
+          judgingProblem,
+        );
         persistReportPaperId(stores.ExamStore.paperId);
       } catch (error) {
         console.error('阅读答案提交失败:', error);

@@ -46,7 +46,12 @@ function ExamPage({type}: {type: string}) {
         : stores.ExamStore.getWritteExam();
 
     const loadExamData = async () => {
-      if (moduleExam.length > 0 && stores.ExamStore.paperId === id) {
+      // 仅当缓存的 exam 确实属于当前试卷时才复用，否则强制重新请求
+      if (
+        moduleExam.length > 0 &&
+        stores.ExamStore.paperId === id &&
+        stores.ExamStore.examPaperId === id
+      ) {
         setExamReady(true);
         return;
       }

@@ -5,6 +5,9 @@ import { getStreamAudioUrl } from "@/api/examPaper";
 class ExamStore {
   paperId = 0;
 
+  /** 当前 exam 数据所属的试卷 id，用于防止切换试卷时复用旧试卷题目 */
+  examPaperId = 0;
+
   currentExamIndex = 1;
   currentExamTitle = "Part1";
   titleExpain = "";
@@ -54,6 +57,7 @@ class ExamStore {
   fullReset() {
     const data = {
       paperId: this.paperId,
+      examPaperId: this.examPaperId,
       currentExamIndex: this.currentExamIndex,
       currentExamTitle: this.currentExamTitle,
       currentPageType: this.currentPageType,
@@ -76,6 +80,7 @@ class ExamStore {
   saveToLocalStorage() {
     const data = {
       paperId: this.paperId,
+      examPaperId: this.examPaperId,
       currentExamIndex: this.currentExamIndex,
       currentExamTitle: this.currentExamTitle,
       currentPageType: this.currentPageType,
@@ -100,6 +105,7 @@ class ExamStore {
     if (data) {
       const parsedData = JSON.parse(data);
       this.paperId = parsedData.paperId || 0;
+      this.examPaperId = parsedData.examPaperId || 0;
       this.currentExamIndex = parsedData.currentExamIndex || 1;
       this.currentExamTitle = parsedData.currentExamTitle || "Part1";
       this.currentPageType = parsedData.currentPageType || "listen";
@@ -134,6 +140,8 @@ class ExamStore {
 
   addExam(exam: Array<Exam>) {
     this.exam = exam;
+    // 记录当前 exam 数据所属的试卷 id，防止切换试卷时复用旧试卷题目
+    this.examPaperId = this.paperId;
     if (this.exam.length == 7) {
       this.listenExam = this.exam.slice(0, 2);
       this.readExam = this.exam.slice(2, 5);

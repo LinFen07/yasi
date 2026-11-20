@@ -1,13 +1,17 @@
 
 import { lazy } from "react";
 import { Navigate } from "react-router-dom";
-import Login from '@/pages/Login';
-import Layout from "@/layout";
-import Dashboard from "@/pages/dashboard";
 import stores from "@/stores";
 import type { Router } from "@/typings/router";
-import Video from "@/pages/video";
 import { invalidateSession } from "@/utils/auth";
+
+// 路由级代码分割：只有登录页需要阻塞首屏，其余页面按需加载。
+// 之前 Layout / Dashboard / Video 是静态 import，会把 Modal、Button、Input、
+// Avatar 等 antd 组件连同它们的依赖全部拉进首屏 chunk。
+const Login = lazy(() => import('@/pages/Login'));
+const Layout = lazy(() => import('@/layout'));
+const Dashboard = lazy(() => import('@/pages/dashboard'));
+const Video = lazy(() => import('@/pages/video'));
 const ExamPage = lazy(() => import('@/pages/examPage'));
 const TextOver = lazy(() => import('@/pages/testOver'));
 

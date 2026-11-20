@@ -1,16 +1,16 @@
 import { useNavigate } from "react-router";
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Form, Input, message, Select, Cascader } from 'antd';
+import { Button, Checkbox, Form, Input, message } from 'antd';
 import { fetchRegister, getExamMeal } from "@/api/register";
 import { fetchLogin } from '@/api/login'
 import stores from "@/stores";
 import { consumeSessionExpiredFlag } from "@/utils/auth";
+import { preloadInstructionAudio } from "@/utils/helper/audioPreload";
+import RegisterProfileFields from './RegisterProfileFields';
 import './index.scss'
 
 import { citys } from '@/utils/contants/ChinaCitys2025'
 import { useEffect, useMemo, useState } from "react";
-
-const { Option } = Select;
 
 const REGISTER_STEPS = [
   {
@@ -114,6 +114,9 @@ function LoginRoute(props: Props) {
         //@ts-ignore
         stores.UserStore.login(res.response);
         message.success('登录成功');
+        // 登录成功后立即预热听力说明音频：利用 1 小时浏览器缓存，
+        // 避免开考同一秒 200 人同时拉取造成服务端瞬时并发尖峰
+        preloadInstructionAudio();
         navigate('/layout/dashboard');
       } else {
         message.warning("用户不是学生!");
@@ -326,35 +329,10 @@ function LoginRoute(props: Props) {
                 )}
 
                 {registerStep === 2 && (
-                  <>
-                    <Form.Item
-                      label="身份证"
-                      name="identity"
-                      rules={[{ required: true, message: '请输入身份证号码' }]}
-                    >
-                      <Input placeholder="身份证号" size="large" />
-                    </Form.Item>
-                    <Form.Item
-                      label="居住城市"
-                      name="address"
-                      rules={[{ required: true, message: '请选择居住城市' }]}
-                    >
-                      <Cascader options={cityOptions} placeholder="请选择居住城市" />
-                    </Form.Item>
-                    <Form.Item
-                      label="套餐"
-                      name="examPackage"
-                      rules={[{ required: true, message: '请选择套餐' }]}
-                    >
-                      <Select placeholder="选择考试套餐">
-                        {ExamMeal?.map((item: any, index: number) => (
-                          <Option value={item.id} key={index}>
-                            {item.dictValue}: {item.description}
-                          </Option>
-                        ))}
-                      </Select>
-                    </Form.Item>
-                  </>
+                  <RegisterProfileFields
+                    cityOptions={cityOptions}
+                    examMeal={ExamMeal}
+                  />
                 )}
               </div>
             )}
