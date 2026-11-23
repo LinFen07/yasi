@@ -1,11 +1,11 @@
-import { getInstructionStreamUrl } from '@/api/examPaper';
+import { getExamInstructionMediaUrl } from '@/api/examPaper';
 
 /**
  * 考前听力说明音频预热。
  *
  * 背景：开考同一秒，200 名考生会同时拉取同一份说明音频（~228KB），
- * 瞬时并发 ≈ 45MB，会打满服务器出口管道。该接口响应带 1 小时浏览器缓存，
- * 因此只要在「登录成功后」提前拉一次，后续 1 小时内所有考生都命中缓存，
+ * 瞬时并发 ≈ 45MB，会打满服务器出口管道。音频已迁移到 OSS（带长缓存），
+ * 因此只要在「登录成功后」提前拉一次，后续所有考生都命中缓存，
  * 开考时不再产生并发尖峰。
  *
  * 说明：
@@ -33,7 +33,8 @@ export function preloadInstructionAudio(): Promise<void> {
     // sessionStorage 不可用（隐私模式等）时忽略
   }
 
-  const url = getInstructionStreamUrl();
+  const url = getExamInstructionMediaUrl('listen');
+  if (!url) return Promise.resolve();
 
   preloadPromise = fetch(url, { headers: { Range: 'bytes=0-0' } })
     .then((res) => {
