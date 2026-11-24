@@ -9,9 +9,9 @@ describe('mergeSubmitAnswerItems', () => {
     ]
     const merged = mergeSubmitAnswerItems(items)
     expect(merged).toEqual([
-      { questionId: 1, prefix: '1', content: 'a', shareWithPrev: false },
-      { questionId: 1, prefix: '2', content: 'b', shareWithPrev: false },
-      { questionId: 2, prefix: '1', content: 'c', shareWithPrev: false },
+      { questionId: 1, prefix: '1', content: 'a' },
+      { questionId: 1, prefix: '2', content: 'b' },
+      { questionId: 2, prefix: '1', content: 'c' },
     ])
   })
 
@@ -23,9 +23,9 @@ describe('mergeSubmitAnswerItems', () => {
       { questionId: 2, prefix: '1', content: 'ok' },
     ])
     expect(merged).toHaveLength(3)
-    expect(merged[0]).toEqual({ questionId: 1, prefix: '1', content: '', shareWithPrev: false })
-    expect(merged[1]).toEqual({ questionId: 1, prefix: '2', content: '', shareWithPrev: false })
-    expect(merged[2]).toEqual({ questionId: 2, prefix: '1', content: 'ok', shareWithPrev: false })
+    expect(merged[0]).toEqual({ questionId: 1, prefix: '1', content: '' })
+    expect(merged[1]).toEqual({ questionId: 1, prefix: '2', content: '' })
+    expect(merged[2]).toEqual({ questionId: 2, prefix: '1', content: 'ok' })
   })
 
   it('drops entries without questionId', () => {
@@ -49,7 +49,7 @@ describe('mergeSubmitAnswerItems', () => {
       [{ questionId: 10, prefix: '1', content: '' }],
       99,
     )
-    expect(items).toEqual([{ questionId: 10, prefix: '1', content: 'draft-answer', shareWithPrev: false }])
+    expect(items).toEqual([{ questionId: 10, prefix: '1', content: 'draft-answer' }])
     localStorage.removeItem(key)
   })
 
@@ -62,8 +62,8 @@ describe('mergeSubmitAnswerItems', () => {
     const items = collectListenReadSubmitItems(completed, undefined)
 
     expect(items).toEqual([
-      { questionId: 10, content: 'a', prefix: '1', shareWithPrev: false },
-      { questionId: 12, content: '', prefix: '1', shareWithPrev: false },
+      { questionId: 10, content: 'a', prefix: '1' },
+      { questionId: 12, content: '', prefix: '1' },
     ])
   })
 

@@ -32,6 +32,9 @@ const studentAnswer: StudentAnswer = {
   prefix: '1',
 }
 
+// 历史版本会在模块级单例上挂 shareWithPrev，显式清掉，避免旧字段「粘」到后续提交答案
+delete (studentAnswer as any).shareWithPrev
+
 export function submitStudentSelectAnswer(
   questionsArr: ExamType[],
   index: number,
@@ -54,13 +57,11 @@ export function submitStudentBlankAnswer(
   value: string,
   _correctIndex: number,
   prefix: string,
-  shareWithPrev: boolean = false,
 ): void {
   Object.assign(studentAnswer, {
     questionId: questionArr.id,
     content: value,
     prefix,
-    shareWithPrev,
   })
   stores.AnswerStore.changeAnswer(prevCount + i, { ...studentAnswer })
 }

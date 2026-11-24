@@ -75,14 +75,18 @@ export function MyInput(
   const len = items.length;
   // questionStart 是「题号偏移」（前面累计题号数），第一个空的题号 = questionStart + 1
   let currentQuestionNo = questionStart + 1;
+  let prevGroup: string | null = null;
 
   for (let localIndex = 0; localIndex < len; localIndex++) {
     const item: any = items[localIndex];
 
-    // 关键：只有 shareWithPrev 为 true 时，题号不递增（与上一个空同号）
-    if (localIndex > 0 && !item.shareWithPrev) {
+    // 关键：groupGap 与上一个空相同则沿用题号（一题多空），不同才递增；
+    // 缺 groupGap 时用槽位号兜底，保证逐空递增、绝不同组
+    const group = item?.groupGap ?? String(localIndex + 1);
+    if (localIndex > 0 && group !== prevGroup) {
       currentQuestionNo += 1;
     }
+    prevGroup = group;
 
     const questionNo = currentQuestionNo;              // 显示/定位/correctListenAnswer 用
     const slotIndex = slotStart + localIndex;          // 答案读写用（0-based 槽位）
@@ -122,8 +126,7 @@ export function MyInput(
           slotStart,
           persistedValue,
           localIndex,
-          (localIndex + 1).toString(),
-          !!item.shareWithPrev
+          (localIndex + 1).toString()
         );
       }
     } else {
@@ -165,8 +168,7 @@ export function MyInput(
           slotStart,
           input.value,
           localIndex,
-          (localIndex + 1).toString(),
-          !!item.shareWithPrev
+          (localIndex + 1).toString()
         );
         runInAction(() => {
           if (!stores.ExamStore.correctListenAnswer.includes(questionNo)) {

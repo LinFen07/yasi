@@ -197,12 +197,16 @@ function footerNav(props: propType) {
         const numberSpan = getQuestionNumberSpan(q);
 
         if (q.questionType === 4 && Array.isArray(q.items)) {
-          // 填空题：逐空还原题号，shareWithPrev 的空与上一空同号
+          // 填空题：逐空还原题号，groupGap 相同的连续空与上一空同号
           let currentNo = questionNoCursor;
+          let prevGroup: string | null = null;
           q.items.forEach((item: any, localIdx: number) => {
-            if (localIdx > 0 && !item.shareWithPrev) {
+            // 缺 groupGap 时用槽位号兜底，保证逐空递增、绝不并组
+            const group = item?.groupGap ?? String(localIdx + 1);
+            if (localIdx > 0 && group !== prevGroup) {
               currentNo += 1;
             }
+            prevGroup = group;
             const slotIdx = slotCursor + localIdx;
             const ans = answers[slotIdx];
             const hasContent =

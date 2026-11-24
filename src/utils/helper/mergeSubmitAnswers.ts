@@ -3,7 +3,6 @@ export type SubmitAnswerItem = {
   content?: string;
   prefix?: string;
   contentArray?: string[];
-  shareWithPrev?: boolean;
 };
 
 /**
@@ -11,7 +10,7 @@ export type SubmitAnswerItem = {
  * 双选题由后端 MultipleChoiceStrategy 合并同题多条提交。
  */
 export function mergeSubmitAnswerItems(
-  items: Array<{ questionId?: number; content?: string; prefix?: string; shareWithPrev?: boolean }>,
+  items: Array<{ questionId?: number; content?: string; prefix?: string }>,
 ): SubmitAnswerItem[] {
   return items
     .filter((item) => item.questionId !== undefined)
@@ -19,7 +18,6 @@ export function mergeSubmitAnswerItems(
       questionId: item.questionId!,
       content: (item.content || '').trim(),
       prefix: item.prefix || '1',
-      shareWithPrev: !!item.shareWithPrev,
     }));
 }
 
@@ -28,12 +26,12 @@ export function mergeSubmitAnswerItems(
  * 多选题使用 contentArray 格式，只有一条记录。
  */
 export function collectListenReadSubmitItems(
-  completedAnswers: Array<{ questionId?: number; content?: string; prefix?: string; contentArray?: string[]; shareWithPrev?: boolean }>,
+  completedAnswers: Array<{ questionId?: number; content?: string; prefix?: string; contentArray?: string[] }>,
   paperId?: number,
 ): SubmitAnswerItem[] {
   const byKey = new Map<string, SubmitAnswerItem>();
 
-  const put = (item: { questionId?: number; content?: string; prefix?: string; contentArray?: string[]; shareWithPrev?: boolean }) => {
+  const put = (item: { questionId?: number; content?: string; prefix?: string; contentArray?: string[] }) => {
     if (item.questionId === undefined) return;
 
     // 多选题使用 contentArray
@@ -51,7 +49,6 @@ export function collectListenReadSubmitItems(
       questionId: item.questionId,
       content,
       prefix,
-      shareWithPrev: !!item.shareWithPrev,
     });
   };
 

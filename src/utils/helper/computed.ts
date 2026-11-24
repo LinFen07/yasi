@@ -69,16 +69,24 @@ export function computedPrevCount(title: string, exam: Array<Exam>): number {
 /**
  * 计算一个题目的「题号跨度」（占用的题号个数）
  * 与 getQuestionSlotCount 的差异仅在填空题（type 4）：
- *   - 普通填空：题号数 = items.length
- *   - 空级别混排（shareWithPrev）：题号数 = items.length - shareWithPrev 数量
+ *   - 填空题：题号数 = 组数（同 groupGap 的连续若干空共用一个题号）
+ *   - 缺 groupGap 时按槽位号兜底，即每个空各占一个题号（绝不并成一组）
  * 其余题型题号跨度 = 槽号跨度，直接复用 getQuestionSlotCount
  */
 export function getQuestionNumberSpan(questionItem: ExamType): number {
   const type = questionItem.questionType;
   if (type === 4) {
     const items = Array.isArray(questionItem.items) ? questionItem.items : [];
-    const shareCount = items.filter((it: any) => it && it.shareWithPrev).length;
-    return items.length - shareCount;
+    // 题号数 = 组数：首个空占 1 个题号，之后 groupGap 变化才 +1
+    let span = items.length > 0 ? 1 : 0;
+    let prevGroup: string | null = null;
+    items.forEach((item, i) => {
+      // 防御性兜底：缺 groupGap 时用槽位号（题目内第几个空），保证逐空递增、不与相邻空并组
+      const group = item.groupGap ?? String(i + 1);
+      if (i > 0 && group !== prevGroup) span += 1;
+      prevGroup = group;
+    });
+    return span;
   }
   return getQuestionSlotCount(questionItem);
 }
