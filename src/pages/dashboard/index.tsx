@@ -41,14 +41,17 @@ const getExamStatus = (
   return "active";
 };
 
-const UNRESTRICTED_EXAM_ID = 1;
+// 该学生账号（studentId）不限制考试时间，其余学生只能在「进行中」进入
+const UNRESTRICTED_STUDENT_ID = 1;
 
-const isExamAccessible = (examPaperId: number, status: ExamStatus) =>
-  examPaperId === UNRESTRICTED_EXAM_ID || status === "active";
+const isExamAccessible = (studentId: number | null, status: ExamStatus) =>
+  studentId === UNRESTRICTED_STUDENT_ID || status === "active";
 
 const Dashboard = () => {
   const [examList, setExamList] = useState([]);
   const [listLoaded, setListLoaded] = useState(false);
+  // 未解析出学生 id 前为 null，避免误判白名单
+  const [studentId, setStudentId] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
   const [ongoingModalVisible, setOngoingModalVisible] = useState(false);
   const [pendingExamId, setPendingExamId] = useState<number | null>(null);
@@ -63,6 +66,7 @@ const Dashboard = () => {
     const res = await getStudentId(stores.UserStore.userName);
     // @ts-ignore
     stores.UserStore.setUserId(res.response.value);
+    setStudentId(stores.UserStore.userId);
   };
 
   useEffect(() => {
@@ -100,7 +104,10 @@ const Dashboard = () => {
     const exam = (examList as any[]).find((item) => item.examPaperId === id);
     if (
       exam &&
-      !isExamAccessible(id, getExamStatus(exam.startTime, exam.endTime))
+      !isExamAccessible(
+        studentId,
+        getExamStatus(exam.startTime, exam.endTime)
+      )
     ) {
       return;
     }
@@ -254,7 +261,7 @@ const Dashboard = () => {
                       <Button
                         type="primary"
                         size="large"
-                        disabled={!isExamAccessible(item.examPaperId, status)}
+                        disabled={!isExamAccessible(studentId, status)}
                         onClick={() => handleConfirmExam(item.examPaperId)}
                       >
                         前往考试
