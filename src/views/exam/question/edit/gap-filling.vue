@@ -57,7 +57,8 @@
 
       <el-form-item v-if="form.items.length" label="填空答案：" required>
         <div class="form-tip gap-group-tip">
-          同一题号下的多个空：组内任意顺序、每个空各自可接受答案，整组全对才得分。打开「开启一题多空」后点「+」给该题号追加空；关闭会删除该组多出来的空（含答案与题干）。
+          同一题号下的多个空：组内任意顺序、每个空各自可接受答案，整组全对才得分。打开「开启一题多空」后点「+」给该题号追加空；
+          组内多出来的空可在操作列点「−」单独删除，删到该题号只剩一个空时会自动关闭「一题多空」。
         </div>
         <el-table :data="form.items" border size="small" class="gap-answer-table">
           <el-table-column label="题号" width="86" align="center">
@@ -120,7 +121,7 @@
               </el-tooltip>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="86" align="center">
+          <el-table-column label="操作" width="120" align="center">
             <template slot-scope="{ row, $index }">
               <el-tooltip v-if="isGroupHead($index) && row.multiGap" content="为该题号追加一个空" placement="top">
                 <el-button
@@ -132,7 +133,17 @@
                   @click="appendGroupSlot(row, $index)"
                 />
               </el-tooltip>
-              <span v-else class="gap-op-placeholder">—</span>
+              <el-tooltip v-if="isExtraGroupSlot($index)" :content="extraSlotRemoveTip($index)" placement="top">
+                <el-button
+                  size="mini"
+                  type="danger"
+                  icon="el-icon-minus"
+                  circle
+                  class="gap-remove-btn"
+                  @click="removeGroupSlot(row, $index)"
+                />
+              </el-tooltip>
+              <span v-if="!isAppendable($index) && !isExtraGroupSlot($index)" class="gap-op-placeholder">—</span>
             </template>
           </el-table-column>
         </el-table>
@@ -549,9 +560,18 @@ export default {
       })
       const spanSetChanged = oldItems.length !== newItems.length ||
         oldItems.some((item, index) => newItems[index].itemUuid !== item.itemUuid)
+      const spanRemoved = newItems.length < oldItems.length
       this.form.items = newItems
       this.form.title = content
+      // 组首被删掉时，新组首从同组旧行继承分值（必须在组号归一之前按旧组号匹配）
+      if (spanRemoved) {
+        this.inheritGroupHeadScore(oldItems)
+      }
       this.recomputeQuestionNumbers()
+      // 空被删掉后按「组内实际空数」校正开关：某题号只剩 1 个空时自动关闭「一题多空」
+      if (spanRemoved) {
+        this.normalizeMultiGapFlags()
+      }
       this.syncTotalScore()
       // 老师在题干里手工增删 span（删空/粘贴）时，顺带清掉残留的 and 分隔符；
       // 组内增删走 appendGroupSlot/removeGroupExtraSlots，已由 syncingFromTitle 守卫，不在这里重复处理
@@ -599,6 +619,26 @@ export default {
     groupMemberSeq (index) {
       const range = this.findGroupRange(this.form.items, index)
       return range.start < 0 ? 1 : index - range.start + 1
+    },
+    /** 组首且已开启「一题多空」时，操作列出现「+」增空按钮 */
+    isAppendable (index) {
+      const items = this.form.items || []
+      if (!this.isGroupHead(index)) return false
+      return !!items[index].multiGap
+    },
+    /** 组内除组首以外的空（多出来的空）：操作列出现「−」删除按钮 */
+    isExtraGroupSlot (index) {
+      const items = this.form.items || []
+      if (index == null || index < 0 || index >= items.length) return false
+      const range = this.findGroupRange(items, index)
+      return range.start >= 0 && range.end > range.start && index !== range.start
+    },
+    extraSlotRemoveTip (index) {
+      const range = this.findGroupRange(this.form.items, index)
+      const remain = range.start < 0 ? 0 : range.end - range.start
+      return remain <= 1
+        ? '删除这个多出来的空（该题号将只剩 1 个空，会自动关闭「一题多空」）'
+        : `删除这个多出来的空（该题号还剩 ${remain} 个空）`
     },
     /** 只重排 groupGap 与 displayNo；displayNo 来自题干 span 文本，绝不把 prefix 写进 span */
     recomputeQuestionNumbers () {
@@ -752,6 +792,71 @@ export default {
       } else if (isSeparatorNode(span.nextSibling)) {
         parent.removeChild(span.nextSibling)
       }
+    },
+    /**
+     * 删除组内某个多出来的空（操作列「−」）：删题干 span + 相邻 and 分隔符，
+     * 行数据仍只由题干单向推导；删到该题号只剩 1 个空时自动关闭「一题多空」。
+     */
+    removeGroupSlot (row, index) {
+      if (!this.editorInstance) return
+      const items = this.form.items || []
+      const range = this.findGroupRange(items, index)
+      if (range.start < 0 || range.end <= range.start || index === range.start) return
+      const target = items[index]
+      if (!target) return
+      const span = this.findEditorSpan(target.itemUuid)
+      if (!span || !span.parentNode) {
+        this.$message.error('未在题干中找到该空的锚点，请直接在题干里删除这个空')
+        return
+      }
+      const headDisplayNo = items[range.start].displayNo || ''
+      const sizeBefore = range.end - range.start + 1
+      this.syncingFromTitle = true
+      try {
+        this.removeAdjacentAndSeparator(span)
+        span.parentNode.removeChild(span)
+        // 不手工 splice：重建与开关校正都在 syncItemsFromContent 内完成
+        this.syncItemsFromContent(this.editorInstance.getContent())
+        this.syncTitleFromItems()
+        this.syncTotalScore()
+        if (sizeBefore - 1 <= 1) {
+          this.$message.success(`已删除该空；题号 ${headDisplayNo} 只剩一个空，已自动关闭「一题多空」`)
+        } else {
+          this.$message.success(`已删除该空；题号 ${headDisplayNo} 还剩 ${sizeBefore - 1} 个空`)
+        }
+      } finally {
+        setTimeout(() => {
+          this.syncingFromTitle = false
+        }, 200)
+      }
+    },
+    /**
+     * 按「组内实际空数」校正每组的「一题多空」开关：
+     * 组内 ≥2 个空 → 组首开关保持开启（+ 可用）；组内只剩 1 个空 → 自动关闭。
+     */
+    normalizeMultiGapFlags () {
+      const items = this.form.items || []
+      items.forEach((item, index) => {
+        if (!this.isGroupHead(index)) {
+          item.multiGap = false
+          return
+        }
+        const range = this.findGroupRange(items, index)
+        item.multiGap = range.end > range.start
+      })
+    },
+    /**
+     * 组首行被删掉（题干里手工删 span）时，新组首从同组旧行继承分值，
+     * 避免老师被迫重新填分、也不让总分莫名变小。用旧 groupGap 匹配，必须在组号归一之前调用。
+     */
+    inheritGroupHeadScore (oldItems) {
+      const items = this.form.items || []
+      const legacyItems = oldItems || []
+      items.forEach((item, index) => {
+        if (!this.isGroupHead(index) || item.score != null) return
+        const legacy = legacyItems.find(old => old.groupGap === item.groupGap && old.score != null)
+        if (legacy) item.score = legacy.score
+      })
     },
     /** 「+」增空：在组内最后一个 span 后面 DOM 直插新 span（文本 = 组首显示题号，前面补 and） */
     appendGroupSlot (row, index) {
@@ -1016,6 +1121,13 @@ export default {
   padding: 0;
   width: 26px;
   height: 26px;
+}
+
+.gap-remove-btn {
+  padding: 0;
+  width: 26px;
+  height: 26px;
+  margin-left: 6px;
 }
 
 .question-item-rate {
