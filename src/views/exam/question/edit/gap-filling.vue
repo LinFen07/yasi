@@ -56,25 +56,32 @@
       </el-dialog>
 
       <el-form-item v-if="form.items.length" label="填空答案：" required>
+        <div class="form-tip gap-group-tip">
+          同一题号下的多个空：组内任意顺序、每个空各自可接受答案，整组全对才得分。打开「开启一题多空」后点「+」给该题号追加空；关闭会删除该组多出来的空（含答案与题干）。
+        </div>
         <el-table :data="form.items" border size="small" class="gap-answer-table">
-          <el-table-column label="题号" width="96" align="center">
-            <template slot-scope="{ row }">
-              <span v-if="!row.shareWithPrev">{{ row.prefix }}</span>
-              <el-tooltip v-else :content="`与上一空共用题号 ${row.prefix}`" placement="top">
-                <span class="gap-shared-no">〃{{ row.prefix }}</span>
+          <el-table-column label="题号" width="86" align="center">
+            <template slot-scope="{ row, $index }">
+              <el-tooltip v-if="!isGroupHead($index)" :content="`属于题号 ${row.displayNo} 的多空组（组内第 ${groupMemberSeq($index)} 个空）`" placement="top">
+                <span class="gap-shared-no">〃{{ row.displayNo }}</span>
+              </el-tooltip>
+              <span v-else class="gap-display-no">{{ row.displayNo }}</span>
+            </template>
+          </el-table-column>
+          <!-- 「开启一题多空」开关只出现在组首行：首行同样可以是组首（如 q390 的 33/34 组），故不禁用 -->
+          <el-table-column label="开启一题多空" width="130" align="center">
+            <template slot-scope="{ row, $index }">
+              <el-switch
+                v-if="isGroupHead($index)"
+                v-model="row.multiGap"
+                @change="val => onGroupToggle(row, $index, val)"
+              />
+              <el-tooltip v-else content="该空属于上一行的多空组，由组首统一开启或关闭" placement="top">
+                <el-switch :value="true" disabled />
               </el-tooltip>
             </template>
           </el-table-column>
-          <el-table-column label="与上一空共用" width="116" align="center">
-            <template slot-scope="{ row, $index }">
-              <el-switch
-                v-model="row.shareWithPrev"
-                :disabled="$index === 0"
-                @change="val => onShareWithPrevChange(row, $index, val)"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column label="标准答案（支持多答案）" min-width="320">
+          <el-table-column label="标准答案（支持多答案）" min-width="300">
             <template slot-scope="{ row }">
               <el-select
                 v-model="row.contents"
@@ -95,10 +102,10 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="分值" width="168" align="center" class-name="gap-score-col">
-            <template slot-scope="{ row }">
+          <el-table-column label="分值" width="150" align="center" class-name="gap-score-col">
+            <template slot-scope="{ row, $index }">
               <el-input-number
-                v-if="!row.shareWithPrev"
+                v-if="isGroupHead($index)"
                 v-model="row.score"
                 :precision="1"
                 :step="1"
@@ -108,13 +115,28 @@
                 class="gap-score-input"
                 @change="syncTotalScore"
               />
-              <el-tooltip v-else content="与上一空共享分值" placement="top">
+              <el-tooltip v-else content="与组首共享分值，整组全对才得分" placement="top">
                 <span class="gap-shared-score">共享</span>
               </el-tooltip>
             </template>
           </el-table-column>
+          <el-table-column label="操作" width="86" align="center">
+            <template slot-scope="{ row, $index }">
+              <el-tooltip v-if="isGroupHead($index) && row.multiGap" content="为该题号追加一个空" placement="top">
+                <el-button
+                  size="mini"
+                  type="primary"
+                  icon="el-icon-plus"
+                  circle
+                  class="gap-append-btn"
+                  @click="appendGroupSlot(row, $index)"
+                />
+              </el-tooltip>
+              <span v-else class="gap-op-placeholder">—</span>
+            </template>
+          </el-table-column>
         </el-table>
-        <div class="form-tip">题目总分将根据各空分值自动合计；支持多答案时全部答案均正确</div>
+        <div class="form-tip">题目总分 = 各题号组组首分值之和（自动合计）；组内其它空显示「共享」，不需要重复填分值。</div>
       </el-form-item>
       <el-alert v-else title="请先在题干中插入至少一个填空" type="info" :closable="false" show-icon class="gap-empty-tip" />
 
@@ -161,6 +183,24 @@ const GAP_EDITOR_CONFIG = {
     'insertrow', 'deleterow', 'insertcol', 'deletecol', 'mergecells', '|',
     'gapfilling'
   ]]
+}
+
+/** 题干里的填空锚点：itemUuid 承载判分定位，span 文本是「显示题号」（不是 prefix） */
+const GAP_SPAN_REGEX = /<span[^>]*class="gapfilling-span\s+([^\s"]+)"[^>]*>(.*?)<\/span>/g
+
+/** 前端自动插入的 and 分隔符：文本节点只由空白与 and 组成时才算分隔符，避免误删正文里的英文 and */
+const AND_SEPARATOR_REGEX = /^(\s*and\s*)+$/i
+
+function normalizeAndText (value) {
+  return String(value == null ? '' : value).replace(/\u00a0/g, ' ')
+}
+
+function isAndSeparatorText (value) {
+  return AND_SEPARATOR_REGEX.test(normalizeAndText(value))
+}
+
+function stripHtmlTags (html) {
+  return String(html == null ? '' : html).replace(/<[^>]+>/g, '')
 }
 
 export default {
@@ -244,38 +284,48 @@ export default {
   methods: {
     applyLoadedForm (data) {
       if (!this.ensureQuestionTypePage(data, 4)) return
-      const loadedItems = (data.items || []).map(item => ({
-        ...item,
-        content: item.contents && item.contents.length ? item.contents[0] : (item.content || ''),
-        contents: item.contents || (item.content ? [item.content] : ['']),
-        score: item.score != null ? Number(item.score) : 0,
-        shareWithPrev: item.shareWithPrev === true || item.shareWithPrev === 'true' || item.shareWithPrev === 1
-      }))
-      // 兜底：后端若未返回 shareWithPrev，则按题干 span 的题号（prefix）是否重复来推断共用关系
-      // 题号与上一空相同（prefix 重复）的空，视为与上一空共用题号
-      loadedItems.forEach((item, i) => {
-        if (i === 0) {
-          item.shareWithPrev = false
-          return
+      const titleSpans = this.extractGapSpans(data.title)
+      const loadedItems = (data.items || []).map((item, index) => {
+        const titleSpan = titleSpans.find(span => span.itemUuid === item.itemUuid) || titleSpans[index] || null
+        const contents = item.contents && item.contents.length ? item.contents : (item.content ? [item.content] : [''])
+        const rawGroupGap = item.groupGap != null ? String(item.groupGap) : ''
+        return {
+          ...item,
+          // prefix 是槽位号（1..N），不能拿来当显示题号
+          prefix: item.prefix != null ? String(item.prefix) : String(index + 1),
+          // 分组事实只认后端返回的 groupGap；缺失时防御性地按「每空各自一组」处理
+          groupGap: rawGroupGap || String(index + 1),
+          // 显示题号只从题干 span 文本解析
+          displayNo: titleSpan ? titleSpan.displayNo : '',
+          content: contents[0] || '',
+          contents,
+          // 非组首后端不返回 score，前端一律按「共享」渲染
+          score: item.score != null && String(item.score) !== '' ? Number(item.score) : null,
+          multiGap: false
         }
-        const prev = loadedItems[i - 1]
-        if (item.shareWithPrev) {
-          // 已明确标记共用：同步分值为上一空的分值
-          item.score = prev.score
-        } else if (item.prefix != null && prev.prefix != null && String(item.prefix) === String(prev.prefix)) {
-          // 未标记但题号与上一空重复 → 推断为共用
-          item.shareWithPrev = true
-          item.score = prev.score
-        }
+      })
+      // 用 groupGap 还原组状态：连续同组的首行是组首，多空组的组首默认开启「一题多空」
+      loadedItems.forEach((item, index) => {
+        const range = this.findGroupRange(loadedItems, index)
+        item.multiGap = range.start === index && range.end > range.start
       })
       this.form = {
         ...data,
         items: loadedItems
       }
       this.$nextTick(() => {
-        if (this.editorInstance) {
+        if (!this.editorInstance) return
+        this.isLoadingContent = true
+        try {
           this.editorInstance.setContent(this.form.title || '')
           normalizeGapTables(this.editorInstance.document)
+          // 回显后以题干 DOM 为准重建行数据，并规范 and 分隔符与组内题号
+          this.syncItemsFromContent(this.form.title || '')
+          this.syncTitleFromItems()
+        } finally {
+          setTimeout(() => {
+            this.isLoadingContent = false
+          }, 300)
         }
       })
       this.updateSubjectFilter()
@@ -304,6 +354,19 @@ export default {
           this.syncItemsFromContent(instance.getContent())
         }
       })
+
+      // 题目数据可能比编辑器先到：编辑器就绪后补一次「以题干 DOM 为准」的重建与分隔符规范化
+      if (this.form.items.length) {
+        this.isLoadingContent = true
+        try {
+          this.syncItemsFromContent(this.form.title || '')
+          this.syncTitleFromItems()
+        } finally {
+          setTimeout(() => {
+            this.isLoadingContent = false
+          }, 300)
+        }
+      }
 
       // MutationObserver 监听编辑器 DOM 变化，确保删除填空后表格行同步移除
       const editorBody = instance.document.body
@@ -364,22 +427,52 @@ export default {
     genUuid () {
       return 'g' + Date.now() + Math.random().toString(36).slice(2, 8)
     },
-    getNextBlankNumber (content) {
-      const spanRegex = /<span class="gapfilling-span (.*?)">(\d+)<\/span>/g
-      let max = 0
+    /** 解析题干里的填空锚点（按出现顺序）：itemUuid + 显示题号 */
+    extractGapSpans (content) {
+      const spans = []
+      GAP_SPAN_REGEX.lastIndex = 0
       let match
-      while ((match = spanRegex.exec(content)) !== null) {
-        max = Math.max(max, parseInt(match[2], 10))
+      while ((match = GAP_SPAN_REGEX.exec(String(content || ''))) !== null) {
+        spans.push({
+          itemUuid: match[1],
+          displayNo: normalizeAndText(stripHtmlTags(match[2])).trim()
+        })
+      }
+      return spans
+    },
+    /** 新插入的独立空取「现有最大显示题号 +1」；组内 + 增空不走这里（见 appendGroupSlot） */
+    getNextBlankNumber () {
+      const items = this.form.items || []
+      let max = 0
+      items.forEach(item => {
+        const no = parseInt(item.displayNo, 10)
+        if (!isNaN(no) && no > max) max = no
+      })
+      if (max === 0 && this.editorInstance) {
+        const content = this.editorInstance.getContent()
+        const spanRegex = /<span[^>]*class="gapfilling-span\s+[^\s"]+"[^>]*>\s*(\d+)/g
+        let match
+        while ((match = spanRegex.exec(content)) !== null) {
+          max = Math.max(max, parseInt(match[1], 10))
+        }
       }
       return max + 1
     },
     insertGap () {
       if (!this.editorInstance) return
-      const content = this.editorInstance.getContent()
-      const num = this.getNextBlankNumber(content)
+      const num = this.getNextBlankNumber()
       const uuid = this.genUuid()
-      this.editorInstance.execCommand('insertHtml', `<span class="gapfilling-span ${uuid}">${num}</span>`)
-      this.syncItemsFromContent(this.editorInstance.getContent())
+      this.syncingFromTitle = true
+      try {
+        this.editorInstance.execCommand('insertHtml', `<span class="gapfilling-span ${uuid}">${num}</span>`)
+        // 普通插入只产生独立题号；这里顺手把可能被拆开的组内 and 分隔符清理掉
+        this.syncItemsFromContent(this.editorInstance.getContent())
+        this.syncTitleFromItems()
+      } finally {
+        setTimeout(() => {
+          this.syncingFromTitle = false
+        }, 200)
+      }
     },
     insertTableHtml (html) {
       if (!this.editorInstance) return
@@ -405,70 +498,137 @@ export default {
       this.insertTableHtml(buildGapTableHtml(cols, rows, { withHeader }))
       this.customTableDialog.visible = false
     },
+    /**
+     * 行数据的唯一来源：每次都以题干 DOM 里的 span 顺序重建 form.items。
+     * 未命中 itemUuid 即视为新空（id=null、contents=['']、score=null），绝不按下标兜底复用旧行。
+     */
     syncItemsFromContent (content) {
-      const spanRegex = /<span class="gapfilling-span (.*?)">(.*?)<\/span>/g
-      const gapItems = content.match(spanRegex)
-      if (!gapItems || !gapItems.length) {
+      const gapSpans = this.extractGapSpans(content)
+      if (!gapSpans.length) {
         this.form.items = []
         this.form.title = content
+        this.syncTotalScore()
         return false
       }
+      const oldItems = this.form.items || []
       const newItems = []
-      gapItems.forEach((span, index) => {
-        const pairRegex = /<span class="gapfilling-span (.*?)">(.*?)<\/span>/
-        pairRegex.test(span)
-        const itemUuid = RegExp.$1
-        const prefix = RegExp.$2
-        // 优先按 itemUuid 匹配旧数据（共用空 itemUuid 唯一）；找不到再按当前索引兜底
-        const old = this.form.items.find(i => i.itemUuid === itemUuid) || this.form.items[index]
+      gapSpans.forEach((span, index) => {
+        const itemUuid = span.itemUuid
+        const displayNo = span.displayNo
+        const old = oldItems.find(item => item.itemUuid === itemUuid)
+        let groupGap = ''
+        let multiGap = false
+        if (old) {
+          groupGap = old.groupGap != null ? String(old.groupGap) : ''
+          multiGap = !!old.multiGap
+        }
+        if (!groupGap) {
+          const prev = newItems[newItems.length - 1]
+          if (prev && prev.displayNo === displayNo) {
+            // 新增的空紧跟在同题号的空之后（表格「+」增空）：归入上一空所在的组
+            groupGap = prev.groupGap
+          } else {
+            // 独立新空：给一个比现有组号都大的临时组号，随后由 recomputeQuestionNumbers 归一为 1..M
+            groupGap = this.nextGroupGap(newItems)
+          }
+        }
         newItems.push({
           id: old ? old.id : null,
           itemUuid,
-          prefix,
+          // prefix 只是槽位号（1..N），与题干显示题号无关
+          prefix: String(index + 1),
+          groupGap,
+          displayNo,
           contents: old && old.contents && old.contents.length ? old.contents : (old && old.content ? [old.content] : ['']),
           content: (old && old.content) || '',
-          score: old && old.score != null ? old.score : 1,
-          shareWithPrev: old ? !!old.shareWithPrev : false
+          // 新空分值必须是 null（组首由老师自己填），否则会被误算进总分
+          score: old && old.score != null ? old.score : null,
+          describe: old ? old.describe : null,
+          multiGap
         })
       })
+      const spanSetChanged = oldItems.length !== newItems.length ||
+        oldItems.some((item, index) => newItems[index].itemUuid !== item.itemUuid)
       this.form.items = newItems
       this.form.title = content
+      this.recomputeQuestionNumbers()
       this.syncTotalScore()
+      // 老师在题干里手工增删 span（删空/粘贴）时，顺带清掉残留的 and 分隔符；
+      // 组内增删走 appendGroupSlot/removeGroupExtraSlots，已由 syncingFromTitle 守卫，不在这里重复处理
+      if (spanSetChanged && this.editorInstance && !this.isLoadingContent && !this.syncingFromTitle) {
+        this.syncingFromTitle = true
+        try {
+          this.handleAndSeparators()
+          this.form.title = this.editorInstance.getContent()
+        } finally {
+          setTimeout(() => {
+            this.syncingFromTitle = false
+          }, 200)
+        }
+      }
       return true
     },
-    onShareWithPrevChange (row, index, val) {
-      this.recomputeQuestionNumbers()
-      this.syncTitleFromItems()
-      this.syncTotalScore()
+    nextGroupGap (items) {
+      const list = items || []
+      let max = 0
+      list.forEach(item => {
+        const value = parseInt(item.groupGap, 10)
+        if (!isNaN(value) && value > max) max = value
+      })
+      return String(max + 1)
     },
+    /** 连续相同 groupGap 的若干行属于同一个题号组 */
+    findGroupRange (items, index) {
+      const list = items || this.form.items || []
+      if (!list.length || index == null || index < 0 || index >= list.length) {
+        return { start: -1, end: -1 }
+      }
+      const gap = String(list[index].groupGap)
+      let start = index
+      while (start > 0 && String(list[start - 1].groupGap) === gap) start--
+      let end = index
+      while (end < list.length - 1 && String(list[end + 1].groupGap) === gap) end++
+      return { start, end }
+    },
+    isGroupHead (index) {
+      const items = this.form.items || []
+      if (index == null || index < 0 || index >= items.length) return false
+      if (index === 0) return true
+      return String(items[index].groupGap) !== String(items[index - 1].groupGap)
+    },
+    groupMemberSeq (index) {
+      const range = this.findGroupRange(this.form.items, index)
+      return range.start < 0 ? 1 : index - range.start + 1
+    },
+    /** 只重排 groupGap 与 displayNo；displayNo 来自题干 span 文本，绝不把 prefix 写进 span */
     recomputeQuestionNumbers () {
       const items = this.form.items
       if (!items.length) return
-      let currentNo = 0
-      items.forEach((item, i) => {
-        if (i === 0) {
-          currentNo = parseInt(item.prefix, 10) || 1
-          item.prefix = String(currentNo)
-          item.shareWithPrev = false
-        } else if (item.shareWithPrev) {
-          item.prefix = items[i - 1].prefix
-          // 共用题号 → 共享分数：与上一空分值保持一致
-          item.score = items[i - 1].score
-        } else {
-          currentNo = (parseInt(items[i - 1].prefix, 10) || 0) + 1
-          item.prefix = String(currentNo)
+      // 先记下「组边界」判据（连续相同为同组），再归一为 1..M
+      const oldGaps = items.map(item => (item.groupGap == null ? '' : String(item.groupGap)))
+      let groupNo = 0
+      let groupDisplayNo = 0
+      items.forEach((item, index) => {
+        const isNewGroup = index === 0 || oldGaps[index] !== oldGaps[index - 1]
+        if (isNewGroup) {
+          groupNo += 1
+          const parsedNo = parseInt(item.displayNo, 10)
+          // 解析不到（题干 span 未写数字）时退回「上一题号 +1」，仍然不碰 prefix
+          groupDisplayNo = isNaN(parsedNo) ? groupDisplayNo + 1 : parsedNo
         }
+        item.displayNo = String(groupDisplayNo)
+        item.groupGap = String(groupNo)
       })
     },
+    /** 把 displayNo 回写到题干 span，并按 groupGap 补齐/清理 and 分隔符 */
     syncTitleFromItems () {
       if (!this.editorInstance) return
       const items = this.form.items
-      const doc = this.editorInstance.document
       this.syncingFromTitle = true
       try {
         items.forEach(item => {
-          const span = doc.querySelector(`.gapfilling-span.${item.itemUuid}`)
-          if (span) span.innerHTML = item.prefix
+          const span = this.findEditorSpan(item.itemUuid)
+          if (span && item.displayNo) span.textContent = item.displayNo
         })
         this.handleAndSeparators()
         this.form.title = this.editorInstance.getContent()
@@ -479,38 +639,161 @@ export default {
         }, 200)
       }
     },
+    /** 相邻两个 span：同组则保证中间有且只有一个 and 分隔符，不同组则清掉多余分隔符（幂等） */
     handleAndSeparators () {
       if (!this.editorInstance) return
-      const items = this.form.items
       const doc = this.editorInstance.document
       const spans = doc.querySelectorAll('.gapfilling-span')
-      const sepText = ' and '
+      if (spans.length < 2) return
+      const items = this.form.items
       for (let i = 0; i < spans.length - 1; i++) {
-        const cur = spans[i]
+        const current = spans[i]
         const next = spans[i + 1]
-        const item = items.find(it => it.itemUuid && cur.className.indexOf(it.itemUuid) !== -1)
-        if (!item) continue
-        // 下一个空是否共用当前空
-        const nextItem = items.find(it => it.itemUuid && next.className.indexOf(it.itemUuid) !== -1)
-        const shouldHaveAnd = nextItem && nextItem.shareWithPrev
-        const betweenNode = cur.nextSibling
-        const hasAnd = betweenNode && betweenNode.nodeType === 3 && betweenNode.nodeValue.trim() === 'and'
-        if (shouldHaveAnd) {
-          if (!hasAnd) {
-            const textNode = doc.createTextNode(sepText)
-            cur.parentNode.insertBefore(textNode, next)
-          }
-        } else {
-          if (hasAnd) {
-            betweenNode.nodeValue = ' '
-          }
+        if (!current.parentNode || !next.parentNode) continue
+        const currentItem = this.findItemBySpan(current, items)
+        const nextItem = this.findItemBySpan(next, items)
+        const sameGroup = !!(currentItem && nextItem && String(currentItem.groupGap) === String(nextItem.groupGap))
+        // 先清理两个空之间已有的 and 分隔符（可能因 <br>/元素节点残留或被重复插入）
+        this.cleanAndSeparators(current, next)
+        if (sameGroup) {
+          next.parentNode.insertBefore(doc.createTextNode(' and '), next)
         }
       }
     },
+    cleanAndSeparators (current, next) {
+      let node = current.nextSibling
+      while (node && node !== next) {
+        const nextNode = node.nextSibling
+        if (node.nodeType === 3 && node.parentNode && isAndSeparatorText(node.nodeValue)) {
+          node.parentNode.removeChild(node)
+        }
+        node = nextNode
+      }
+    },
+    findItemBySpan (span, items) {
+      const className = (span && span.className) || ''
+      return (items || []).find(item => item.itemUuid && className.indexOf(item.itemUuid) !== -1) || null
+    },
+    findEditorSpan (itemUuid) {
+      if (!this.editorInstance || !itemUuid) return null
+      const spans = this.editorInstance.document.querySelectorAll('.gapfilling-span')
+      for (let i = 0; i < spans.length; i++) {
+        if ((spans[i].className || '').indexOf(itemUuid) !== -1) return spans[i]
+      }
+      return null
+    },
+    /** 开关「一题多空」：打开只标记组首（行尾出现 +）；关闭会删除该组多出来的空（含答案与题干 span） */
+    onGroupToggle (row, index, val) {
+      if (!row || index < 0) return
+      const range = this.findGroupRange(this.form.items, index)
+      if (range.start !== index) {
+        // 组内非组首的空不能单独开关，统一由组首管理
+        row.multiGap = false
+        return
+      }
+      if (val) {
+        row.multiGap = true
+        return
+      }
+      const extraCount = range.end - range.start
+      if (!extraCount) {
+        row.multiGap = false
+        this.syncTotalScore()
+        return
+      }
+      this.$confirm(
+        `关闭「一题多空」会删除该组多出来的 ${extraCount} 个空（含已填答案与题干中的空），且不可恢复，是否继续？`,
+        '关闭一题多空',
+        {
+          type: 'warning',
+          confirmButtonText: '删除并关闭',
+          cancelButtonText: '取消'
+        }
+      ).then(() => {
+        this.removeGroupExtraSlots(index)
+      }).catch(() => {
+        row.multiGap = true
+      })
+    },
+    /** 删除组内除组首以外的空：题干 span + 相邻 and 分隔符，然后由 syncItemsFromContent 单向重建行数据 */
+    removeGroupExtraSlots (headIndex) {
+      if (!this.editorInstance) return
+      const items = this.form.items
+      const range = this.findGroupRange(items, headIndex)
+      if (range.start !== headIndex || range.end <= range.start) return
+      const headItem = items[range.start]
+      const extraItems = items.slice(range.start + 1, range.end + 1)
+      this.syncingFromTitle = true
+      try {
+        extraItems.forEach(item => {
+          const span = this.findEditorSpan(item.itemUuid)
+          if (!span || !span.parentNode) return
+          this.removeAdjacentAndSeparator(span)
+          span.parentNode.removeChild(span)
+        })
+        this.syncItemsFromContent(this.editorInstance.getContent())
+        const rebuiltHead = this.form.items.find(item => item.itemUuid === headItem.itemUuid)
+        if (rebuiltHead) rebuiltHead.multiGap = false
+        this.syncTitleFromItems()
+        this.syncTotalScore()
+        this.$message.success(`已删除该组多出来的 ${extraItems.length} 个空`)
+      } finally {
+        setTimeout(() => {
+          this.syncingFromTitle = false
+        }, 200)
+      }
+    },
+    removeAdjacentAndSeparator (span) {
+      const parent = span.parentNode
+      if (!parent) return
+      const isSeparatorNode = node => !!node && node.nodeType === 3 && isAndSeparatorText(node.nodeValue)
+      if (isSeparatorNode(span.previousSibling)) {
+        parent.removeChild(span.previousSibling)
+      } else if (isSeparatorNode(span.nextSibling)) {
+        parent.removeChild(span.nextSibling)
+      }
+    },
+    /** 「+」增空：在组内最后一个 span 后面 DOM 直插新 span（文本 = 组首显示题号，前面补 and） */
+    appendGroupSlot (row, index) {
+      if (!this.editorInstance) return
+      const items = this.form.items
+      const range = this.findGroupRange(items, index)
+      if (range.start < 0) return
+      const head = items[range.start]
+      const last = items[range.end]
+      const lastSpan = this.findEditorSpan(last.itemUuid)
+      if (!lastSpan || !lastSpan.parentNode) {
+        this.$message.error('未在题干中找到该空的锚点，请检查题干')
+        return
+      }
+      const doc = this.editorInstance.document
+      const uuid = this.genUuid()
+      // 新空显示题号 = 组首显示题号（不是 getNextBlankNumber 的「最大号 +1」）
+      const displayNo = head.displayNo || ''
+      this.syncingFromTitle = true
+      try {
+        const span = doc.createElement('span')
+        span.className = `gapfilling-span ${uuid}`
+        span.textContent = displayNo
+        const separator = doc.createTextNode(' and ')
+        const insertPoint = lastSpan.nextSibling
+        lastSpan.parentNode.insertBefore(separator, insertPoint)
+        lastSpan.parentNode.insertBefore(span, separator.nextSibling)
+        // 行数据只由题干推导：新 span 的 itemUuid 未命中旧行 → 新空（答案空、分值为 null）
+        this.syncItemsFromContent(this.editorInstance.getContent())
+        this.syncTitleFromItems()
+        this.syncTotalScore()
+      } finally {
+        setTimeout(() => {
+          this.syncingFromTitle = false
+        }, 200)
+      }
+    },
+    /** 总分只累加组首分值，组内其它空共享组首分值 */
     syncTotalScore () {
-      // 共用题号的空（shareWithPrev）与上一空共享分值，不重复累加
-      const sum = this.form.items.reduce((total, item, index) => {
-        if (index > 0 && item.shareWithPrev) return total
+      const items = this.form.items || []
+      const sum = items.reduce((total, item, index) => {
+        if (!this.isGroupHead(index)) return total
         return total + Number(item.score || 0)
       }, 0)
       this.form.score = Math.round(sum * 10) / 10
@@ -521,29 +804,88 @@ export default {
         this.$message.error('请先在题干中插入填空')
         return false
       }
-      if (this.form.items.some(item => !item.contents || !item.contents.length || !item.contents[0])) {
-        this.$message.error('请填写所有填空的标准答案')
+      // 每个空都必须自己填答案（同义词/多解放在同一空的答案集合里）
+      if (this.form.items.some(item => !item.contents || !item.contents.length || !String(item.contents[0] || '').trim())) {
+        this.$message.error('请填写所有填空的标准答案（每个空至少 1 个答案）')
+        return false
+      }
+      // 组首分值必填且必须大于 0
+      const missingScoreIndex = this.form.items.findIndex((item, index) => this.isGroupHead(index) && !(Number(item.score) > 0))
+      if (missingScoreIndex !== -1) {
+        const row = this.form.items[missingScoreIndex]
+        this.$message.error(`请填写题号 ${row.displayNo || missingScoreIndex + 1} 的分值（每组组首分值必须大于 0）`)
+        return false
+      }
+      // 同一组内两个空的可接受集合完全相同且元素数 > 1 时后端会拒绝
+      const duplicateNo = this.findDuplicateAnswerSetInGroup()
+      if (duplicateNo) {
+        this.$message.error(`题号 ${duplicateNo} 同一组内有两个空的答案集合完全相同，请调整后再保存`)
         return false
       }
       this.syncTotalScore()
+      const headSum = this.form.items.reduce((total, item, index) => {
+        if (!this.isGroupHead(index)) return total
+        return total + Number(item.score || 0)
+      }, 0)
+      if (Math.abs(headSum - Number(this.form.score || 0)) > 0.001) {
+        this.$message.error('题目总分与各组组首分值之和不一致，请检查分值')
+        return false
+      }
       return true
+    },
+    findDuplicateAnswerSetInGroup () {
+      const items = this.form.items || []
+      for (let headIndex = 0; headIndex < items.length; headIndex++) {
+        if (!this.isGroupHead(headIndex)) continue
+        const range = this.findGroupRange(items, headIndex)
+        if (range.end <= range.start) continue
+        const seen = []
+        for (let i = range.start; i <= range.end; i++) {
+          const contents = (items[i].contents || [])
+            .map(value => String(value == null ? '' : value).trim().toLowerCase())
+            .filter(value => value)
+          if (contents.length <= 1) continue
+          const key = contents.slice().sort().join('\u0001')
+          if (seen.indexOf(key) !== -1) return items[i].displayNo || String(headIndex + 1)
+          seen.push(key)
+        }
+      }
+      return null
     },
     submitForm () {
       if (this.editorInstance) {
         this.form.title = this.editorInstance.getContent()
       }
-      this.syncTotalScore()
+      this.syncItemsFromContent(this.form.title)
       this.$refs.form.validate((valid) => {
         if (!valid || !this.validateGapForm()) return
-        // 确保 contents 数组格式正确
-        this.form.items = this.form.items.map(item => ({
-          ...item,
-          contents: item.contents && item.contents.length ? item.contents : (item.content ? [item.content] : ['']),
-          content: item.content || (item.contents && item.contents[0]) || ''
-        }))
-        this.form.topicType = this.form.questionType
+        const items = this.form.items.map((item, index) => {
+          const contents = (item.contents || [])
+            .map(value => String(value == null ? '' : value).trim())
+            .filter(value => value)
+          const content = contents.length ? contents[0] : (item.content || '')
+          return {
+            id: item.id,
+            itemUuid: item.itemUuid,
+            // prefix = 槽位号 1..N（唯一），与题干显示题号解耦
+            prefix: String(index + 1),
+            // 每个空都必须带组号；同一题号组的空 groupGap 相同且必须相邻
+            groupGap: String(item.groupGap),
+            contents: contents.length ? contents : [content],
+            content,
+            // 只有组首带分值（字符串分制），非组首必须为 null（不是 0）
+            score: this.isGroupHead(index) ? String(Number(item.score)) : null,
+            describe: item.describe || null
+          }
+        })
+        const payload = {
+          ...this.form,
+          items,
+          score: String(this.form.score),
+          topicType: this.form.questionType
+        }
         this.formLoading = true
-        questionApi.edit(this.form).then(re => {
+        questionApi.edit(payload).then(re => {
           if (re.code === 1) {
             this.$message.success(re.message)
             this.delCurrentView(this).then(() => {
@@ -615,9 +957,14 @@ export default {
   font-size: 12px;
 }
 
+.gap-group-tip {
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
 .gap-answer-table {
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
 }
 
 .gap-answer-table ::v-deep .gap-score-col .cell {
@@ -644,6 +991,11 @@ export default {
   margin-bottom: 18px;
 }
 
+.gap-display-no {
+  font-weight: 600;
+  color: #303133;
+}
+
 .gap-shared-no {
   color: #909399;
   font-style: italic;
@@ -653,6 +1005,17 @@ export default {
 .gap-shared-score {
   color: #909399;
   font-size: 12px;
+}
+
+.gap-op-placeholder {
+  color: #c0c4cc;
+  font-size: 12px;
+}
+
+.gap-append-btn {
+  padding: 0;
+  width: 26px;
+  height: 26px;
 }
 
 .question-item-rate {
