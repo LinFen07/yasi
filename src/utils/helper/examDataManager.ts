@@ -5,6 +5,7 @@
 
 import stores from '@/stores';
 import { runInAction } from 'mobx';
+import { getExamDurationMs } from './examDuration';
 
 /** URL 参数 shouldReset=false 时表示继续上次作答，否则视为新开一场 */
 export const shouldStartFreshExam = (): boolean => {
@@ -340,11 +341,7 @@ export interface OngoingExamState {
   writte: { status: 'pending' | 'in_progress' | 'expired' | 'completed' | 'not_started'; remainingMs: number };
 }
 
-const DURATION_MS: Record<string, number> = {
-  listen: 30 * 60 * 1000,
-  read: 1 * 60 * 1000,
-  writte: 1 * 60 * 1000,
-};
+// 各模块考试时长统一由 examDuration 提供，避免与考试中的倒计时（HeadTip）不一致
 
 export interface ModuleProgress {
   status: 'not_started' | 'in_progress' | 'completed';
@@ -455,7 +452,7 @@ export const checkOngoingExamState = (paperId: number): OngoingExamState => {
   for (const mod of modules) {
     const key = `testTimer:${paperId}:${mod}`;
     const raw = localStorage.getItem(key);
-    const durationMs = DURATION_MS[mod];
+    const durationMs = getExamDurationMs(mod);
 
     if (raw) {
       try {

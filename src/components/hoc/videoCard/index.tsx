@@ -2,6 +2,7 @@ import ExamExplainVideo from "@/components/basic/examExpainVideo";
 import { CheckOutlined } from "@ant-design/icons";
 import stores from "@/stores";
 import { observer } from "mobx-react";
+import { getExamDurationMinutes } from "@/utils/helper/examDuration";
 import "./index.scss";
 
 const expainVideoCard = observer(
@@ -16,7 +17,7 @@ const expainVideoCard = observer(
     isAvailable?: boolean,
     shouldReset?: boolean
   }) => {
-    const time = type === 'listen' ? 30 : 60;
+    const time = getExamDurationMinutes(type);
     const title =
       type == 'listen'
         ? 'Listening'

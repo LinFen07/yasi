@@ -13,6 +13,7 @@ import { collectListenReadSubmitItems } from '@/utils/helper/mergeSubmitAnswers'
 import { persistReportPaperId } from '@/utils/helper/reportPaperId';
 import { submitAnswerBatch, judgingProblem } from '@/api/studentAnswer';
 import { submitModuleGuarded, buildSubmitKey } from '@/utils/helper/moduleSubmitGuard';
+import { getExamDurationMinutes } from '@/utils/helper/examDuration';
 import { clearExamHighlights } from '@/components/container/examContent';
 
 const items: MenuProps['items'] = [
@@ -31,7 +32,7 @@ type propType = {
 };
 
 const HeadTip = forwardRef((props: propType) => {
-  const testTime: number = props.type == 'listen' ? 30 : 60;
+  const testTime: number = getExamDurationMinutes(props.type);
   const examstore = stores.ExamStore;
 
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
