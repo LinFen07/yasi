@@ -66,28 +66,73 @@ export function computedPrevCount(title: string, exam: Array<Exam>): number {
   return prevCount;
 }
 
+/** 判断 item 上的 shareWithPrev 旧字段是否为真（历史数据兼容） */
+function isShareWithPrev(item: any): boolean {
+  const raw = item?.shareWithPrev;
+  return raw === true || raw === 'true' || raw === 1 || raw === '1';
+}
+
+/**
+ * 计算一个填空题内每个空的「题号组标识」。
+ *
+ * 组标识相同且相邻的若干空属于同一个题号组（一题多空），
+ * 例：groupGap = ['1', '1'] 表示两个空共用第 1 个题号。
+ *
+ * 兜底策略（务必保持"宁可多占号，也不可误并组"）：
+ *   - groupGap 缺失 / 空串 / 空白 → 该空自成一组
+ *   - groupGap 缺失但带旧字段 shareWithPrev → 与上一空同组（兼容存量题目）
+ * 误并组会让整题只占 1 个题号，导致后续题号整体前移（比多占号更隐蔽、更难排查）。
+ */
+export function getGapGroupKeys(items: any[]): string[] {
+  const list = Array.isArray(items) ? items : [];
+  const keys: string[] = [];
+  let prevKey: string | null = null;
+
+  list.forEach((item, index) => {
+    const raw = item?.groupGap;
+    const hasGroup = raw !== null && raw !== undefined && String(raw).trim() !== '';
+    let key: string;
+    if (hasGroup) {
+      key = String(raw).trim();
+    } else if (isShareWithPrev(item) && prevKey !== null) {
+      key = prevKey;
+    } else {
+      key = String(index + 1);
+    }
+    keys.push(key);
+    prevKey = key;
+  });
+
+  return keys;
+}
+
+/**
+ * 计算一个填空题的「题号组数」（= 它占用的题号个数）
+ * 连续且组标识相同的空属于同一组，只占 1 个题号
+ */
+export function getGapGroupCount(questionItem: ExamType): number {
+  const items = Array.isArray(questionItem.items) ? questionItem.items : [];
+  if (items.length === 0) return 0;
+  const keys = getGapGroupKeys(items);
+  let span = 1;
+  for (let i = 1; i < keys.length; i++) {
+    if (keys[i] !== keys[i - 1]) span += 1;
+  }
+  return span;
+}
+
 /**
  * 计算一个题目的「题号跨度」（占用的题号个数）
- * 与 getQuestionSlotCount 的差异仅在填空题（type 4）：
- *   - 填空题：题号数 = 组数（同 groupGap 的连续若干空共用一个题号）
+ * 与 getQuestionSlotCount（槽位跨度）的差异仅在填空题（type 4）：
+ *   - 填空题：题号数 = 题号组数（同 groupGap 的连续若干空共用一个题号）
+ *     双填空题（一个题两个空）只占 1 个题号，否则后续题号会整体后移
+ *     （模考反馈：听力 Q12、阅读 Q33/Q35 是双填空题，导致后面题号全部 +1）
  *   - 缺 groupGap 时按槽位号兜底，即每个空各占一个题号（绝不并成一组）
  * 其余题型题号跨度 = 槽号跨度，直接复用 getQuestionSlotCount
  */
 export function getQuestionNumberSpan(questionItem: ExamType): number {
   const type = questionItem.questionType;
-  if (type === 4) {
-    const items = Array.isArray(questionItem.items) ? questionItem.items : [];
-    // 题号数 = 组数：首个空占 1 个题号，之后 groupGap 变化才 +1
-    let span = items.length > 0 ? 1 : 0;
-    let prevGroup: string | null = null;
-    items.forEach((item, i) => {
-      // 防御性兜底：缺 groupGap 时用槽位号（题目内第几个空），保证逐空递增、不与相邻空并组
-      const group = item.groupGap ?? String(i + 1);
-      if (i > 0 && group !== prevGroup) span += 1;
-      prevGroup = group;
-    });
-    return span;
-  }
+  if (type === 4) return getGapGroupCount(questionItem);
   return getQuestionSlotCount(questionItem);
 }
 

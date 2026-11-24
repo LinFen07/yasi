@@ -6,7 +6,7 @@ import store from "@/stores";
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { reaction, runInAction } from "mobx";
-import { getQuestionNumberSpan, getQuestionSlotCount } from "@/utils/helper/computed"; // 导航按题号跨度计算 + 槽位还原
+import { getQuestionNumberSpan, getQuestionSlotCount, getGapGroupKeys } from "@/utils/helper/computed"; // 导航按题号跨度计算 + 槽位还原
 
 type pageType = {
   title: string;
@@ -197,16 +197,13 @@ function footerNav(props: propType) {
         const numberSpan = getQuestionNumberSpan(q);
 
         if (q.questionType === 4 && Array.isArray(q.items)) {
-          // 填空题：逐空还原题号，groupGap 相同的连续空与上一空同号
+          // 填空题：逐空还原题号，同组（groupGap 相同且相邻）的空与上一空同号
+          const groupKeys = getGapGroupKeys(q.items);
           let currentNo = questionNoCursor;
-          let prevGroup: string | null = null;
-          q.items.forEach((item: any, localIdx: number) => {
-            // 缺 groupGap 时用槽位号兜底，保证逐空递增、绝不并组
-            const group = item?.groupGap ?? String(localIdx + 1);
-            if (localIdx > 0 && group !== prevGroup) {
+          groupKeys.forEach((group: string, localIdx: number) => {
+            if (localIdx > 0 && group !== groupKeys[localIdx - 1]) {
               currentNo += 1;
             }
-            prevGroup = group;
             const slotIdx = slotCursor + localIdx;
             const ans = answers[slotIdx];
             const hasContent =
@@ -216,7 +213,7 @@ function footerNav(props: propType) {
             }
           });
         } else {
-          // 其他题型：题号与槽位一一对应（或多选题占多个槽位但同一题号）
+          // 其他题型：题号与槽位一一对应
           for (let i = 0; i < numberSpan; i++) {
             const questionNo = questionNoCursor + i + 1;
             let answered = false;
