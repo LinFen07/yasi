@@ -19,17 +19,19 @@ import { shouldStartFreshExam } from '@/utils/helper/examDataManager';
 
 function questions({ exam, shouldReset }: { exam: Exam[]; shouldReset?: boolean }) {
   const resetAnswers = shouldReset ?? shouldStartFreshExam();
-  const [listensArr, setListensArr] = useState(exam[0]);
-  const [questionsArr, setQuestionArr] = useState(listensArr.questionItems);
+  const currentExamTitle = stores.ExamStore.currentExamTitle;
+  const currentPartIndex = Number(currentExamTitle.match(/\d+/)?.[0] || 1) - 1;
+  const initialPart = exam[currentPartIndex] || exam[0];
+  const [questionsArr, setQuestionArr] = useState(initialPart?.questionItems || []);
   const titleRefs = useRef<(HTMLDivElement | null)[]>([]);
   const questionIndex = stores.ExamStore.currentExamIndex;
   const lastFocusedInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    const index = +stores.ExamStore.currentExamTitle[4] - 1;
-    setListensArr(exam[index]);
-    setQuestionArr(exam[index].questionItems);
-  }, [stores.ExamStore.currentExamTitle]);
+    const index = Number(currentExamTitle.match(/\d+/)?.[0] || 1) - 1;
+    const part = exam[index];
+    if (part) setQuestionArr(part.questionItems);
+  }, [currentExamTitle, exam]);
 
   // 初始化答案数组
   useEffect(() => {

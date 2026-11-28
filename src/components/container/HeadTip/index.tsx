@@ -358,17 +358,11 @@ const HeadTip = forwardRef((props: propType) => {
           onMouseLeave={() => setTimerVisible(false)}
         >
           <FieldTimeOutlined style={{ fontSize: '28px' }} />
-          {remainingMs <= 60000 ? (
-            <p>
-              {minutes}：{seconds.toString().padStart(2, '0')}
-            </p>
-          ) : timerVisible ? (
-            <p>
-              {minutes}：{seconds.toString().padStart(2, '0')}
-            </p>
-          ) : (
-            <p>{minutes} minutes remaining</p>
-          )}
+          <p style={{ minWidth: '12em' }}>
+            {remainingMs <= 60000 || timerVisible
+              ? `${minutes}：${seconds.toString().padStart(2, '0')}`
+              : `${minutes} minutes remaining`}
+          </p>
         </Space>
         <div className="empty"></div>
         {props.type === 'listen' && (

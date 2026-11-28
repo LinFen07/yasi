@@ -29,7 +29,10 @@ function questions() {
 
   const [title, setTitle] = useState(currentPart?.name || '');
   const [content, setContent] = useState(currentPart?.questionItems?.[0]?.title || '');
-  const [value, setValue] = useState(['', '']);
+  const [value, setValue] = useState(() => [
+    stores.ExamStore.correctWritte[0] || '',
+    stores.ExamStore.correctWritte[1] || '',
+  ]);
   const [wordCOunt, setWordCount] = useState(0);
   const [leftPercent, setLeftPercent] = useState(48);
   const [imeWarningVisible, setImeWarningVisible] = useState(false);
@@ -58,7 +61,6 @@ function questions() {
     if (!hasExam) return;
 
     const index = getPartIndex(examTitle, exam.length);
-    stores.ExamStore.changeWritteAnswer(index, value[index] || '');
     setWordCount(countWords(value[index] || ''));
   }, [value, examTitle, hasExam]);
 
@@ -109,6 +111,7 @@ function questions() {
       updatedValues[index] = finalValue;
       return updatedValues;
     });
+    stores.ExamStore.changeWritteAnswer(index, finalValue);
   };
 
   if (!hasExam) {
@@ -165,6 +168,7 @@ function questions() {
               updatedValues[currentIndex] = filteredValue;
               return updatedValues;
             });
+            stores.ExamStore.changeWritteAnswer(currentIndex, filteredValue);
           }}
         />
         <div className="writte-word-count">Word count: {wordCOunt}</div>

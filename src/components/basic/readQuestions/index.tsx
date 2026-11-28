@@ -12,19 +12,23 @@ const MAX_LEFT_PERCENT = 72;
 const questions = () => {
   const examTitle = stores.ExamStore.currentExamTitle;
   const exam = stores.ExamStore.getReadExam();
-  const [readArr, setReadArr] = useState(exam[0]);
+  const initialPartIndex = Number(examTitle.match(/\d+/)?.[0] || 1) - 1;
+  const [readArr, setReadArr] = useState(() => exam[initialPartIndex] || exam[0]);
   const [leftPercent, setLeftPercent] = useState(48);
   const containerRef = useRef<HTMLDivElement>(null);
   const readContentRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
 
   useEffect(() => {
-    const index = +examTitle[4] - 1;
-    setReadArr(exam[index]);
-    if(containerRef.current) {
-      createInput(exam, 'read', containerRef.current);
-    }
+    const index = Number(examTitle.match(/\d+/)?.[0] || 1) - 1;
+    setReadArr(exam[index] || exam[0]);
   },[examTitle, exam]);
+
+  useEffect(() => {
+    const index = Number(examTitle.match(/\d+/)?.[0] || 1) - 1;
+    if (readArr !== exam[index] || !containerRef.current) return;
+    createInput(exam, 'read', containerRef.current);
+  }, [examTitle, exam, readArr]);
 
   const handleDividerMouseDown = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
