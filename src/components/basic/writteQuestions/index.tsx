@@ -3,10 +3,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import parse from 'html-react-parser';
 import stores from '@/stores';
 import { observer } from 'mobx-react';
+import { runInAction } from 'mobx';
 
 import { Input, Modal, Button } from 'antd';
 import { countWords } from '@/utils/helper/computed';
 import { restrictChineseInput } from '@/utils/helper/inputRestriction';
+import {
+  readWritteDraft,
+  writeWritteDraft,
+} from '@/utils/helper/writteDraftCache';
 
 const { TextArea } = Input;
 
@@ -23,16 +28,21 @@ function getPartIndex(examTitle: string, examLength: number) {
 function questions() {
   const exam = stores.ExamStore.getWritteExam();
   const examTitle = stores.ExamStore.currentExamTitle;
+  const paperId = stores.ExamStore.paperId;
   const hasExam = exam.length > 0;
   const partIndex = getPartIndex(examTitle, exam.length);
   const currentPart = hasExam ? exam[partIndex] : null;
 
   const [title, setTitle] = useState(currentPart?.name || '');
   const [content, setContent] = useState(currentPart?.questionItems?.[0]?.title || '');
-  const [value, setValue] = useState(() => [
-    stores.ExamStore.correctWritte[0] || '',
-    stores.ExamStore.correctWritte[1] || '',
-  ]);
+  const [value, setValue] = useState<string[]>(() =>
+    exam.map(
+      (_, index) =>
+        readWritteDraft(paperId, index) ||
+        stores.ExamStore.correctWritte[index] ||
+        ''
+    )
+  );
   const [wordCOunt, setWordCount] = useState(0);
   const [leftPercent, setLeftPercent] = useState(48);
   const [imeWarningVisible, setImeWarningVisible] = useState(false);
@@ -50,12 +60,19 @@ function questions() {
     setTitle(part.name || '');
     setContent(part.questionItems?.[0]?.title || '');
 
-    setValue((prev) => {
-      const updatedValues = [...prev];
-      updatedValues[index] = stores.ExamStore.correctWritte[index] || '';
-      return updatedValues;
+    runInAction(() => {
+      const restored = exam.map((_, partIndex) => {
+        const draft = readWritteDraft(paperId, partIndex);
+        const stored = stores.ExamStore.correctWritte[partIndex] || '';
+        const answer = draft || stored;
+        if (answer !== stored) {
+          stores.ExamStore.changeWritteAnswer(partIndex, answer);
+        }
+        return answer;
+      });
+      setValue(restored);
     });
-  }, [examTitle, exam, hasExam]);
+  }, [examTitle, exam, hasExam, paperId]);
 
   useEffect(() => {
     if (!hasExam) return;
@@ -111,6 +128,7 @@ function questions() {
       updatedValues[index] = finalValue;
       return updatedValues;
     });
+    writeWritteDraft(paperId, index, finalValue);
     stores.ExamStore.changeWritteAnswer(index, finalValue);
   };
 
@@ -168,6 +186,7 @@ function questions() {
               updatedValues[currentIndex] = filteredValue;
               return updatedValues;
             });
+            writeWritteDraft(paperId, currentIndex, filteredValue);
             stores.ExamStore.changeWritteAnswer(currentIndex, filteredValue);
           }}
         />

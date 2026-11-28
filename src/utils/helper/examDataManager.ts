@@ -6,6 +6,7 @@
 import stores from '@/stores';
 import { runInAction } from 'mobx';
 import { getExamDurationMs } from './examDuration';
+import { clearWritteDrafts } from './writteDraftCache';
 
 /** URL 参数 shouldReset=false 时表示继续上次作答，否则视为新开一场 */
 export const shouldStartFreshExam = (): boolean => {
@@ -75,6 +76,7 @@ export const clearExamLocalData = (options: ExamDataClearOptions = {}) => {
     if (clearExamStore) {
       stores.ExamStore.resetLocalStorage();
       localStorage.removeItem('examStore');
+      clearWritteDrafts();
       // console.log('ExamStore数据已清除');
     }
 
@@ -213,9 +215,10 @@ export const clearModuleDrafts = () => {
  */
 export const clearAllExamData = () => {
   try {
-    // 清除考试存储
+    // 清除考试存储（含写作分 Part 草稿缓存）
     stores.ExamStore.resetLocalStorage();
     localStorage.removeItem('examStore');
+    clearWritteDrafts();
 
     // 清除答案存储
     stores.AnswerStore.resetLocalStorage();

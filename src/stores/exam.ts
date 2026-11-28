@@ -1,6 +1,7 @@
 import { makeAutoObservable, reaction, runInAction } from "mobx";
 import { Exam, ExamType } from "@/typings/exam";
 import { getStreamAudioUrl } from "@/api/examPaper";
+import { clearWritteDrafts } from "@/utils/helper/writteDraftCache";
 
 class ExamStore {
   paperId = 0;
@@ -55,6 +56,7 @@ class ExamStore {
   }
 
   fullReset() {
+    clearWritteDrafts(this.paperId);
     const data = {
       paperId: this.paperId,
       examPaperId: this.examPaperId,
